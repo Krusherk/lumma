@@ -55,14 +55,12 @@ export default function HomePage() {
               >
                 Enter Cockpit
               </Link>
-              <a
-                href="https://docs.arc.network/arc/concepts/welcome-to-arc"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/docs"
                 className="rounded-xl border border-lumma-ink/30 px-5 py-3 text-sm font-semibold text-lumma-ink transition hover:bg-white/70"
               >
-                Read Arc Docs
-              </a>
+                Read Lumma Docs
+              </Link>
             </div>
           </div>
           <div className="lumma-float rounded-3xl border border-lumma-ink/15 bg-white/60 p-6 shadow-sm backdrop-blur">

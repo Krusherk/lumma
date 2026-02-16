@@ -4,10 +4,10 @@ export const config = {
   appName: "Lumma",
   appUrl: env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   chain: {
-    id: Number(env.NEXT_PUBLIC_ARC_CHAIN_ID ?? "9124"),
-    rpcUrl: env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.xyz",
+    id: Number(env.NEXT_PUBLIC_ARC_CHAIN_ID ?? "5042002"),
+    rpcUrl: env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network",
     explorerUrl:
-      env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://explorer.testnet.arc.xyz",
+      env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
   },
   contracts: {
     vaultManager: env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS ?? "",
@@ -23,7 +23,10 @@ export const config = {
   },
   supabase: {
     url: env.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+    anonKey:
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+      env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+      "",
     serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   },
   security: {

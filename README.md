@@ -31,6 +31,7 @@ npm run dev
 4. Open:
 - Marketing: `http://localhost:3000`
 - App dashboard: `http://localhost:3000/app`
+- Docs portal: `http://localhost:3000/docs`
 - Admin pause panel: `http://localhost:3000/admin`
 
 ## Scripts
@@ -66,4 +67,3 @@ npm run dev
 - Rotate exposed Privy secret before deployment.
 - Keep `PRIVY_APP_SECRET` server-only.
 - Use `ADMIN_API_TOKEN` for vault pause endpoint.
-

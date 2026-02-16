@@ -10,7 +10,7 @@ interface PrivyProviderWrapperProps {
 const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
 
 const arcChain = {
-  id: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? 9124),
+  id: Number(process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? 5042002),
   name: "Arc Testnet",
   nativeCurrency: {
     name: "USDC",
@@ -19,16 +19,16 @@ const arcChain = {
   },
   rpcUrls: {
     default: {
-      http: [process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.xyz"],
+      http: [process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network"],
     },
     public: {
-      http: [process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.xyz"],
+      http: [process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network"],
     },
   },
   blockExplorers: {
     default: {
       name: "Arc Explorer",
-      url: process.env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://explorer.testnet.arc.xyz",
+      url: process.env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
     },
   },
   testnet: true,
