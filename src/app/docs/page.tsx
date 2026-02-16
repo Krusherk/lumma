@@ -117,7 +117,7 @@ export default function DocsPage() {
               </ol>
               <p className="mt-3">Arc testnet stablecoin addresses:</p>
               <CodeBlock
-                code={`USDC: 0x3600A3931B280d54D5012817e26615F84aC1F63f\nEURC: 0x84B0453f4Ab23b6D7A8fA3fa5B4A9f6242D793D8`}
+                code={`USDC (ERC-20 interface): 0x3600000000000000000000000000000000000000\nEURC: 0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a`}
               />
               <p className="mt-3 text-sm text-lumma-ink/75">
                 You can also use Foundry deploy flow from Arc docs if preferred.
