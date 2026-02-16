@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f4ea;
+  --foreground: #0e1116;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-lumma-ink: #0e1116;
+  --color-lumma-sky: #5ee9ff;
+  --color-lumma-lime: #c6ff5c;
+  --color-lumma-sand: #f7f4ea;
+  --color-lumma-alert: #ff6b6b;
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-space-grotesk);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), sans-serif;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+@keyframes lumma-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.lumma-float {
+  animation: lumma-float 7s ease-in-out infinite;
+}
