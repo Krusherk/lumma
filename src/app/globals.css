@@ -183,6 +183,51 @@ a {
   animation: lumma-scan 4.5s ease-in-out infinite;
 }
 
+.lumma-noir-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(88, 204, 255, 0.16), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 18%);
+}
+
+.lumma-noir-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.07) 0px,
+    rgba(255, 255, 255, 0.07) 1px,
+    rgba(255, 255, 255, 0) 3px,
+    rgba(255, 255, 255, 0) 6px
+  );
+  opacity: 0.18;
+}
+
+.lumma-scanlines {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09) 0px,
+    rgba(255, 255, 255, 0.09) 1px,
+    rgba(255, 255, 255, 0) 4px,
+    rgba(255, 255, 255, 0) 8px
+  );
+}
+
+.lumma-reveal {
+  opacity: 0;
+  transform: translateY(26px) scale(0.985);
+  transition:
+    opacity 640ms ease,
+    transform 720ms cubic-bezier(0.2, 0.74, 0.2, 1);
+}
+
+.lumma-reveal.in-view {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
 .lumma-orb {
   position: absolute;
   border-radius: 9999px;
@@ -223,6 +268,25 @@ a {
 
 .lumma-pulse-lime {
   animation: lumma-glow-lime 3.6s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .lumma-orb {
+    filter: blur(36px);
+    opacity: 0.45;
+  }
+
+  .lumma-orb-a,
+  .lumma-orb-b,
+  .lumma-orb-c {
+    width: 11rem;
+    height: 11rem;
+  }
+
+  .lumma-noir-grid::before,
+  .lumma-scanlines {
+    opacity: 0.12;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
