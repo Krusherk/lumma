@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 
+import type { TxPayload } from "@/lib/tx";
+
 interface PrivyAuthProps {
   onResolvedUserId: (userId: string) => void;
+  onWalletExecutorReady?: (executor: ((payload: TxPayload) => Promise<string[]>) | null) => void;
 }
 
 interface ProfileResponse {
@@ -13,9 +16,15 @@ interface ProfileResponse {
     walletAddress: string | null;
     referralCode: string | null;
   };
+  source: "supabase" | "memory";
+  warning?: string;
 }
 
-export function PrivyAuth({ onResolvedUserId }: PrivyAuthProps) {
+function usernameKey(userId: string) {
+  return `lumma:username:${userId}`;
+}
+
+export function PrivyAuth({ onResolvedUserId, onWalletExecutorReady }: PrivyAuthProps) {
   const { ready, authenticated, login, logout, user, getAccessToken } = usePrivy();
   const { wallets } = useWallets();
   const [usernameInput, setUsernameInput] = useState("");
@@ -23,21 +32,80 @@ export function PrivyAuth({ onResolvedUserId }: PrivyAuthProps) {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const primaryWallet = useMemo(() => wallets[0]?.address ?? null, [wallets]);
+  const primaryWallet = useMemo(() => wallets[0] ?? null, [wallets]);
+
+  const executeTxPayload = useCallback(
+    async (payload: TxPayload) => {
+      if (payload.mode !== "onchain" || !payload.steps.length) {
+        return [];
+      }
+      if (!primaryWallet) {
+        throw new Error("No connected wallet found. Connect wallet with Privy first.");
+      }
+      await primaryWallet.switchChain(payload.chainId);
+      const provider = await primaryWallet.getEthereumProvider();
+      const hashes: string[] = [];
+      for (const step of payload.steps) {
+        const hash = await provider.request({
+          method: "eth_sendTransaction",
+          params: [
+            {
+              from: primaryWallet.address,
+              to: step.to,
+              data: step.data,
+              value: step.value,
+            },
+          ],
+        });
+        hashes.push(String(hash));
+      }
+      return hashes;
+    },
+    [primaryWallet],
+  );
+
+  useEffect(() => {
+    if (typeof onWalletExecutorReady !== "function") {
+      return;
+    }
+    if (!authenticated) {
+      onWalletExecutorReady(null);
+      return;
+    }
+    onWalletExecutorReady(executeTxPayload);
+  }, [authenticated, executeTxPayload, onWalletExecutorReady]);
 
   const loadProfile = useCallback(
     async (userId: string) => {
       const response = await fetch("/api/user/profile", {
+        cache: "no-store",
         headers: { "x-user-id": userId },
       });
       const payload = (await response.json()) as { ok: boolean; data?: ProfileResponse; error?: string };
       if (!response.ok || !payload.ok || !payload.data) {
         throw new Error(payload.error ?? "Failed to load profile.");
       }
-      const username = payload.data.profile.username;
-      setSavedUsername(username);
-      if (username) {
-        setUsernameInput(username);
+
+      const usernameFromApi = payload.data.profile.username;
+      const cachedUsername = window.localStorage.getItem(usernameKey(userId));
+      const resolvedUsername = usernameFromApi ?? cachedUsername;
+
+      setSavedUsername(resolvedUsername);
+      if (resolvedUsername) {
+        setUsernameInput(resolvedUsername);
+      }
+
+      if (usernameFromApi) {
+        window.localStorage.setItem(usernameKey(userId), usernameFromApi);
+      }
+
+      if (payload.data.source !== "supabase") {
+        setStatus(
+          payload.data.warning ??
+            "Profile API is using temporary memory storage. Run Supabase migrations to persist usernames.",
+        );
+      } else {
+        setStatus("");
       }
     },
     [],
@@ -79,17 +147,23 @@ export function PrivyAuth({ onResolvedUserId }: PrivyAuthProps) {
       setStatus("Connect wallet first.");
       return;
     }
+    const normalized = usernameInput.trim().toLowerCase();
+    if (!normalized) {
+      setStatus("Enter a username before saving.");
+      return;
+    }
     setSaving(true);
     try {
       const response = await fetch("/api/user/profile", {
         method: "POST",
+        cache: "no-store",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": user.id,
         },
         body: JSON.stringify({
-          username: usernameInput.trim(),
-          walletAddress: primaryWallet ?? undefined,
+          username: normalized,
+          walletAddress: primaryWallet?.address ?? undefined,
         }),
       });
       const payload = (await response.json()) as {
@@ -100,8 +174,15 @@ export function PrivyAuth({ onResolvedUserId }: PrivyAuthProps) {
       if (!response.ok || !payload.ok || !payload.data) {
         throw new Error(payload.error ?? "Failed to save username.");
       }
-      setSavedUsername(payload.data.profile.username);
-      setStatus("Username saved.");
+      const username = payload.data.profile.username ?? normalized;
+      setSavedUsername(username);
+      setUsernameInput(username);
+      window.localStorage.setItem(usernameKey(user.id), username);
+      setStatus(
+        payload.data.source === "supabase"
+          ? "Username saved to Supabase."
+          : (payload.data.warning ?? "Saved locally. Supabase sync is not active."),
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Failed to save username.");
     } finally {
@@ -181,4 +262,3 @@ export function PrivyAuth({ onResolvedUserId }: PrivyAuthProps) {
     </div>
   );
 }
-

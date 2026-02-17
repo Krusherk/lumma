@@ -3,6 +3,7 @@ import { z } from "zod";
 import { config } from "@/lib/config";
 import { fail, getUserIdFromRequest, ok } from "@/lib/api";
 import { enableReferralRewardsForUser, executeSwap, getSwapHistory, getUserSummary, recordPointEvent } from "@/lib/store";
+import type { TxPayload } from "@/lib/tx";
 
 const bodySchema = z.object({
   userId: z.string().optional(),
@@ -26,16 +27,16 @@ export async function POST(request: Request) {
     } else if (summary.swaps >= 10) {
       recordPointEvent(userId, "swaps_10");
     }
+    const txPayload: TxPayload = {
+      chainId: config.chain.id,
+      mode: "simulation",
+      steps: [],
+      note: "Swap is recorded in simulation mode. StableFX mainnet-style signed flow is not wired yet.",
+    };
 
     return ok({
       swap: swapEvent,
-      txPayload: {
-        to: config.contracts.stableFxRouter || "0x0000000000000000000000000000000000000000",
-        value: "0",
-        data: "0x",
-        chainId: config.chain.id,
-        slippageBps: body.slippageBps,
-      },
+      txPayload,
       history: getSwapHistory(userId),
       swapMilestoneProgress: `${summary.swaps}/250`,
     });

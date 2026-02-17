@@ -10,20 +10,28 @@ const updateSchema = z.object({
   walletAddress: z.string().optional(),
 });
 
+function missingUsersTable(message?: string) {
+  return message?.includes("public.users") ?? false;
+}
+
 export async function GET(request: Request) {
   const userId = getUserIdFromRequest(request);
   const localUser = getUserProfile(userId);
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
-    return ok({
-      userId,
-      profile: {
-        username: localUser.username ?? null,
-        walletAddress: localUser.walletAddress ?? null,
-        referralCode: localUser.referralCode,
+    return ok(
+      {
+        userId,
+        profile: {
+          username: localUser.username ?? null,
+          walletAddress: localUser.walletAddress ?? null,
+          referralCode: localUser.referralCode,
+        },
+        source: "memory",
+        warning: "Supabase service role key is missing; profile is in temporary memory mode.",
       },
-      source: "memory",
-    });
+      { headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   const { data, error } = await supabase
@@ -33,18 +41,36 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (error) {
+    if (missingUsersTable(error.message)) {
+      return ok(
+        {
+          userId,
+          profile: {
+            username: localUser.username ?? null,
+            walletAddress: localUser.walletAddress ?? null,
+            referralCode: localUser.referralCode,
+          },
+          source: "memory",
+          warning: "Supabase schema is missing public.users. Run migrations 0001_initial.sql and 0002_usernames.sql.",
+        },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
     return fail("Failed to load user profile from Supabase.", 500, error.message);
   }
 
-  return ok({
-    userId,
-    profile: {
-      username: data?.username ?? localUser.username ?? null,
-      walletAddress: data?.wallet_address ?? localUser.walletAddress ?? null,
-      referralCode: data?.referral_code ?? localUser.referralCode,
+  return ok(
+    {
+      userId,
+      profile: {
+        username: data?.username ?? localUser.username ?? null,
+        walletAddress: data?.wallet_address ?? localUser.walletAddress ?? null,
+        referralCode: data?.referral_code ?? localUser.referralCode,
+      },
+      source: "supabase",
     },
-    source: "supabase",
-  });
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {
@@ -56,15 +82,19 @@ export async function POST(request: Request) {
     const supabase = createSupabaseAdminClient();
 
     if (!supabase) {
-      return ok({
-        userId,
-        profile: {
-          username: updated.username ?? null,
-          walletAddress: updated.walletAddress ?? null,
-          referralCode: updated.referralCode,
+      return ok(
+        {
+          userId,
+          profile: {
+            username: updated.username ?? null,
+            walletAddress: updated.walletAddress ?? null,
+            referralCode: updated.referralCode,
+          },
+          source: "memory",
+          warning: "Supabase service role key is missing; username is only stored in memory.",
         },
-        source: "memory",
-      });
+        { headers: { "Cache-Control": "no-store" } },
+      );
     }
 
     const payload = {
@@ -84,6 +114,21 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      if (missingUsersTable(error.message)) {
+        return ok(
+          {
+            userId,
+            profile: {
+              username: updated.username ?? null,
+              walletAddress: updated.walletAddress ?? null,
+              referralCode: updated.referralCode,
+            },
+            source: "memory",
+            warning: "Supabase schema is missing public.users. Run migrations 0001_initial.sql and 0002_usernames.sql.",
+          },
+          { headers: { "Cache-Control": "no-store" } },
+        );
+      }
       return fail(
         "Failed to save profile to Supabase. Ensure users table has username column.",
         500,
@@ -91,15 +136,18 @@ export async function POST(request: Request) {
       );
     }
 
-    return ok({
-      userId,
-      profile: {
-        username: data.username,
-        walletAddress: data.wallet_address,
-        referralCode: data.referral_code,
+    return ok(
+      {
+        userId,
+        profile: {
+          username: data.username,
+          walletAddress: data.wallet_address,
+          referralCode: data.referral_code,
+        },
+        source: "supabase",
       },
-      source: "supabase",
-    });
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     return fail(
       error instanceof Error ? error.message : "Invalid profile update request.",

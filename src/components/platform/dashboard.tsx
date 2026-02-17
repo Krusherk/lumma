@@ -14,6 +14,7 @@ import {
 import { LummaLogo } from "@/components/brand/lumma-logo";
 import { PrivyAuth } from "@/components/platform/privy-auth";
 import { taskDefinitions } from "@/lib/tasks";
+import type { TxPayload } from "@/lib/tx";
 import { cn } from "@/lib/utils";
 
 type LeaderboardPeriod = "weekly" | "monthly" | "all_time";
@@ -68,6 +69,10 @@ interface ApiEnvelope<T> {
   error?: string;
 }
 
+interface MutationResponse {
+  txPayload?: TxPayload;
+}
+
 interface QuestView {
   id: string;
   name: string;
@@ -101,6 +106,7 @@ const quickLinks = [
 async function api<T>(path: string, init: RequestInit = {}, userId: string): Promise<T> {
   const response = await fetch(path, {
     ...init,
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       "x-user-id": userId,
@@ -129,6 +135,7 @@ export function Dashboard() {
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [walletExecutor, setWalletExecutor] = useState<((payload: TxPayload) => Promise<string[]>) | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -164,8 +171,9 @@ export function Dashboard() {
     async (label: string, task: () => Promise<unknown>) => {
       setBusy(true);
       try {
-        await task();
-        setStatus(`${label} completed.`);
+        const result = await task();
+        const message = typeof result === "string" ? result : null;
+        setStatus(message ?? `${label} completed.`);
         await refresh();
       } catch (error) {
         setStatus(error instanceof Error ? error.message : `${label} failed.`);
@@ -174,6 +182,24 @@ export function Dashboard() {
       }
     },
     [refresh],
+  );
+
+  const submitTxPayload = useCallback(
+    async (txPayload?: TxPayload) => {
+      if (!txPayload || txPayload.mode !== "onchain" || txPayload.steps.length === 0) {
+        return txPayload?.note;
+      }
+      if (!walletExecutor) {
+        throw new Error("Connect wallet with Privy before submitting onchain transactions.");
+      }
+      const hashes = await walletExecutor(txPayload);
+      const lastHash = hashes.at(-1);
+      if (!lastHash) {
+        return "Transaction flow completed.";
+      }
+      return `Onchain tx sent: ${lastHash.slice(0, 12)}...`;
+    },
+    [walletExecutor],
   );
 
   const milestoneProgress = useMemo(() => {
@@ -212,7 +238,10 @@ export function Dashboard() {
           </div>
           <div id="wallet-section" className="mt-4 scroll-mt-24">
             {privyEnabled ? (
-              <PrivyAuth onResolvedUserId={setUserId} />
+              <PrivyAuth
+                onResolvedUserId={setUserId}
+                onWalletExecutorReady={(executor) => setWalletExecutor(() => executor)}
+              />
             ) : (
               <PrivySetupHint />
             )}
@@ -307,8 +336,8 @@ export function Dashboard() {
                       <button
                         disabled={busy || vault.paused}
                         onClick={() =>
-                          void run("Deposit", () =>
-                            api(
+                          void run("Deposit", async () => {
+                            const response = await api<MutationResponse>(
                               "/api/vaults/deposit",
                               {
                                 method: "POST",
@@ -318,8 +347,9 @@ export function Dashboard() {
                                 }),
                               },
                               userId,
-                            ),
-                          )
+                            );
+                            return submitTxPayload(response.txPayload);
+                          })
                         }
                         className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-[var(--lumma-bg)] disabled:opacity-60"
                       >
@@ -328,8 +358,8 @@ export function Dashboard() {
                       <button
                         disabled={busy}
                         onClick={() =>
-                          void run("Withdraw", () =>
-                            api(
+                          void run("Withdraw", async () => {
+                            const response = await api<MutationResponse>(
                               "/api/vaults/withdraw",
                               {
                                 method: "POST",
@@ -339,8 +369,9 @@ export function Dashboard() {
                                 }),
                               },
                               userId,
-                            ),
-                          )
+                            );
+                            return submitTxPayload(response.txPayload);
+                          })
                         }
                         className="rounded-lg border border-lumma-ink/30 px-3 py-1.5 text-sm font-medium text-lumma-ink disabled:opacity-60"
                       >
@@ -386,8 +417,8 @@ export function Dashboard() {
                 <button
                   disabled={busy}
                   onClick={() =>
-                    void run("Swap", () =>
-                      api(
+                    void run("Swap", async () => {
+                      const response = await api<MutationResponse>(
                         "/api/swap/execute",
                         {
                           method: "POST",
@@ -399,8 +430,9 @@ export function Dashboard() {
                           }),
                         },
                         userId,
-                      ),
-                    )
+                      );
+                      return submitTxPayload(response.txPayload);
+                    })
                   }
                   className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-[var(--lumma-bg)] disabled:opacity-60"
                 >
