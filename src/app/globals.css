@@ -1,31 +1,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f4ea;
-  --foreground: #0e1116;
+  --lumma-bg: #f7f4ea;
+  --lumma-fg: #10151d;
+  --lumma-ink: #10151d;
+  --lumma-sky: #5ee9ff;
+  --lumma-lime: #c6ff5c;
+  --lumma-sand: #fffcf4;
+  --lumma-alert: #ff6b6b;
+  --lumma-panel: rgba(255, 255, 255, 0.72);
+  --lumma-panel-strong: rgba(255, 255, 255, 0.9);
+  --lumma-border: rgba(16, 21, 29, 0.16);
+}
+
+html[data-theme="dark"] {
+  --lumma-bg: #060b12;
+  --lumma-fg: #e8edf6;
+  --lumma-ink: #e8edf6;
+  --lumma-sky: #58ccff;
+  --lumma-lime: #bff05f;
+  --lumma-sand: #101926;
+  --lumma-alert: #ff8f8f;
+  --lumma-panel: rgba(14, 23, 34, 0.72);
+  --lumma-panel-strong: rgba(12, 20, 30, 0.88);
+  --lumma-border: rgba(232, 237, 246, 0.16);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-lumma-ink: #0e1116;
-  --color-lumma-sky: #5ee9ff;
-  --color-lumma-lime: #c6ff5c;
-  --color-lumma-sand: #f7f4ea;
-  --color-lumma-alert: #ff6b6b;
+  --color-background: var(--lumma-bg);
+  --color-foreground: var(--lumma-fg);
+  --color-lumma-ink: var(--lumma-ink);
+  --color-lumma-sky: var(--lumma-sky);
+  --color-lumma-lime: var(--lumma-lime);
+  --color-lumma-sand: var(--lumma-sand);
+  --color-lumma-alert: var(--lumma-alert);
   --font-sans: var(--font-manrope);
   --font-display: var(--font-space-grotesk);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--lumma-bg);
+  color: var(--lumma-fg);
   font-family: var(--font-manrope), sans-serif;
   min-height: 100vh;
+  transition: background-color 280ms ease, color 280ms ease;
 }
 
 a {
   color: inherit;
+}
+
+::selection {
+  background: rgba(94, 233, 255, 0.45);
+  color: #051119;
 }
 
 @keyframes lumma-float {
@@ -34,10 +61,102 @@ a {
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes lumma-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lumma-spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lumma-scan {
+  0% {
+    transform: translateX(-40%);
+    opacity: 0;
+  }
+  40%,
+  70% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateX(140%);
+    opacity: 0;
   }
 }
 
 .lumma-float {
   animation: lumma-float 7s ease-in-out infinite;
 }
+
+.lumma-rise {
+  animation: lumma-rise 700ms ease both;
+}
+
+.lumma-glass {
+  background: var(--lumma-panel);
+  border: 1px solid var(--lumma-border);
+  backdrop-filter: blur(12px);
+}
+
+.lumma-grid {
+  position: relative;
+}
+
+.lumma-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(120, 130, 150, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(120, 130, 150, 0.08) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+}
+
+.lumma-scanline {
+  position: relative;
+  overflow: hidden;
+}
+
+.lumma-scanline::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -20%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(94, 233, 255, 0.22) 45%,
+    transparent 100%
+  );
+  animation: lumma-scan 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+

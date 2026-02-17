@@ -316,7 +316,7 @@ export function Dashboard() {
               </div>
             </Panel>
 
-            <Panel title="Swap Engine (USDC ↔ EURC)">
+            <Panel title="Swap Engine (USDC/EURC)">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setSwapDirection("USDC_EURC")}
@@ -327,7 +327,7 @@ export function Dashboard() {
                       : "border border-lumma-ink/20 text-lumma-ink",
                   )}
                 >
-                  USDC → EURC
+                  USDC to EURC
                 </button>
                 <button
                   onClick={() => setSwapDirection("EURC_USDC")}
@@ -338,7 +338,7 @@ export function Dashboard() {
                       : "border border-lumma-ink/20 text-lumma-ink",
                   )}
                 >
-                  EURC → USDC
+                  EURC to USDC
                 </button>
                 <input
                   type="number"
@@ -372,12 +372,12 @@ export function Dashboard() {
                 </button>
               </div>
               <p className="mt-2 text-xs text-lumma-ink/70">
-                Swap milestones: {milestoneProgress.join(" · ")}
+                Swap milestones: {milestoneProgress.join(" | ")}
               </p>
               <div className="mt-4 space-y-2">
                 {swaps.slice(0, 6).map((swap) => (
                   <div key={swap.id} className="rounded-lg border border-lumma-ink/10 bg-lumma-sand/60 px-3 py-2 text-sm text-lumma-ink">
-                    {swap.from} → {swap.to} | ${swap.amount.toFixed(2)} | {new Date(swap.createdAt).toLocaleString()}
+                    {swap.from} to {swap.to} | ${swap.amount.toFixed(2)} | {new Date(swap.createdAt).toLocaleString()}
                   </div>
                 ))}
                 {!swaps.length && <p className="text-sm text-lumma-ink/60">No swaps yet.</p>}
