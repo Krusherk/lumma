@@ -182,12 +182,12 @@ export function Dashboard() {
   }, [summary?.nft.swaps]);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,rgba(94,233,255,0.45),transparent_38%),radial-gradient(circle_at_80%_80%,rgba(198,255,92,0.45),transparent_40%),linear-gradient(140deg,#f7f4ea,#eef6f8)] pb-20">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,rgba(94,233,255,0.28),transparent_38%),radial-gradient(circle_at_80%_80%,rgba(198,255,92,0.24),transparent_40%),linear-gradient(140deg,var(--lumma-bg),color-mix(in oklab,var(--lumma-bg),#7ea9d2_12%))] pb-20">
       <div className="mx-auto max-w-6xl px-5 py-10">
-        <header className="rounded-3xl border border-lumma-ink/15 bg-white/60 p-6 shadow-sm backdrop-blur">
+        <header className="rounded-3xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-6 shadow-sm backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <LummaLogo />
-            <span className="rounded-full border border-lumma-ink/20 bg-lumma-sand px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-lumma-ink">
+            <span className="rounded-full border border-lumma-ink/20 bg-lumma-sand/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-lumma-ink">
               Built on Arc
             </span>
           </div>
@@ -198,14 +198,14 @@ export function Dashboard() {
             <label className="flex flex-col gap-2 text-sm">
               Active User ID
               <input
-                className="rounded-xl border border-lumma-ink/20 bg-white px-3 py-2 font-medium text-lumma-ink"
+                className="rounded-xl border border-lumma-ink/20 bg-[var(--lumma-panel-strong)] px-3 py-2 font-medium text-lumma-ink"
                 value={userId}
                 onChange={(event) => setUserId(event.target.value || "demo-user")}
               />
             </label>
             <button
               onClick={() => void refresh()}
-              className="h-fit rounded-xl bg-lumma-ink px-4 py-2 text-sm font-semibold text-lumma-sand transition hover:opacity-90"
+              className="h-fit rounded-xl bg-lumma-ink px-4 py-2 text-sm font-semibold text-[var(--lumma-bg)] transition hover:opacity-90"
             >
               Refresh
             </button>
@@ -223,7 +223,7 @@ export function Dashboard() {
         </header>
 
         {status && (
-          <div className="mt-5 rounded-2xl border border-lumma-ink/20 bg-white/80 px-4 py-3 text-sm text-lumma-ink">
+          <div className="mt-5 rounded-2xl border border-lumma-ink/20 bg-[var(--lumma-panel)] px-4 py-3 text-sm text-lumma-ink">
             {status}
           </div>
         )}
@@ -235,7 +235,7 @@ export function Dashboard() {
               <a
                 key={link.href}
                 href={link.href}
-                className="inline-flex items-center gap-2 rounded-lg border border-lumma-ink/25 bg-lumma-sand/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.11em] text-lumma-ink transition hover:border-lumma-sky hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-lg border border-lumma-ink/25 bg-lumma-sand/70 px-3 py-2 text-xs font-semibold uppercase tracking-[0.11em] text-lumma-ink transition hover:border-lumma-sky hover:bg-[var(--lumma-panel-strong)]"
               >
                 <Icon size={13} />
                 {link.label}
@@ -268,7 +268,7 @@ export function Dashboard() {
               {loading && <p className="text-sm text-lumma-ink/70">Loading vaults...</p>}
               <div className="grid gap-4">
                 {vaults.map((vault) => (
-                  <div key={vault.id} className="rounded-2xl border border-lumma-ink/15 bg-white p-4">
+                  <div key={vault.id} className="rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel-strong)] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <h3 className="font-display text-lg font-semibold text-lumma-ink">{vault.name}</h3>
                       <span
@@ -302,7 +302,7 @@ export function Dashboard() {
                             [vault.id]: event.target.value,
                           }))
                         }
-                        className="w-32 rounded-lg border border-lumma-ink/20 px-2 py-1.5 text-sm"
+                        className="w-32 rounded-lg border border-lumma-ink/20 bg-[var(--lumma-panel)] px-2 py-1.5 text-sm text-lumma-ink"
                       />
                       <button
                         disabled={busy || vault.paused}
@@ -321,7 +321,7 @@ export function Dashboard() {
                             ),
                           )
                         }
-                        className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-lumma-sand disabled:opacity-60"
+                        className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-[var(--lumma-bg)] disabled:opacity-60"
                       >
                         Deposit
                       </button>
@@ -359,7 +359,7 @@ export function Dashboard() {
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-sm font-medium",
                     swapDirection === "USDC_EURC"
-                      ? "bg-lumma-ink text-lumma-sand"
+                      ? "bg-lumma-ink text-[var(--lumma-bg)]"
                       : "border border-lumma-ink/20 text-lumma-ink",
                   )}
                 >
@@ -370,7 +370,7 @@ export function Dashboard() {
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-sm font-medium",
                     swapDirection === "EURC_USDC"
-                      ? "bg-lumma-ink text-lumma-sand"
+                      ? "bg-lumma-ink text-[var(--lumma-bg)]"
                       : "border border-lumma-ink/20 text-lumma-ink",
                   )}
                 >
@@ -381,7 +381,7 @@ export function Dashboard() {
                   min="1"
                   value={swapAmount}
                   onChange={(event) => setSwapAmount(event.target.value)}
-                  className="w-32 rounded-lg border border-lumma-ink/20 px-2 py-1.5 text-sm"
+                  className="w-32 rounded-lg border border-lumma-ink/20 bg-[var(--lumma-panel)] px-2 py-1.5 text-sm text-lumma-ink"
                 />
                 <button
                   disabled={busy}
@@ -402,7 +402,7 @@ export function Dashboard() {
                       ),
                     )
                   }
-                  className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-lumma-sand disabled:opacity-60"
+                  className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-[var(--lumma-bg)] disabled:opacity-60"
                 >
                   Execute Swap
                 </button>
@@ -412,7 +412,7 @@ export function Dashboard() {
               </p>
               <div className="mt-4 space-y-2">
                 {swaps.slice(0, 6).map((swap) => (
-                  <div key={swap.id} className="rounded-lg border border-lumma-ink/10 bg-lumma-sand/60 px-3 py-2 text-sm text-lumma-ink">
+                  <div key={swap.id} className="rounded-lg border border-lumma-ink/10 bg-lumma-sand/55 px-3 py-2 text-sm text-lumma-ink">
                     {swap.from} to {swap.to} | ${swap.amount.toFixed(2)} | {new Date(swap.createdAt).toLocaleString()}
                   </div>
                 ))}
@@ -460,7 +460,7 @@ export function Dashboard() {
                           ),
                         )
                       }
-                      className="flex items-center justify-between rounded-lg border border-lumma-ink/15 bg-white px-3 py-2 text-left text-sm text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
+                      className="flex items-center justify-between rounded-lg border border-lumma-ink/15 bg-[var(--lumma-panel-strong)] px-3 py-2 text-left text-sm text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
                     >
                       <span>{task.label}</span>
                       <span className="font-semibold">+{task.points}</span>
@@ -482,7 +482,7 @@ export function Dashboard() {
                   value={referralCodeInput}
                   onChange={(event) => setReferralCodeInput(event.target.value.toUpperCase())}
                   placeholder="Enter referral code"
-                  className="w-full rounded-lg border border-lumma-ink/20 px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-lumma-ink/20 bg-[var(--lumma-panel)] px-3 py-2 text-sm text-lumma-ink"
                 />
                 <button
                   disabled={busy}
@@ -498,7 +498,7 @@ export function Dashboard() {
                       ),
                     )
                   }
-                  className="rounded-lg bg-lumma-ink px-3 py-2 text-sm font-semibold text-lumma-sand disabled:opacity-60"
+                  className="rounded-lg bg-lumma-ink px-3 py-2 text-sm font-semibold text-[var(--lumma-bg)] disabled:opacity-60"
                 >
                   Apply
                 </button>
@@ -526,7 +526,7 @@ export function Dashboard() {
                         ),
                       )
                     }
-                    className="rounded-lg border border-lumma-ink/20 bg-white px-3 py-2 text-sm font-medium text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
+                    className="rounded-lg border border-lumma-ink/20 bg-[var(--lumma-panel-strong)] px-3 py-2 text-sm font-medium text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
                   >
                     Claim {tier}
                   </button>
@@ -537,7 +537,7 @@ export function Dashboard() {
             <Panel title="Yield Quests">
               <div className="space-y-3">
                 {quests.map((quest) => (
-                  <div key={quest.id} className="rounded-xl border border-lumma-ink/15 bg-white p-3">
+                  <div key={quest.id} className="rounded-xl border border-lumma-ink/15 bg-[var(--lumma-panel-strong)] p-3">
                     <div className="flex items-center justify-between gap-2">
                       <div>
                         <p className="font-semibold text-lumma-ink">{quest.name}</p>
@@ -559,7 +559,7 @@ export function Dashboard() {
                             ),
                           )
                         }
-                        className="rounded-lg bg-lumma-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-lumma-sand disabled:opacity-50"
+                        className="rounded-lg bg-lumma-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--lumma-bg)] disabled:opacity-50"
                       >
                         {quest.status === "completed" ? "Done" : "Complete"}
                       </button>
@@ -588,7 +588,7 @@ export function Dashboard() {
                   className={cn(
                     "rounded-lg px-3 py-1.5 text-sm font-medium capitalize",
                     leaderboardPeriod === period
-                      ? "bg-lumma-ink text-lumma-sand"
+                      ? "bg-lumma-ink text-[var(--lumma-bg)]"
                       : "border border-lumma-ink/20 text-lumma-ink",
                   )}
                 >
@@ -642,7 +642,7 @@ function Panel({
   return (
     <section
       id={id}
-      className="scroll-mt-24 rounded-3xl border border-lumma-ink/15 bg-white/70 p-5 shadow-sm backdrop-blur"
+      className="scroll-mt-24 rounded-3xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-5 shadow-sm backdrop-blur"
     >
       <h2 className="font-display text-xl font-semibold text-lumma-ink">{title}</h2>
       <div className="mt-4">{children}</div>
@@ -671,7 +671,7 @@ function MetricCard({
   value: number;
 }) {
   return (
-    <article className="rounded-2xl border border-lumma-ink/15 bg-white/70 p-4 backdrop-blur">
+    <article className="rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-4 backdrop-blur">
       <div className="flex items-center gap-2 text-lumma-ink/75">{icon}</div>
       <p className="mt-2 text-xs uppercase tracking-wider text-lumma-ink/60">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-lumma-ink">{value.toLocaleString()}</p>

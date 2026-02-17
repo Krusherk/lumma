@@ -58,6 +58,7 @@ export interface UserProfile {
   id: string;
   createdAt: string;
   walletAddress?: string;
+  username?: string;
   referralCode: string;
   referredBy?: string;
   pointsSettled: number;

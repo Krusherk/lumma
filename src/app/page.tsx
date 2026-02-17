@@ -21,7 +21,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <a
               href="https://docs.lumma.xyz"
-              className="rounded-xl border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-lumma-ink transition hover:bg-lumma-ink hover:text-lumma-sand"
+              className="rounded-xl border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-lumma-ink transition hover:bg-lumma-ink hover:text-[var(--lumma-bg)]"
             >
               Docs
             </a>
@@ -47,7 +47,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/experience"
-                className="lumma-scanline rounded-xl bg-lumma-ink px-6 py-3 text-sm font-semibold uppercase tracking-[0.13em] text-lumma-sand transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-lumma-sky"
+                className="lumma-scanline rounded-xl bg-lumma-ink px-6 py-3 text-sm font-semibold uppercase tracking-[0.13em] text-[var(--lumma-bg)] transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-lumma-sky"
               >
                 Enter App
               </Link>

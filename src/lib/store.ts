@@ -692,6 +692,26 @@ export function setVaultPause(paused: boolean, token?: string) {
   return state.admin.vaultsPaused;
 }
 
+export function setUsername(userId: string, username: string) {
+  const normalized = username.trim().toLowerCase();
+  if (!/^[a-z0-9_]{3,20}$/.test(normalized)) {
+    throw new Error("Username must be 3-20 chars, lowercase letters, numbers, or underscore.");
+  }
+  const takenBy = Array.from(state.users.values()).find(
+    (user) => user.username === normalized && user.id !== userId,
+  );
+  if (takenBy) {
+    throw new Error("Username already taken.");
+  }
+  const user = getOrCreateUser(userId);
+  user.username = normalized;
+  return user;
+}
+
+export function getUserProfile(userId: string) {
+  return getOrCreateUser(userId);
+}
+
 export function getSystemState() {
   return {
     users: state.users.size,

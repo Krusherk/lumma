@@ -57,7 +57,7 @@ export default function ExperiencePage() {
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a
                 href="https://testnet.lumma.xyz"
-                className="lumma-scanline rounded-xl bg-lumma-ink px-5 py-3 text-sm font-semibold text-lumma-sand transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-lumma-sky"
+                className="lumma-scanline rounded-xl bg-lumma-ink px-5 py-3 text-sm font-semibold text-[var(--lumma-bg)] transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-lumma-sky"
               >
                 Enter Cockpit
               </a>

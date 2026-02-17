@@ -38,14 +38,14 @@ export default function AdminPage() {
       <p className="mt-2 text-sm text-lumma-ink/70">
         Emergency control for testnet vault pause switch.
       </p>
-      <div className="mt-6 rounded-2xl border border-lumma-ink/15 bg-white p-5">
+      <div className="mt-6 rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-5">
         <label className="flex flex-col gap-2 text-sm text-lumma-ink">
           Admin API token
           <input
             type="password"
             value={token}
             onChange={(event) => setToken(event.target.value)}
-            className="rounded-lg border border-lumma-ink/25 px-3 py-2"
+            className="rounded-lg border border-lumma-ink/25 bg-[var(--lumma-panel-strong)] px-3 py-2 text-lumma-ink"
           />
         </label>
         <div className="mt-4 flex items-center gap-3">

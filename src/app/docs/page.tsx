@@ -40,7 +40,7 @@ export default function DocsPage() {
           <div className="mt-5 flex flex-wrap gap-2">
             <a
               href="https://testnet.lumma.xyz"
-              className="rounded-xl bg-lumma-ink px-4 py-2 text-sm font-semibold text-lumma-sand transition hover:scale-[1.02]"
+              className="rounded-xl bg-lumma-ink px-4 py-2 text-sm font-semibold text-[var(--lumma-bg)] transition hover:scale-[1.02]"
             >
               Open Cockpit
             </a>
