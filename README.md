@@ -51,7 +51,8 @@ npm run dev
 - Official trade endpoint: `POST https://api.circle.com/v1/exchange/stablefx/trades`
 - App behavior:
 - If `STABLEFX_QUOTE_API_URL` is set, `/api/swap/quote` uses your custom signer/provider.
-- Else if `CIRCLE_API_KEY` is set, `/api/swap/quote` pulls official Circle quotes.
+- Else if `CIRCLE_API_KEY` is set, `/api/swap/quote` pulls Circle quotes.
+- Optional: set `CIRCLE_API_BASE_URL` if your key is pinned to a specific host.
 - Else it falls back to simulation quotes.
 
 ## API Endpoints
