@@ -1,190 +1,159 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowUpRight, Rocket, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpRight, Layers, Rocket, ShieldCheck, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 
 import { LummaLogo } from "@/components/brand/lumma-logo";
 
-const highlights = [
+const layers = [
   {
-    title: "Vault Layer",
-    description:
-      "Conservative, balanced, and aggressive rails with clear risk signaling and explicit testnet APY estimates.",
+    title: "Access Layer",
+    text: "Privy wallet login, profile binding, and identity-aware progression rails.",
   },
   {
-    title: "Swap Layer",
-    description:
-      "StableFX flow centered on USDC/EURC with quote checks, milestone counters, and auditable event history.",
+    title: "Execution Layer",
+    text: "Vault deposit/withdraw and StableFX swap actions wired to Arc-native contracts.",
   },
   {
-    title: "Reward Layer",
-    description:
-      "Tasks, quests, referrals, and NFT milestones form a coherent progression economy instead of isolated gimmicks.",
+    title: "Incentive Layer",
+    text: "Points, quests, referrals, and milestone NFTs resolved by anti-sybil-aware scoring.",
   },
 ];
 
-const flowSteps = [
-  {
-    title: "Connect Wallet",
-    detail: "Sign in with Privy wallet login and bind your identity to one progression profile.",
-  },
-  {
-    title: "Run Useful Actions",
-    detail: "Deposit into vault rails, perform swaps, and complete mission chains that prove activity.",
-  },
-  {
-    title: "Compound Rewards",
-    detail: "Settle points, earn referral share, climb leaderboards, and claim milestone NFTs.",
-  },
+const steps = [
+  "Connect wallet and set your profile identity.",
+  "Deposit into a vault rail and execute stable swaps.",
+  "Complete quests to compound points and unlock NFTs.",
 ];
 
 export default function ExperiencePage() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+          }
+        }
+      },
+      { threshold: 0.16, rootMargin: "0px 0px -10% 0px" },
+    );
+    const nodes = Array.from(document.querySelectorAll("[data-reveal]"));
+    for (const node of nodes) {
+      observer.observe(node);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_22%_16%,rgba(94,233,255,0.3),transparent_36%),radial-gradient(circle_at_76%_80%,rgba(198,255,92,0.24),transparent_34%),linear-gradient(150deg,var(--lumma-bg),color-mix(in oklab,var(--lumma-bg),#8cb1d8 10%))] pb-16">
+    <main className="relative min-h-screen overflow-hidden bg-[#04070e] text-[#eceef2]">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="lumma-orb lumma-orb-a" />
-        <div className="lumma-orb lumma-orb-b" />
+        <div className="lumma-noir-grid opacity-90" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-5 pb-14 pt-8">
-        <nav className="lumma-glass lumma-rise flex items-center justify-between rounded-2xl px-4 py-3">
-          <LummaLogo />
-          <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
-            >
-              Home
-            </Link>
-            <a
-              href="https://docs.lumma.xyz"
-              className="rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
-            >
-              Docs
-            </a>
-          </div>
-        </nav>
-
-        <section className="mt-10 grid gap-8 lg:grid-cols-[1.14fr_0.86fr] lg:items-start">
-          <div className="lumma-rise">
-            <p className="inline-flex items-center gap-2 rounded-full border border-lumma-ink/22 bg-lumma-sand/75 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-lumma-ink/70">
-              <Sparkles size={12} />
-              Product Experience
-            </p>
-            <h1 className="mt-5 font-display text-5xl font-semibold leading-[0.98] tracking-tight text-lumma-ink sm:text-6xl">
-              A modular DeFi loop,
-              <span className="block bg-[linear-gradient(90deg,#5ee9ff,#c6ff5c)] bg-clip-text text-transparent">
-                built for retention.
-              </span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-lumma-ink/80 sm:text-lg">
-              Lumma treats vaults, swaps, and incentives as one system. Every onchain action updates progression and every progression state drives the next action.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+      <div className="mx-auto max-w-[1320px] px-3 pb-14 pt-4 sm:px-5 sm:pt-6">
+        <nav className="lumma-reveal border border-white/22 bg-black/78 px-4 py-3 backdrop-blur-sm" data-reveal>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <LummaLogo />
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/"
+                className="border border-white/25 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/8"
+              >
+                Home
+              </Link>
+              <a
+                href="https://docs.lumma.xyz"
+                className="border border-white/25 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/8"
+              >
+                Docs
+              </a>
               <a
                 href="https://testnet.lumma.xyz"
-                className="lumma-scanline rounded-xl bg-lumma-ink px-5 py-3 text-sm font-semibold uppercase tracking-[0.13em] text-[var(--lumma-bg)] transition hover:scale-[1.02]"
+                className="border border-lumma-sky/45 bg-lumma-sky/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-lumma-sky transition hover:bg-lumma-sky/16"
               >
                 Enter Cockpit
               </a>
-              <a
-                href="https://docs.lumma.xyz"
-                className="rounded-xl border border-lumma-ink/30 px-5 py-3 text-sm font-semibold uppercase tracking-[0.13em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
-              >
-                Read Docs
-              </a>
             </div>
           </div>
+        </nav>
 
-          <article className="lumma-rise rounded-3xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-6 shadow-[0_30px_64px_-44px_rgba(6,13,26,0.68)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lumma-ink/62">
-              Launch Rails
+        <section className="lumma-reveal relative mt-8 overflow-hidden border border-white/12 bg-[#050913] px-4 py-14 sm:px-8 sm:py-20" data-reveal>
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-70" />
+          <div className="relative">
+            <p className="inline-flex items-center gap-2 border border-white/24 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/72">
+              <Sparkles size={11} />
+              Experience Layer
             </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold text-lumma-ink">Arc Testnet Tracks</h2>
-            <p className="mt-2 text-sm text-lumma-ink/75">
-              APY values are shown as estimated and refreshed in 15-minute windows for transparent testnet behavior.
+            <h1 className="mt-6 max-w-4xl font-display text-[clamp(2rem,6.8vw,6rem)] leading-[0.94] text-white">
+              The Lumma protocol loop,
+              <span className="block text-white/68">without dead-end screens.</span>
+            </h1>
+            <p className="mt-5 max-w-3xl text-sm leading-relaxed text-white/67 sm:text-base">
+              You start with wallet identity, execute stablecoin actions, then compound reputation-like signals through quests and rewards.
             </p>
-            <div className="mt-4 space-y-2">
-              <div className="rounded-xl border border-lumma-ink/14 bg-lumma-sand/65 px-3 py-2 text-sm text-lumma-ink">
-                Conservative Vault: 5-8%
-              </div>
-              <div className="rounded-xl border border-lumma-ink/14 bg-lumma-sky/20 px-3 py-2 text-sm text-lumma-ink">
-                Balanced Vault: 8-12%
-              </div>
-              <div className="rounded-xl border border-lumma-ink/14 bg-lumma-alert/14 px-3 py-2 text-sm text-lumma-ink">
-                Aggressive Vault: 12-20%
-              </div>
-            </div>
-            <a
-              href="https://testnet.lumma.xyz"
-              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-lumma-sky/88 px-4 py-2 text-sm font-semibold text-[#04131d] transition hover:brightness-105"
-            >
-              Open Testnet App <ArrowUpRight size={14} />
-            </a>
-          </article>
+          </div>
         </section>
 
-        <section className="mt-12 rounded-3xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-6">
+        <section className="lumma-reveal mt-10 border border-white/14 bg-[linear-gradient(150deg,#10192b_0%,#0b1323_100%)] px-4 py-8 sm:px-8 sm:py-10" data-reveal>
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.17em] text-lumma-ink/62">
-                System Map
-              </p>
-              <h2 className="mt-2 font-display text-3xl font-semibold text-lumma-ink">
-                The Lumma loop in three moves.
-              </h2>
-            </div>
+            <h2 className="font-display text-[clamp(1.8rem,4.6vw,3.9rem)] leading-[0.95] text-white">Three Layers. One Compounding Outcome.</h2>
             <a
               href="https://testnet.lumma.xyz/app"
-              className="rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
+              className="inline-flex items-center gap-2 border border-white/24 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/8"
             >
-              Open App Deck
+              Open App Deck <ArrowUpRight size={14} />
             </a>
           </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {flowSteps.map((step, index) => (
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {layers.map((layer, index) => (
               <article
-                key={step.title}
-                className="rounded-2xl border border-lumma-ink/14 bg-[var(--lumma-panel-strong)] p-4"
+                key={layer.title}
+                className="border border-white/14 bg-black/36 p-4"
+                style={{ transitionDelay: `${index * 80}ms` }}
               >
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-lumma-ink/60">
-                  Step {index + 1}
-                </p>
-                <h3 className="mt-2 font-display text-xl font-semibold text-lumma-ink">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-lumma-ink/76">{step.detail}</p>
+                <h3 className="font-display text-2xl leading-none text-white">{layer.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-white/72">{layer.text}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="mt-10 grid gap-4 md:grid-cols-3">
-          {highlights.map((item) => (
-            <article
-              key={item.title}
-              className="lumma-rise rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-5 backdrop-blur"
-            >
-              <h3 className="font-display text-lg font-semibold text-lumma-ink">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-lumma-ink/80">{item.description}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="mt-10 rounded-3xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-6 backdrop-blur">
-          <h2 className="font-display text-2xl font-semibold text-lumma-ink">Operational Posture</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <FeatureBadge icon={<Rocket size={16} />} label="Launch cadence and content ops ready" />
-            <FeatureBadge icon={<Sparkles size={16} />} label="Quest narratives drive weekly reactivation" />
-            <FeatureBadge icon={<ShieldCheck size={16} />} label="Anti-sybil controls gate suspicious rewards" />
-          </div>
+        <section className="lumma-reveal mt-10 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]" data-reveal>
+          <article className="relative overflow-hidden border border-white/12 bg-[#050913] p-5 sm:p-6">
+            <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-65" />
+            <div className="relative">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/58">Execution Sequence</p>
+              <ol className="mt-4 space-y-3 text-sm text-white/78">
+                {steps.map((step, index) => (
+                  <li key={step} className="flex items-start gap-3 border border-white/14 bg-black/35 px-3 py-2">
+                    <span className="mt-0.5 text-xs font-semibold text-lumma-lime/86">0{index + 1}</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </article>
+          <article className="border border-white/12 bg-[linear-gradient(145deg,#d2e8ff_0%,#a8d5ff_100%)] p-5 text-[#08101b] sm:p-6">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-[#0f1b2a]/65">Operational Posture</p>
+            <div className="mt-4 grid gap-3">
+              <FeatureLine icon={<Rocket size={16} />} text="Launch cadence and ecosystem response plan." />
+              <FeatureLine icon={<Layers size={16} />} text="Modular pages for vaults, swaps, tasks, leaderboard, and quests." />
+              <FeatureLine icon={<ShieldCheck size={16} />} text="Strict anti-sybil controls before social rewards settle." />
+            </div>
+          </article>
         </section>
       </div>
     </main>
   );
 }
 
-function FeatureBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
+function FeatureLine({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-lumma-ink/15 bg-lumma-sand/62 px-3 py-2 text-sm font-medium text-lumma-ink">
+    <div className="flex items-start gap-2 border border-[#111a29]/25 bg-white/62 px-3 py-2 text-sm text-[#0f1a2a]">
       {icon}
-      {label}
+      <span>{text}</span>
     </div>
   );
 }

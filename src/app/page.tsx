@@ -1,39 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowUpRight,
-  CheckCircle2,
+  CirclePlus,
   MessageCircle,
   Send,
+  ShieldCheck,
   Sparkles,
   Twitter,
 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { LummaLogo } from "@/components/brand/lumma-logo";
-
-const trustPills = [
-  "Built on Arc testnet",
-  "Stablecoin-first UX",
-  "Quest-native incentives",
-  "Estimated APY labels always visible",
-];
-
-const featureRails = [
-  {
-    title: "Yield Vaults",
-    description:
-      "Three risk rails with estimated APY, live position tracking, and transaction caps enforced by contract logic.",
-  },
-  {
-    title: "StableFX Swaps",
-    description:
-      "USDC and EURC routes with quote visibility, milestones, and event history that feeds your reward progression.",
-  },
-  {
-    title: "Progression Layer",
-    description:
-      "Tasks, referrals, points, leaderboard ranks, and milestone NFTs that evolve as users stay active.",
-  },
-];
 
 const socialCards = [
   { label: "X", icon: Twitter, href: "#" },
@@ -41,197 +20,299 @@ const socialCards = [
   { label: "Telegram", icon: Send, href: "#" },
 ];
 
+const rails = [
+  {
+    title: "Yield Vaults",
+    points: ["Conservative / Balanced / Aggressive rails", "APY marked as estimated", "Onchain tx cap + pause controls"],
+  },
+  {
+    title: "StableFX Swaps",
+    points: ["USDC <-> EURC quotes and execution", "Milestone progress tracking", "History wired to reward engine"],
+  },
+  {
+    title: "Quest Economy",
+    points: ["Weekly mission chains", "Referral share + anti-sybil checks", "NFT milestone evolution states"],
+  },
+];
+
+const trustRows = [
+  "Wallet identity is required for reward settlement.",
+  "Referral rewards activate only after first real onchain action.",
+  "Suspicious bursts are throttled before points settle.",
+];
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function sectionProgress(element: HTMLElement | null) {
+  if (!element) {
+    return 0;
+  }
+  const rect = element.getBoundingClientRect();
+  const viewport = window.innerHeight || 1;
+  const start = viewport * 0.92;
+  const end = -rect.height * 0.45;
+  return clamp((start - rect.top) / (start - end), 0, 1);
+}
+
 export default function LandingPage() {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const mapRef = useRef<HTMLElement | null>(null);
+  const [heroProgress, setHeroProgress] = useState(0);
+  const [mapProgress, setMapProgress] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setHeroProgress(sectionProgress(heroRef.current));
+      setMapProgress(sectionProgress(mapRef.current));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+          }
+        }
+      },
+      {
+        threshold: 0.14,
+        rootMargin: "0px 0px -8% 0px",
+      },
+    );
+
+    const nodes = Array.from(document.querySelectorAll("[data-reveal]"));
+    for (const node of nodes) {
+      observer.observe(node);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  const yearlyLoss = useMemo(() => {
+    const value = 1_300_000_000 + Math.round(heroProgress * 7_900_000_000);
+    return value.toLocaleString("en-US");
+  }, [heroProgress]);
+
+  const liveCredibility = useMemo(() => 1120 + Math.round(mapProgress * 980), [mapProgress]);
+
+  const nodeScale = 0.82 + mapProgress * 0.42;
+  const nodeShift = mapProgress * 86;
+  const pulseOpacity = 0.25 + mapProgress * 0.75;
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_14%,rgba(94,233,255,0.34),transparent_38%),radial-gradient(circle_at_92%_82%,rgba(198,255,92,0.22),transparent_35%),linear-gradient(165deg,var(--lumma-bg),color-mix(in oklab,var(--lumma-bg),#7eaad4 9%))]">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="lumma-orb lumma-orb-a" />
-        <div className="lumma-orb lumma-orb-b" />
-        <div className="lumma-orb lumma-orb-c" />
+    <main className="relative min-h-screen overflow-hidden bg-[#04070e] text-[#eceef2]">
+      <div className="pointer-events-none absolute inset-0 -z-10 opacity-90">
+        <div className="lumma-noir-grid" />
       </div>
 
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 pb-16 pt-8">
-        <nav className="lumma-glass lumma-rise flex items-center justify-between rounded-2xl px-4 py-3">
-          <LummaLogo />
-          <div className="flex items-center gap-2">
-            <a
-              href="https://docs.lumma.xyz"
-              className="rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
-            >
-              Docs
-            </a>
-            <a
-              href="https://testnet.lumma.xyz"
-              className="rounded-lg bg-lumma-ink px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--lumma-bg)] transition hover:-translate-y-0.5"
-            >
-              Enter Cockpit
-            </a>
+      <div className="mx-auto flex min-h-screen w-full max-w-[1320px] flex-col px-3 pb-16 pt-4 sm:px-5 sm:pt-6">
+        <nav className="lumma-reveal sticky top-3 z-40 border border-white/22 bg-black/78 px-4 py-3 backdrop-blur-sm sm:px-5" data-reveal>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <LummaLogo />
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href="https://docs.lumma.xyz"
+                className="border border-white/28 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/86 transition hover:bg-white/8"
+              >
+                Docs
+              </a>
+              <a
+                href="https://testnet.lumma.xyz"
+                className="border border-lumma-sky/45 bg-lumma-sky/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-lumma-sky transition hover:bg-lumma-sky/16"
+              >
+                Open Cockpit
+              </a>
+            </div>
           </div>
         </nav>
 
-        <section className="mt-10 grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
-          <div className="lumma-rise">
-            <p className="inline-flex items-center gap-2 rounded-full border border-lumma-ink/20 bg-lumma-sand/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-lumma-ink/72">
-              <Sparkles size={12} />
-              Stablecoin utility with game loops
+        <section
+          ref={heroRef}
+          className="lumma-reveal relative mt-7 overflow-hidden border border-white/12 bg-[linear-gradient(180deg,#080d18_0%,#050913_100%)] px-4 py-14 sm:px-8 sm:py-20"
+          data-reveal
+        >
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-60" />
+          <div className="relative">
+            <p className="inline-flex items-center gap-2 border border-white/24 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/72">
+              <Sparkles size={11} />
+              Built on Arc
             </p>
-            <h1 className="mt-5 font-display text-5xl font-semibold leading-[0.98] tracking-tight text-lumma-ink sm:text-7xl">
-              A trust-forward stablecoin cockpit,
-              <span className="block bg-[linear-gradient(90deg,#5ee9ff,#c6ff5c)] bg-clip-text text-transparent">
-                designed to feel alive.
-              </span>
+            <h1 className="mt-6 max-w-5xl font-display text-[clamp(2.2rem,7.8vw,7.3rem)] leading-[0.94] tracking-tight text-white">
+              Stablecoin utility,
+              <span className="block text-white/82">engineered for trust loops.</span>
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-relaxed text-lumma-ink/78 sm:text-lg">
-              Lumma combines vaults, swaps, and progression mechanics into one coherent system. Users are rewarded for useful behavior, not empty clicks.
+            <p className="mt-5 max-w-3xl text-sm leading-relaxed text-white/68 sm:text-base">
+              Lumma merges vaults, swaps, and progression into one protocol surface. Every user action can be verified, scored, and rewarded.
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-10 grid gap-3 sm:grid-cols-2">
               <Link
                 href="/experience"
-                className="lumma-scanline rounded-xl bg-lumma-ink px-6 py-3 text-sm font-semibold uppercase tracking-[0.13em] text-[var(--lumma-bg)] transition hover:scale-[1.02]"
+                className="group inline-flex items-center justify-between border border-white/28 bg-white/[0.03] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/[0.07]"
               >
-                Enter App
+                Enter App Experience
+                <ArrowUpRight size={14} className="transition group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="https://docs.lumma.xyz"
-                className="rounded-xl border border-lumma-ink/30 px-6 py-3 text-sm font-semibold uppercase tracking-[0.13em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
+                className="inline-flex items-center justify-between border border-white/20 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white/85 transition hover:bg-white/[0.07]"
               >
-                Read Docs
+                Open Lumma Docs
               </a>
             </div>
 
-            <div className="mt-8 grid gap-2 sm:grid-cols-2">
-              {trustPills.map((pill) => (
-                <div
-                  key={pill}
-                  className="flex items-center gap-2 rounded-xl border border-lumma-ink/15 bg-[var(--lumma-panel)] px-3 py-2 text-sm text-lumma-ink"
-                >
-                  <CheckCircle2 size={14} className="text-lumma-ink/72" />
-                  {pill}
-                </div>
-              ))}
+            <div className="mt-12 border border-[#ff5a1f]/45 bg-black/40 px-4 py-5 sm:px-6 sm:py-7">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#ff6d33]">Fragmentation Cost</p>
+              <p className="mt-2 font-display text-[clamp(2rem,8vw,6.1rem)] leading-none text-[#ff5a1f]">${yearlyLoss}</p>
+              <p className="mt-2 max-w-xl text-sm text-white/65">
+                Estimated yearly value lost to fragmented stablecoin UX across vaulting, swapping, and reward surfaces.
+              </p>
             </div>
           </div>
-
-          <aside className="lumma-rise space-y-4">
-            <article className="lumma-glass rounded-3xl p-5 shadow-[0_30px_68px_-46px_rgba(5,11,22,0.7)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lumma-ink/62">
-                Live Mode
-              </p>
-              <h2 className="mt-2 font-display text-2xl font-semibold text-lumma-ink">Arc Orbit Quest Active</h2>
-              <p className="mt-2 text-sm leading-relaxed text-lumma-ink/76">
-                Deposit, run swaps, and invite an active friend to complete this mission chain. Finishers unlock boosted progression states.
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <StatCard label="Vault Rails" value="3" />
-                <StatCard label="Swap Pair" value="USDC/EURC" />
-                <StatCard label="NFT Tiers" value="4" />
-                <StatCard label="Mode" value="Testnet" />
-              </div>
-              <a
-                href="https://testnet.lumma.xyz"
-                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-lumma-sky/85 px-4 py-2.5 text-sm font-semibold text-[#05131c] transition hover:brightness-105"
-              >
-                Open Cockpit <ArrowUpRight size={14} />
-              </a>
-            </article>
-
-            <article className="rounded-3xl border border-lumma-ink/16 bg-[var(--lumma-panel)] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lumma-ink/62">
-                Trust Surface
-              </p>
-              <ul className="mt-3 space-y-2 text-sm text-lumma-ink/78">
-                <li className="rounded-lg border border-lumma-ink/14 bg-[var(--lumma-panel-strong)] px-3 py-2">
-                  Contract-backed vault caps and pause controls.
-                </li>
-                <li className="rounded-lg border border-lumma-ink/14 bg-[var(--lumma-panel-strong)] px-3 py-2">
-                  Anti-sybil checks on points and referral payout.
-                </li>
-                <li className="rounded-lg border border-lumma-ink/14 bg-[var(--lumma-panel-strong)] px-3 py-2">
-                  Rewards exposed with explicit estimated labels.
-                </li>
-              </ul>
-            </article>
-          </aside>
         </section>
 
-        <section className="mt-12">
-          <div className="rounded-3xl border border-lumma-ink/16 bg-[var(--lumma-panel)] p-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lumma-ink/62">
-                  Product Rails
-                </p>
-                <h2 className="mt-2 font-display text-3xl font-semibold text-lumma-ink">
-                  Three layers, one compounding loop.
-                </h2>
-              </div>
-              <Link
-                href="/experience"
-                className="rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
-              >
-                Explore Experience
-              </Link>
-            </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
-              {featureRails.map((item) => (
+        <section className="lumma-reveal mt-10 px-1 sm:px-0" data-reveal>
+          <div className="border border-white/14 bg-[linear-gradient(145deg,#cde8ff_0%,#a6d3ff_36%,#85c7ff_100%)] px-4 py-10 text-[#070d17] sm:px-8 sm:py-14">
+            <h2 className="max-w-4xl font-display text-[clamp(1.9rem,6.5vw,5rem)] leading-[0.95]">
+              Decentralizing utility
+              <span className="block">& reputation signals.</span>
+            </h2>
+
+            <div className="mt-7 grid gap-4 lg:grid-cols-3">
+              {rails.map((rail, index) => (
                 <article
-                  key={item.title}
-                  className="rounded-2xl border border-lumma-ink/14 bg-[var(--lumma-panel-strong)] p-4"
+                  key={rail.title}
+                  className="border border-[#111826]/28 bg-white/54 p-4 backdrop-blur-sm sm:p-5"
+                  style={{ transitionDelay: `${index * 80}ms` }}
                 >
-                  <h3 className="font-display text-xl font-semibold text-lumma-ink">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-lumma-ink/76">{item.description}</p>
+                  <h3 className="font-display text-3xl leading-none text-[#050b14]">{rail.title}</h3>
+                  <ul className="mt-4 space-y-2 text-sm leading-relaxed text-[#101826]">
+                    {rail.points.map((point) => (
+                      <li key={point} className="flex items-start gap-2">
+                        <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-[#0d1423]" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mt-6">
-          <div className="grid gap-3 rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-4 sm:grid-cols-3">
-            {socialCards.map((item) => {
-              const Icon = item.icon;
-              return (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="flex items-center justify-between rounded-xl border border-lumma-ink/16 bg-[var(--lumma-panel-strong)] px-4 py-3 text-lumma-ink transition hover:-translate-y-0.5 hover:border-lumma-sky/55"
-                >
-                  <span className="text-sm font-semibold">{item.label}</span>
-                  <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-lumma-ink/64">
-                    <Icon size={14} />
-                    Soon
-                  </span>
-                </a>
-              );
-            })}
+        <section
+          ref={mapRef}
+          className="lumma-reveal relative mt-10 overflow-hidden border border-white/12 bg-[linear-gradient(180deg,#070c17_0%,#050812_100%)] px-4 py-14 sm:px-8"
+          data-reveal
+        >
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-70" />
+          <div className="relative grid gap-10 lg:grid-cols-[1fr_1fr]">
+            <div className="lg:pr-4">
+              <h2 className="font-display text-[clamp(2rem,5.5vw,4.9rem)] leading-[0.95] text-white/94">
+                How trust is
+                <span className="block text-white/75">gained or lost.</span>
+              </h2>
+              <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/65 sm:text-base">
+                Lumma tracks behaviors that matter. Verified activity pushes users upward. Suspicious activity throttles and blocks reward extraction.
+              </p>
+              <div className="mt-6 space-y-3">
+                {trustRows.map((row) => (
+                  <div key={row} className="border border-white/18 bg-black/45 px-3 py-2 text-sm text-white/82">
+                    {row}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative min-h-[360px] overflow-hidden border border-white/14 bg-black/35 p-4 sm:min-h-[420px] sm:p-6">
+              <div
+                className="absolute left-[14%] top-[58%] h-[82px] w-[82px] rounded-full border border-lumma-lime/65 bg-lumma-lime/18"
+                style={{
+                  transform: `translate(${nodeShift * 0.22}px, ${-nodeShift * 0.25}px) scale(${0.8 + mapProgress * 0.3})`,
+                }}
+              />
+              <div
+                className="absolute left-[40%] top-[46%] h-[42px] w-[42px] rounded-full border border-lumma-sky/72 bg-lumma-sky/15"
+                style={{
+                  transform: `translate(${nodeShift * 0.3}px, ${-nodeShift * 0.18}px)`,
+                  opacity: pulseOpacity,
+                }}
+              />
+              <div
+                className="absolute left-[57%] top-[24%] h-[210px] w-[210px] rounded-full border border-lumma-lime/25 bg-lumma-lime/20 shadow-[0_0_60px_rgba(198,255,92,0.35)]"
+                style={{
+                  transform: `translate(${nodeShift * 0.12}px, ${-nodeShift * 0.2}px) scale(${nodeScale})`,
+                  opacity: 0.62 + mapProgress * 0.3,
+                }}
+              />
+              <div className="absolute left-[22%] top-[62%] h-[1px] w-[42%] bg-lumma-lime/65" />
+              <div className="absolute left-[48%] top-[52%] h-[1px] w-[26%] -rotate-[42deg] bg-lumma-lime/55" />
+
+              <div className="absolute left-[54%] top-[34%] rounded-md border border-lumma-lime/42 bg-black/58 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-lumma-lime/78">Live Credibility</p>
+                <p className="mt-1 font-display text-4xl leading-none text-lumma-lime">{liveCredibility}</p>
+              </div>
+
+              <div className="absolute right-4 top-5 space-y-2 text-xs text-white/55">
+                <p className="flex items-center gap-1">
+                  <CirclePlus size={12} className="text-lumma-lime" />
+                  Verified action adds score
+                </p>
+                <p className="flex items-center gap-1">
+                  <ShieldCheck size={12} className="text-[#ff6d33]" />
+                  Risk activity cuts rewards
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="mt-6">
-          <div className="rounded-2xl border border-lumma-ink/18 bg-[var(--lumma-panel-strong)] p-5 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-lumma-ink/62">Built on Arc</p>
-            <p className="mt-2 text-sm text-lumma-ink/75">
-              Lumma is in public testnet mode. APY values are model-based estimates, not guaranteed returns.
-            </p>
+        <section className="lumma-reveal relative mt-10 overflow-hidden border border-white/12 bg-[#050913] px-4 py-16 sm:px-8" data-reveal>
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-75" />
+          <div className="relative text-center">
+            <p className="text-xs uppercase tracking-[0.15em] text-white/58">Ready to enter the loop?</p>
+            <h2 className="mx-auto mt-3 max-w-3xl font-display text-[clamp(2.2rem,6.5vw,5.8rem)] leading-[0.94] text-white/88">
+              Sound interesting?
+              <span className="block text-white/66">Try Lumma yourself.</span>
+            </h2>
             <a
               href="https://testnet.lumma.xyz"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-lumma-ink px-4 py-2 text-sm font-semibold text-[var(--lumma-bg)] transition hover:-translate-y-0.5"
+              className="mt-7 inline-flex items-center gap-2 border border-lumma-sky/58 bg-lumma-sky/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-lumma-sky transition hover:bg-lumma-sky/18"
             >
-              Enter Testnet Cockpit <ArrowUpRight size={14} />
+              Open Lumma <ArrowUpRight size={15} />
             </a>
+
+            <div className="mt-12 grid gap-3 sm:grid-cols-3">
+              {socialCards.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    className="flex items-center justify-between border border-white/15 bg-black/32 px-4 py-3 text-white/86 transition hover:-translate-y-0.5 hover:border-lumma-sky/52"
+                  >
+                    <span className="text-sm font-semibold">{item.label}</span>
+                    <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-white/62">
+                      <Icon size={14} />
+                      Soon
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </section>
       </div>
     </main>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-lumma-ink/14 bg-[var(--lumma-panel-strong)] px-3 py-2">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-lumma-ink/62">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-lumma-ink">{value}</p>
-    </div>
   );
 }
