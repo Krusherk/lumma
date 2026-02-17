@@ -44,6 +44,15 @@ npm run dev
 - `npm run test` - run Vitest
 - `npm run build` - production build
 - `npm run bot:discord` - start Discord bot
+- `npm run deploy:arc` - deploy vault + milestone contracts to Arc testnet
+
+## StableFX Quote Setup
+- Official quote endpoint: `POST https://api.circle.com/v1/exchange/stablefx/quotes`
+- Official trade endpoint: `POST https://api.circle.com/v1/exchange/stablefx/trades`
+- App behavior:
+- If `STABLEFX_QUOTE_API_URL` is set, `/api/swap/quote` uses your custom signer/provider.
+- Else if `CIRCLE_API_KEY` is set, `/api/swap/quote` pulls official Circle quotes.
+- Else it falls back to simulation quotes.
 
 ## API Endpoints
 - `POST /api/auth/privy/verify`
