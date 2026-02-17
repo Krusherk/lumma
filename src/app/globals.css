@@ -100,6 +100,38 @@ a {
   }
 }
 
+@keyframes lumma-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.56;
+  }
+  50% {
+    transform: translate3d(28px, -22px, 0) scale(1.08);
+    opacity: 0.86;
+  }
+}
+
+@keyframes lumma-glow-sky {
+  0%,
+  100% {
+    box-shadow: 0 16px 46px -38px rgba(94, 233, 255, 0.7);
+  }
+  50% {
+    box-shadow: 0 22px 54px -36px rgba(94, 233, 255, 0.95);
+  }
+}
+
+@keyframes lumma-glow-lime {
+  0%,
+  100% {
+    box-shadow: 0 16px 46px -38px rgba(198, 255, 92, 0.68);
+  }
+  50% {
+    box-shadow: 0 22px 54px -36px rgba(198, 255, 92, 0.92);
+  }
+}
+
 .lumma-float {
   animation: lumma-float 7s ease-in-out infinite;
 }
@@ -149,6 +181,48 @@ a {
     transparent 100%
   );
   animation: lumma-scan 4.5s ease-in-out infinite;
+}
+
+.lumma-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.65;
+  animation: lumma-drift 12s ease-in-out infinite;
+}
+
+.lumma-orb-a {
+  left: -14%;
+  top: 10%;
+  width: 20rem;
+  height: 20rem;
+  background: rgba(94, 233, 255, 0.38);
+}
+
+.lumma-orb-b {
+  right: -12%;
+  top: 44%;
+  width: 24rem;
+  height: 24rem;
+  background: rgba(198, 255, 92, 0.3);
+  animation-delay: 1.8s;
+}
+
+.lumma-orb-c {
+  left: 34%;
+  bottom: -16%;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(94, 233, 255, 0.24);
+  animation-delay: 0.8s;
+}
+
+.lumma-pulse-sky {
+  animation: lumma-glow-sky 3.8s ease-in-out infinite;
+}
+
+.lumma-pulse-lime {
+  animation: lumma-glow-lime 3.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
