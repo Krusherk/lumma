@@ -203,6 +203,8 @@ tokenURI(uint256 tokenId)`}
                 <li>Set `NEXT_PUBLIC_ARC_CHAIN_ID=5042002` and Arc RPC/explorer envs.</li>
                 <li>Configure Privy app id + secret and Supabase keys.</li>
                 <li>Set deployed Lumma contract addresses in environment vars.</li>
+                <li>For StableFX quotes use `POST https://api.circle.com/v1/exchange/stablefx/quotes` with `CIRCLE_API_KEY`.</li>
+                <li>For settlement creation use `POST https://api.circle.com/v1/exchange/stablefx/trades`.</li>
                 <li>Use `/api/vaults`, `/api/swap/*`, `/api/points/event`, `/api/nft/claim` for app flows.</li>
               </ol>
             </DocCard>
