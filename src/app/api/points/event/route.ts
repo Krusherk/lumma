@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { fail, getUserIdFromRequest, ok } from "@/lib/api";
-import { getUserSummary, recordPointEvent } from "@/lib/store";
+import { getUserSummary, recordPointEvent } from "@/lib/persistence";
 
 const bodySchema = z.object({
   userId: z.string().optional(),
@@ -13,10 +13,10 @@ export async function POST(request: Request) {
   try {
     const body = bodySchema.parse(await request.json());
     const userId = body.userId ?? getUserIdFromRequest(request);
-    const event = recordPointEvent(userId, body.taskKey, body.metadata ?? {});
+    const event = await recordPointEvent(userId, body.taskKey, body.metadata ?? {});
     return ok({
       event,
-      summary: getUserSummary(userId),
+      summary: await getUserSummary(userId),
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Failed to append point event.", 400);

@@ -1,11 +1,11 @@
 import { getUserIdFromRequest, ok } from "@/lib/api";
-import { getActiveQuests } from "@/lib/store";
+import { getActiveQuests } from "@/lib/persistence";
 
 export async function GET(request: Request) {
   const userId = getUserIdFromRequest(request);
   return ok({
     userId,
-    quests: getActiveQuests(userId),
+    quests: await getActiveQuests(userId),
     timer: {
       resetsInHours: 168,
     },

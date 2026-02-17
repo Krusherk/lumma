@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { fail, getUserIdFromRequest, ok } from "@/lib/api";
-import { completeQuest, getActiveQuests, getUserSummary } from "@/lib/store";
+import { completeQuest, getActiveQuests, getUserSummary } from "@/lib/persistence";
 
 const bodySchema = z.object({
   userId: z.string().optional(),
@@ -13,11 +13,11 @@ export async function POST(request: Request) {
   try {
     const body = bodySchema.parse(await request.json());
     const userId = body.userId ?? getUserIdFromRequest(request);
-    const run = completeQuest(userId, body.questId);
+    const run = await completeQuest(userId, body.questId);
     return ok({
       run,
-      quests: getActiveQuests(userId),
-      summary: getUserSummary(userId),
+      quests: await getActiveQuests(userId),
+      summary: await getUserSummary(userId),
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Failed to complete quest.", 400);

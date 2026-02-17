@@ -1,6 +1,6 @@
 import type { LeaderboardPeriod } from "@/lib/types";
 import { fail, ok } from "@/lib/api";
-import { getLeaderboard } from "@/lib/store";
+import { getLeaderboard } from "@/lib/persistence";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   }
   return ok({
     period,
-    rows: getLeaderboard(period),
+    rows: await getLeaderboard(period),
   });
 }
 

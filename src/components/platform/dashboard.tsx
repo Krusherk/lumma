@@ -73,6 +73,22 @@ interface MutationResponse {
   txPayload?: TxPayload;
 }
 
+interface SwapQuoteView {
+  from: "USDC" | "EURC";
+  to: "USDC" | "EURC";
+  amount: number;
+  rate: number;
+  outAmount: number;
+  mode?: "simulation" | "onchain";
+  warning?: string;
+  quote?: {
+    minOut: number;
+    fee: number;
+    expiresAt: number;
+    signature: string;
+  };
+}
+
 interface QuestView {
   id: string;
   name: string;
@@ -418,20 +434,43 @@ export function Dashboard() {
                   disabled={busy}
                   onClick={() =>
                     void run("Swap", async () => {
+                      const from = swapDirection === "USDC_EURC" ? "USDC" : "EURC";
+                      const to = swapDirection === "USDC_EURC" ? "EURC" : "USDC";
+                      const amount = Number(swapAmount);
+                      const query = new URLSearchParams({
+                        from,
+                        to,
+                        amount: amount.toString(),
+                      }).toString();
+                      const swapQuote = await api<SwapQuoteView>(
+                        `/api/swap/quote?${query}`,
+                        {},
+                        userId,
+                      );
+                      const body: Record<string, unknown> = {
+                        from,
+                        to,
+                        amount,
+                        slippageBps: 30,
+                      };
+                      if (swapQuote.mode === "onchain" && swapQuote.quote) {
+                        body.quote = swapQuote.quote;
+                      }
                       const response = await api<MutationResponse>(
                         "/api/swap/execute",
                         {
                           method: "POST",
-                          body: JSON.stringify({
-                            from: swapDirection === "USDC_EURC" ? "USDC" : "EURC",
-                            to: swapDirection === "USDC_EURC" ? "EURC" : "USDC",
-                            amount: Number(swapAmount),
-                            slippageBps: 30,
-                          }),
+                          body: JSON.stringify(body),
                         },
                         userId,
                       );
-                      return submitTxPayload(response.txPayload);
+                      const txStatus = await submitTxPayload(response.txPayload);
+                      if (swapQuote.warning) {
+                        return txStatus
+                          ? `${txStatus} ${swapQuote.warning}`
+                          : swapQuote.warning;
+                      }
+                      return txStatus;
                     })
                   }
                   className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-medium text-[var(--lumma-bg)] disabled:opacity-60"
@@ -547,16 +586,17 @@ export function Dashboard() {
                     key={tier}
                     disabled={busy}
                     onClick={() =>
-                      void run(`Claim ${tier}`, () =>
-                        api(
+                      void run(`Claim ${tier}`, async () => {
+                        const response = await api<MutationResponse>(
                           "/api/nft/claim",
                           {
                             method: "POST",
                             body: JSON.stringify({ tier }),
                           },
                           userId,
-                        ),
-                      )
+                        );
+                        return submitTxPayload(response.txPayload);
+                      })
                     }
                     className="rounded-lg border border-lumma-ink/20 bg-[var(--lumma-panel-strong)] px-3 py-2 text-sm font-medium text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
                   >

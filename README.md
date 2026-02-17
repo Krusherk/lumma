@@ -24,11 +24,15 @@ npm install
 ```bash
 cp .env.example .env.local
 ```
-3. Start dev server:
+3. Run Supabase migrations in SQL editor (in order):
+- `supabase/migrations/0001_initial.sql`
+- `supabase/migrations/0002_usernames.sql`
+- `supabase/migrations/0003_system_flags.sql`
+4. Start dev server:
 ```bash
 npm run dev
 ```
-4. Open:
+5. Open:
 - Marketing: `http://localhost:3000`
 - App dashboard: `http://localhost:3000/app`
 - Docs portal: `http://localhost:3000/docs`
@@ -67,3 +71,4 @@ npm run dev
 - Rotate exposed Privy secret before deployment.
 - Keep `PRIVY_APP_SECRET` server-only.
 - Use `ADMIN_API_TOKEN` for vault pause endpoint.
+- Set `DEPLOYER_PRIVATE_KEY` only in secure server environments (for owner-gated NFT mint flow).

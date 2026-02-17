@@ -3,7 +3,12 @@ import { encodeFunctionData, isAddress, keccak256, parseUnits, toHex } from "vie
 
 import { config } from "@/lib/config";
 import { fail, getUserIdFromRequest, ok } from "@/lib/api";
-import { depositToVault, enableReferralRewardsForUser, getVaults, recordPointEvent } from "@/lib/store";
+import {
+  depositToVault,
+  enableReferralRewardsForUser,
+  getVaults,
+  recordPointEvent,
+} from "@/lib/persistence";
 import type { TxPayload } from "@/lib/tx";
 
 const bodySchema = z.object({
@@ -49,14 +54,14 @@ export async function POST(request: Request) {
   try {
     const body = bodySchema.parse(await request.json());
     const userId = body.userId ?? getUserIdFromRequest(request);
-    depositToVault(userId, body.vaultId, body.amount);
-    enableReferralRewardsForUser(userId);
+    await depositToVault(userId, body.vaultId, body.amount);
+    await enableReferralRewardsForUser(userId);
     if (body.amount >= 1000) {
-      recordPointEvent(userId, "deposit_1000");
+      await recordPointEvent(userId, "deposit_1000");
     } else if (body.amount >= 100) {
-      recordPointEvent(userId, "deposit_100");
+      await recordPointEvent(userId, "deposit_100");
     }
-    recordPointEvent(userId, "first_deposit");
+    await recordPointEvent(userId, "first_deposit");
 
     const vaultManagerAddress = getConfiguredAddress(
       config.contracts.vaultManager,
@@ -95,7 +100,7 @@ export async function POST(request: Request) {
     return ok({
       message: "Deposit accepted.",
       txPayload,
-      vaults: getVaults(userId),
+      vaults: await getVaults(userId),
     });
   } catch (error) {
     return fail(

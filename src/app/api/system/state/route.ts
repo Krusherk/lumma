@@ -1,7 +1,7 @@
 import { ok } from "@/lib/api";
-import { getSystemState } from "@/lib/store";
+import { getSystemState } from "@/lib/persistence";
 
 export async function GET() {
-  return ok(getSystemState());
+  return ok(await getSystemState());
 }
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { fail, ok } from "@/lib/api";
-import { getOrCreateUser } from "@/lib/store";
+import { getOrCreateUser } from "@/lib/persistence";
 import { verifyPrivyAccessToken } from "@/lib/privy";
 
 const bodySchema = z.object({
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!verification.verified || !verification.userId) {
       return fail("Privy token verification failed.", 401, verification);
     }
-    const user = getOrCreateUser(verification.userId, verification.walletAddress);
+    const user = await getOrCreateUser(verification.userId, verification.walletAddress);
     return ok({
       verified: true,
       userId: user.id,

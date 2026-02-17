@@ -3,7 +3,7 @@ import { encodeFunctionData, isAddress, keccak256, parseUnits, toHex } from "vie
 
 import { config } from "@/lib/config";
 import { fail, getUserIdFromRequest, ok } from "@/lib/api";
-import { getVaults, withdrawFromVault } from "@/lib/store";
+import { getVaults, withdrawFromVault } from "@/lib/persistence";
 import type { TxPayload } from "@/lib/tx";
 
 const bodySchema = z.object({
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   try {
     const body = bodySchema.parse(await request.json());
     const userId = body.userId ?? getUserIdFromRequest(request);
-    withdrawFromVault(userId, body.vaultId, body.amount);
+    await withdrawFromVault(userId, body.vaultId, body.amount);
 
     const vaultManagerAddress = getConfiguredAddress(
       config.contracts.vaultManager,
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     return ok({
       message: "Withdrawal accepted.",
       txPayload,
-      vaults: getVaults(userId),
+      vaults: await getVaults(userId),
     });
   } catch (error) {
     return fail(
