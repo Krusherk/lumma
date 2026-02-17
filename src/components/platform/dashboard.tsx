@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, Gift, ShieldAlert, Trophy, Vault } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Gift,
+  ListTodo,
+  ShieldAlert,
+  Trophy,
+  Vault,
+  Wallet,
+} from "lucide-react";
 
 import { LummaLogo } from "@/components/brand/lumma-logo";
 import { PrivyAuth } from "@/components/platform/privy-auth";
@@ -83,6 +91,12 @@ interface QuestView {
 
 const nftTiers: NftTier[] = ["bronze", "silver", "gold", "diamond"];
 const privyEnabled = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
+const quickLinks = [
+  { href: "#wallet-section", label: "Wallet", icon: Wallet },
+  { href: "#points-section", label: "Points", icon: Gift },
+  { href: "#tasks-section", label: "Tasks", icon: ListTodo },
+  { href: "#leaderboard-section", label: "Leaderboard", icon: Trophy },
+];
 
 async function api<T>(path: string, init: RequestInit = {}, userId: string): Promise<T> {
   const response = await fetch(path, {
@@ -196,7 +210,13 @@ export function Dashboard() {
               Refresh
             </button>
           </div>
-          {privyEnabled && <div className="mt-4"><PrivyAuth onResolvedUserId={setUserId} /></div>}
+          <div id="wallet-section" className="mt-4 scroll-mt-24">
+            {privyEnabled ? (
+              <PrivyAuth onResolvedUserId={setUserId} />
+            ) : (
+              <PrivySetupHint />
+            )}
+          </div>
           <p className="mt-3 text-xs text-lumma-ink/70">
             APY values are estimated from the testnet model and update every 15 minutes.
           </p>
@@ -207,6 +227,22 @@ export function Dashboard() {
             {status}
           </div>
         )}
+
+        <section className="mt-5 flex flex-wrap gap-2">
+          {quickLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <a
+                key={link.href}
+                href={link.href}
+                className="inline-flex items-center gap-2 rounded-lg border border-lumma-ink/25 bg-lumma-sand/80 px-3 py-2 text-xs font-semibold uppercase tracking-[0.11em] text-lumma-ink transition hover:border-lumma-sky hover:bg-white"
+              >
+                <Icon size={13} />
+                {link.label}
+              </a>
+            );
+          })}
+        </section>
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard icon={<Trophy size={18} />} label="Settled Points" value={summary?.summary.user.pointsSettled ?? 0} />
@@ -386,32 +422,51 @@ export function Dashboard() {
           </div>
 
           <div className="space-y-6">
-            <Panel title="Points Tasks">
-              <div className="grid gap-2">
-                {taskDefinitions.map((task) => (
-                  <button
-                    key={task.key}
-                    disabled={busy}
-                    onClick={() =>
-                      void run(task.label, () =>
-                        api(
-                          "/api/points/event",
-                          {
-                            method: "POST",
-                            body: JSON.stringify({
-                              taskKey: task.key,
-                            }),
-                          },
-                          userId,
-                        ),
-                      )
-                    }
-                    className="flex items-center justify-between rounded-lg border border-lumma-ink/15 bg-white px-3 py-2 text-left text-sm text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
-                  >
-                    <span>{task.label}</span>
-                    <span className="font-semibold">+{task.points}</span>
-                  </button>
-                ))}
+            <Panel id="points-section" title="Points System">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-lg border border-lumma-ink/15 bg-lumma-sand/75 px-3 py-2">
+                  <p className="text-xs uppercase tracking-[0.1em] text-lumma-ink/60">Settled</p>
+                  <p className="mt-1 text-xl font-semibold text-lumma-ink">
+                    {(summary?.summary.user.pointsSettled ?? 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-lumma-ink/15 bg-lumma-sand/75 px-3 py-2">
+                  <p className="text-xs uppercase tracking-[0.1em] text-lumma-ink/60">Pending</p>
+                  <p className="mt-1 text-xl font-semibold text-lumma-ink">
+                    {(summary?.summary.user.pointsPending ?? 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <div id="tasks-section" className="mt-4 scroll-mt-24">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink/62">
+                  Tasks
+                </p>
+                <div className="grid gap-2">
+                  {taskDefinitions.map((task) => (
+                    <button
+                      key={task.key}
+                      disabled={busy}
+                      onClick={() =>
+                        void run(task.label, () =>
+                          api(
+                            "/api/points/event",
+                            {
+                              method: "POST",
+                              body: JSON.stringify({
+                                taskKey: task.key,
+                              }),
+                            },
+                            userId,
+                          ),
+                        )
+                      }
+                      className="flex items-center justify-between rounded-lg border border-lumma-ink/15 bg-white px-3 py-2 text-left text-sm text-lumma-ink transition hover:bg-lumma-sand/70 disabled:opacity-60"
+                    >
+                      <span>{task.label}</span>
+                      <span className="font-semibold">+{task.points}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </Panel>
 
@@ -523,7 +578,7 @@ export function Dashboard() {
           </div>
         </section>
 
-        <section className="mt-8">
+        <section id="leaderboard-section" className="mt-8 scroll-mt-24">
           <Panel title="Leaderboard">
             <div className="mb-3 flex items-center gap-2">
               {(["weekly", "monthly", "all_time"] as const).map((period) => (
@@ -575,12 +630,34 @@ export function Dashboard() {
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  children,
+  id,
+}: {
+  title: string;
+  children: React.ReactNode;
+  id?: string;
+}) {
   return (
-    <section className="rounded-3xl border border-lumma-ink/15 bg-white/70 p-5 shadow-sm backdrop-blur">
+    <section
+      id={id}
+      className="scroll-mt-24 rounded-3xl border border-lumma-ink/15 bg-white/70 p-5 shadow-sm backdrop-blur"
+    >
       <h2 className="font-display text-xl font-semibold text-lumma-ink">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function PrivySetupHint() {
+  return (
+    <div className="rounded-2xl border border-lumma-alert/35 bg-lumma-alert/10 p-4 text-sm text-lumma-ink">
+      <p className="font-semibold">Privy wallet login is not configured for this deployment.</p>
+      <p className="mt-1 text-lumma-ink/80">
+        Add <code>NEXT_PUBLIC_PRIVY_APP_ID</code> in Vercel project envs and redeploy.
+      </p>
+    </div>
   );
 }
 
