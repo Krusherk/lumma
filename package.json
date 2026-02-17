@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bot:discord": "tsx bot/discord-bot.ts"
+    "bot:discord": "tsx bot/discord-bot.ts",
+    "deploy:arc": "tsx scripts/deploy-arc-contracts.ts"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.4.0",
@@ -22,6 +23,7 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "solc": "^0.8.33",
     "viem": "^2.46.0",
     "zod": "^4.3.6"
   },
