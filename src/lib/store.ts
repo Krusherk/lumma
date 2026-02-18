@@ -46,9 +46,48 @@ function randomId(prefix: string) {
   return `${prefix}_${token}`;
 }
 
+function buildReferralCode(seed: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const token = (hash >>> 0).toString(36).toUpperCase().padStart(6, "0").slice(0, 6);
+  return `LUM-${token}`;
+}
+
 function referralCodeFor(userId: string) {
-  const entropy = deterministicNumber(`ref-${userId}`).toString(36).slice(2, 8).toUpperCase();
-  return `LUM-${entropy}`;
+  return buildReferralCode(`ref:${userId}`);
+}
+
+function referralCodeVariant(userId: string, attempt: number) {
+  return buildReferralCode(`ref:${userId}:${attempt}`);
+}
+
+function generateUniqueReferralCode(userId: string) {
+  const taken = new Set(
+    Array.from(state.users.values()).map((user) => user.referralCode),
+  );
+  const candidates = [
+    referralCodeFor(userId),
+    ...Array.from({ length: 6 }, (_, index) => referralCodeVariant(userId, index + 1)),
+  ];
+  for (const candidate of candidates) {
+    if (!taken.has(candidate)) {
+      return candidate;
+    }
+  }
+  let attempt = 0;
+  while (attempt < 32) {
+    const candidate = buildReferralCode(
+      `rnd:${userId}:${attempt}:${Math.random().toString(36).slice(2)}`,
+    );
+    if (!taken.has(candidate)) {
+      return candidate;
+    }
+    attempt += 1;
+  }
+  throw new Error("Unable to allocate unique referral code in memory mode.");
 }
 
 function initialVaults(): VaultDefinition[] {
@@ -122,7 +161,7 @@ export function getOrCreateUser(userId: string, walletAddress?: string) {
     id: userId,
     createdAt: nowIso(),
     walletAddress,
-    referralCode: referralCodeFor(userId),
+    referralCode: generateUniqueReferralCode(userId),
     pointsPending: 0,
     pointsSettled: 0,
     riskFlag: "none",

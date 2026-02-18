@@ -795,91 +795,102 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         <header className="lumma-reveal relative overflow-hidden rounded-sm border border-white/16 bg-[#050913] p-6 shadow-[0_34px_80px_-48px_rgba(3,10,20,0.78)]" data-reveal>
           <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-60" />
           <div className="relative">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <LummaLogo />
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-white/22 bg-white/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82">
-                Built on Arc
-              </span>
-              <a
-                href="https://docs.lumma.xyz"
-                className="rounded-lg border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/10"
-              >
-                Docs
-              </a>
-            </div>
-          </div>
-
-          <p className="mt-5 max-w-4xl text-xl font-semibold leading-tight text-white sm:text-2xl">
-            Cockpit rebuilt into a modular command deck. No more one-page overload.
-          </p>
-
-          <div className="mt-5 overflow-x-auto pb-1">
-            <nav className="flex min-w-max items-center gap-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.view === currentView;
-                return (
-                  <Link
-                    key={item.view}
-                    href={item.href}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition",
-                      isActive
-                        ? "bg-white text-[#050913]"
-                        : "border border-white/20 bg-white/5 text-white/85 hover:-translate-y-0.5 hover:border-lumma-sky/60",
-                    )}
-                  >
-                    <Icon size={14} />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <article className="lumma-scanline rounded-sm border border-white/18 bg-black/40 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/64">Active View</p>
-              <h1 className="mt-1 font-display text-3xl font-semibold text-white">{activeNav.label}</h1>
-              <p className="mt-2 text-sm text-white/72">{activeNav.blurb}</p>
-            </article>
-            <article className="rounded-sm border border-white/18 bg-black/40 p-4">
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <label className="text-sm text-white">
-                  Active User ID
-                  <input
-                    className="mt-1 w-full rounded-sm border border-white/20 bg-black/45 px-3 py-2 text-white"
-                    value={userId}
-                    onChange={(event) => setUserId(event.target.value || "demo-user")}
-                  />
-                </label>
-                <button
-                  onClick={() => void refresh()}
-                  className="h-fit rounded-sm border border-lumma-sky/52 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5"
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <LummaLogo />
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="rounded-full border border-white/22 bg-white/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82">
+                  Built on Arc
+                </span>
+                <a
+                  href="https://docs.lumma.xyz"
+                  className="rounded-lg border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/10"
                 >
-                  Refresh
-                </button>
+                  Docs
+                </a>
+                {privyEnabled ? (
+                  <PrivyAuth
+                    onResolvedUserId={setUserId}
+                    onWalletExecutorReady={(executor) => setWalletExecutor(() => executor)}
+                  />
+                ) : (
+                  <PrivySetupBadge />
+                )}
               </div>
-            </article>
-          </div>
+            </div>
 
-          <div id="wallet-section" className="mt-4 scroll-mt-24">
-            {privyEnabled ? (
-              <PrivyAuth
-                onResolvedUserId={setUserId}
-                onWalletExecutorReady={(executor) => setWalletExecutor(() => executor)}
-              />
-            ) : (
-              <PrivySetupHint />
-            )}
-          </div>
+            <p className="mt-5 max-w-4xl text-xl font-semibold leading-tight text-white sm:text-2xl">
+              Cockpit rebuilt into a modular command deck. No more one-page overload.
+            </p>
 
-          <p className="mt-3 text-xs text-white/62">
-            APY values are estimated from the testnet model and update every 15 minutes.
-          </p>
+            <div className="mt-5 overflow-x-auto pb-1">
+              <nav className="flex min-w-max items-center gap-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.view === currentView;
+                  return (
+                    <Link
+                      key={item.view}
+                      href={item.href}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition",
+                        isActive
+                          ? "bg-white text-[#050913]"
+                          : "border border-white/20 bg-white/5 text-white/85 hover:-translate-y-0.5 hover:border-lumma-sky/60",
+                      )}
+                    >
+                      <Icon size={14} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <article className="lumma-scanline rounded-sm border border-white/18 bg-black/40 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/64">Active View</p>
+                <h1 className="mt-1 font-display text-3xl font-semibold text-white">{activeNav.label}</h1>
+                <p className="mt-2 text-sm text-white/72">{activeNav.blurb}</p>
+              </article>
+              <article className="rounded-sm border border-white/18 bg-black/40 p-4">
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <label className="text-sm text-white">
+                    Active User ID
+                    <input
+                      className="mt-1 w-full rounded-sm border border-white/20 bg-black/45 px-3 py-2 text-white disabled:cursor-not-allowed disabled:opacity-70"
+                      value={userId}
+                      onChange={(event) => setUserId(event.target.value || "demo-user")}
+                      disabled={privyEnabled}
+                    />
+                  </label>
+                  <button
+                    onClick={() => void refresh()}
+                    className="h-fit rounded-sm border border-lumma-sky/52 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                {privyEnabled ? (
+                  <p className="mt-2 text-xs text-white/62">
+                    User ID is synced from your Privy login in the top-right.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs text-white/62">Privy disabled. Manual user mode is active.</p>
+                )}
+              </article>
+            </div>
+
+            <p className="mt-3 text-xs text-white/62">
+              APY values are estimated from the testnet model and update every 15 minutes.
+            </p>
           </div>
         </header>
+
+        {!privyEnabled && (
+          <div className="mt-4">
+            <PrivySetupHint />
+          </div>
+        )}
 
         {status && (
           <div className="lumma-reveal mt-5 rounded-sm border border-white/20 bg-black/45 px-4 py-3 text-sm text-white/86" data-reveal>
@@ -1027,6 +1038,14 @@ function PrivySetupHint() {
         Add <code>NEXT_PUBLIC_PRIVY_APP_ID</code> in Vercel project envs and redeploy.
       </p>
     </div>
+  );
+}
+
+function PrivySetupBadge() {
+  return (
+    <span className="rounded-sm border border-lumma-alert/46 bg-lumma-alert/14 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-lumma-alert">
+      Privy Off
+    </span>
   );
 }
 
