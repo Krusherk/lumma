@@ -59,19 +59,33 @@ const vaultCatalog: VaultCatalogEntry[] = [
 ];
 
 const socialKeys = ["follow_twitter", "retweet_announcement", "join_discord", "like_comment"];
+const USER_COLUMNS =
+  "id, created_at, wallet_address, username, referral_code, referred_by, points_settled, points_pending, risk_flag";
 
 function getDbOrNull() {
   return createSupabaseAdminClient();
 }
 
+function buildReferralCode(seed: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const token = (hash >>> 0).toString(36).toUpperCase().padStart(6, "0").slice(0, 6);
+  return `LUM-${token}`;
+}
+
 function referralCodeFor(userId: string) {
-  const entropy = deterministicNumber(`ref-${userId}`).toString(36).slice(2, 8).toUpperCase();
-  return `LUM-${entropy}`;
+  return buildReferralCode(`ref:${userId}`);
+}
+
+function referralCodeVariant(userId: string, attempt: number) {
+  return buildReferralCode(`ref:${userId}:${attempt}`);
 }
 
 function randomReferralCode() {
-  const entropy = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `LUM-${entropy}`;
+  return buildReferralCode(`rnd:${Date.now()}:${Math.random().toString(36).slice(2)}`);
 }
 
 function toNumber(value: unknown) {
@@ -169,32 +183,61 @@ async function ensureUserDb(userId: string, walletAddress?: string) {
   const db = getDbOrNull();
   if (!db) return memoryStore.getOrCreateUser(userId, walletAddress);
 
-  let referralCode = referralCodeFor(userId);
-  for (let i = 0; i < 3; i += 1) {
-    const payload: Record<string, unknown> = { id: userId, referral_code: referralCode };
-    if (walletAddress) payload.wallet_address = walletAddress;
-    const { error } = await db.from("users").upsert(payload, { onConflict: "id" });
-    if (!error) break;
-    if (!(error.code === "23505" && String(error.message).includes("users_referral_code"))) {
-      throw mapDbError(error, "Failed to upsert user.");
+  const fetchUser = async () => {
+    const { data, error } = await db.from("users").select(USER_COLUMNS).eq("id", userId).maybeSingle();
+    if (error) throw mapDbError(error, "Failed to fetch user.");
+    return data as Record<string, unknown> | null;
+  };
+
+  const withWallet = async (row: Record<string, unknown>) => {
+    if (walletAddress && String(row.wallet_address ?? "") !== walletAddress) {
+      const { error } = await db.from("users").update({ wallet_address: walletAddress }).eq("id", userId);
+      if (error) throw mapDbError(error, "Failed to update wallet address.");
+      row.wallet_address = walletAddress;
     }
-    referralCode = randomReferralCode();
+    return mapUser(row);
+  };
+
+  const existing = await fetchUser();
+  if (existing) {
+    return withWallet(existing);
   }
 
-  const { data, error } = await db
-    .from("users")
-    .select("id, created_at, wallet_address, username, referral_code, referred_by, points_settled, points_pending, risk_flag")
-    .eq("id", userId)
-    .single();
-  if (error || !data) throw mapDbError(error, "Failed to fetch user.");
+  const candidates = [
+    referralCodeFor(userId),
+    ...Array.from({ length: 5 }, (_, index) => referralCodeVariant(userId, index + 1)),
+    ...Array.from({ length: 4 }, () => randomReferralCode()),
+  ];
 
-  if (walletAddress && data.wallet_address !== walletAddress) {
-    const { error: walletError } = await db.from("users").update({ wallet_address: walletAddress }).eq("id", userId);
-    if (walletError) throw mapDbError(walletError, "Failed to update wallet address.");
-    data.wallet_address = walletAddress;
+  for (const referralCode of candidates) {
+    const payload: Record<string, unknown> = { id: userId, referral_code: referralCode };
+    if (walletAddress) {
+      payload.wallet_address = walletAddress;
+    }
+
+    const { data, error } = await db.from("users").insert(payload).select(USER_COLUMNS).maybeSingle();
+    if (!error && data) {
+      return mapUser(data as Record<string, unknown>);
+    }
+    if (!error) {
+      continue;
+    }
+    if (error.code === "23505") {
+      const message = String(error.message ?? "");
+      if (message.includes("users_pkey")) {
+        const raced = await fetchUser();
+        if (raced) {
+          return withWallet(raced);
+        }
+      }
+      if (message.includes("users_referral_code")) {
+        continue;
+      }
+    }
+    throw mapDbError(error, "Failed to create user.");
   }
 
-  return mapUser(data as unknown as Record<string, unknown>);
+  throw new Error("Failed to reserve unique referral code for user.");
 }
 
 async function updateUserPoints(db: DbClient, userId: string, deltaSettled: number, deltaPending: number) {
