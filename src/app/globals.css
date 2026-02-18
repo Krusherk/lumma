@@ -205,6 +205,16 @@ a {
   opacity: 0.18;
 }
 
+.lumma-noir-app {
+  --lumma-bg: #04070e;
+  --lumma-fg: #eceef2;
+  --lumma-ink: #eceef2;
+  --lumma-sand: #0f1622;
+  --lumma-panel: rgba(8, 13, 21, 0.78);
+  --lumma-panel-strong: rgba(12, 18, 28, 0.9);
+  --lumma-border: rgba(236, 240, 247, 0.18);
+}
+
 .lumma-scanlines {
   background: repeating-linear-gradient(
     180deg,
@@ -286,6 +296,11 @@ a {
   .lumma-noir-grid::before,
   .lumma-scanlines {
     opacity: 0.12;
+  }
+
+  .lumma-reveal {
+    transform: translateY(14px) scale(0.995);
+    transition-duration: 420ms;
   }
 }
 

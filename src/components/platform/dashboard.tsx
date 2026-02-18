@@ -280,6 +280,24 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+          }
+        }
+      },
+      { threshold: 0.14, rootMargin: "0px 0px -8% 0px" },
+    );
+    const nodes = Array.from(document.querySelectorAll("[data-reveal]"));
+    for (const node of nodes) {
+      observer.observe(node);
+    }
+    return () => observer.disconnect();
+  }, []);
+
   const run = useCallback(
     async (label: string, task: () => Promise<unknown>) => {
       setBusy(true);
@@ -768,31 +786,31 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   );
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_18%,rgba(94,233,255,0.3),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(198,255,92,0.24),transparent_36%),linear-gradient(136deg,var(--lumma-bg),color-mix(in oklab,var(--lumma-bg),#8bb4d8_12%))] pb-20">
+    <main className="lumma-noir-app relative min-h-screen overflow-hidden bg-[#04070e] pb-20 text-[#eceef2]">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="lumma-orb lumma-orb-a" />
-        <div className="lumma-orb lumma-orb-b" />
-        <div className="lumma-orb lumma-orb-c" />
+        <div className="lumma-noir-grid" />
       </div>
 
       <div className="mx-auto max-w-7xl px-5 py-9">
-        <header className="lumma-glass lumma-rise rounded-[2rem] p-6 shadow-[0_34px_80px_-48px_rgba(3,10,20,0.78)]">
+        <header className="lumma-reveal relative overflow-hidden rounded-[2rem] border border-white/16 bg-[#050913] p-6 shadow-[0_34px_80px_-48px_rgba(3,10,20,0.78)]" data-reveal>
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-60" />
+          <div className="relative">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <LummaLogo />
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-lumma-ink/25 bg-lumma-sand/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-lumma-ink">
+              <span className="rounded-full border border-white/22 bg-white/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82">
                 Built on Arc
               </span>
               <a
                 href="https://docs.lumma.xyz"
-                className="rounded-lg border border-lumma-ink/28 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
+                className="rounded-lg border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/10"
               >
                 Docs
               </a>
             </div>
           </div>
 
-          <p className="mt-5 max-w-4xl text-xl font-semibold leading-tight text-lumma-ink sm:text-2xl">
+          <p className="mt-5 max-w-4xl text-xl font-semibold leading-tight text-white sm:text-2xl">
             Cockpit rebuilt into a modular command deck. No more one-page overload.
           </p>
 
@@ -808,8 +826,8 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                     className={cn(
                       "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition",
                       isActive
-                        ? "bg-lumma-ink text-[var(--lumma-bg)]"
-                        : "border border-lumma-ink/25 bg-[var(--lumma-panel)] text-lumma-ink hover:-translate-y-0.5 hover:border-lumma-sky/60",
+                        ? "bg-white text-[#050913]"
+                        : "border border-white/20 bg-white/5 text-white/85 hover:-translate-y-0.5 hover:border-lumma-sky/60",
                     )}
                   >
                     <Icon size={14} />
@@ -821,24 +839,24 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <article className="lumma-scanline rounded-2xl border border-lumma-ink/18 bg-[var(--lumma-panel-strong)] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lumma-ink/64">Active View</p>
-              <h1 className="mt-1 font-display text-3xl font-semibold text-lumma-ink">{activeNav.label}</h1>
-              <p className="mt-2 text-sm text-lumma-ink/78">{activeNav.blurb}</p>
+            <article className="lumma-scanline rounded-2xl border border-white/18 bg-black/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/64">Active View</p>
+              <h1 className="mt-1 font-display text-3xl font-semibold text-white">{activeNav.label}</h1>
+              <p className="mt-2 text-sm text-white/72">{activeNav.blurb}</p>
             </article>
-            <article className="rounded-2xl border border-lumma-ink/18 bg-[var(--lumma-panel-strong)] p-4">
+            <article className="rounded-2xl border border-white/18 bg-black/40 p-4">
               <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <label className="text-sm text-lumma-ink">
+                <label className="text-sm text-white">
                   Active User ID
                   <input
-                    className="mt-1 w-full rounded-xl border border-lumma-ink/25 bg-[var(--lumma-panel)] px-3 py-2 text-lumma-ink"
+                    className="mt-1 w-full rounded-xl border border-white/20 bg-black/45 px-3 py-2 text-white"
                     value={userId}
                     onChange={(event) => setUserId(event.target.value || "demo-user")}
                   />
                 </label>
                 <button
                   onClick={() => void refresh()}
-                  className="h-fit rounded-xl bg-lumma-ink px-4 py-2 text-sm font-semibold text-[var(--lumma-bg)] transition hover:-translate-y-0.5"
+                  className="h-fit rounded-xl border border-lumma-sky/52 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5"
                 >
                   Refresh
                 </button>
@@ -857,18 +875,19 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             )}
           </div>
 
-          <p className="mt-3 text-xs text-lumma-ink/72">
+          <p className="mt-3 text-xs text-white/62">
             APY values are estimated from the testnet model and update every 15 minutes.
           </p>
+          </div>
         </header>
 
         {status && (
-          <div className="lumma-rise mt-5 rounded-2xl border border-lumma-ink/25 bg-[var(--lumma-panel)] px-4 py-3 text-sm text-lumma-ink">
+          <div className="lumma-reveal mt-5 rounded-2xl border border-white/20 bg-black/45 px-4 py-3 text-sm text-white/86" data-reveal>
             {status}
           </div>
         )}
 
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="lumma-reveal mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-reveal>
           <MetricCard
             icon={<Trophy size={18} />}
             label="Settled Points"
@@ -987,10 +1006,11 @@ function Panel({
   return (
     <section
       id={id}
-      className="lumma-rise scroll-mt-24 rounded-[1.65rem] border border-lumma-ink/16 bg-[var(--lumma-panel)] p-5 shadow-[0_20px_56px_-44px_rgba(4,11,22,0.72)] backdrop-blur"
+      data-reveal
+      className="lumma-reveal scroll-mt-24 rounded-[1.65rem] border border-white/14 bg-black/38 p-5 shadow-[0_20px_56px_-44px_rgba(4,11,22,0.72)] backdrop-blur"
     >
-      <h2 className="font-display text-xl font-semibold text-lumma-ink">{title}</h2>
-      {subtitle && <p className="mt-1 text-sm text-lumma-ink/72">{subtitle}</p>}
+      <h2 className="font-display text-xl font-semibold text-white">{title}</h2>
+      {subtitle && <p className="mt-1 text-sm text-white/66">{subtitle}</p>}
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -998,9 +1018,9 @@ function Panel({
 
 function PrivySetupHint() {
   return (
-    <div className="rounded-2xl border border-lumma-alert/35 bg-lumma-alert/10 p-4 text-sm text-lumma-ink">
+    <div className="rounded-2xl border border-lumma-alert/35 bg-lumma-alert/12 p-4 text-sm text-white">
       <p className="font-semibold">Privy wallet login is not configured for this deployment.</p>
-      <p className="mt-1 text-lumma-ink/80">
+      <p className="mt-1 text-white/75">
         Add <code>NEXT_PUBLIC_PRIVY_APP_ID</code> in Vercel project envs and redeploy.
       </p>
     </div>
@@ -1021,27 +1041,27 @@ function MetricCard({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel)] p-4 backdrop-blur",
+        "rounded-2xl border border-white/14 bg-black/36 p-4 backdrop-blur",
         pulse === "sky" && "lumma-pulse-sky",
         pulse === "lime" && "lumma-pulse-lime",
       )}
     >
-      <div className="flex items-center gap-2 text-lumma-ink/75">{icon}</div>
-      <p className="mt-2 text-xs uppercase tracking-[0.13em] text-lumma-ink/62">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-lumma-ink">{value.toLocaleString()}</p>
+      <div className="flex items-center gap-2 text-white/74">{icon}</div>
+      <p className="mt-2 text-xs uppercase tracking-[0.13em] text-white/58">{label}</p>
+      <p className="mt-1 text-2xl font-semibold text-white">{value.toLocaleString()}</p>
     </article>
   );
 }
 
 function PulseTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-lumma-ink/12 bg-[var(--lumma-panel-strong)] px-3 py-2">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-lumma-ink/60">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-lumma-ink">{value.toLocaleString()}</p>
+    <div className="rounded-xl border border-white/14 bg-black/38 px-3 py-2">
+      <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-white">{value.toLocaleString()}</p>
     </div>
   );
 }
 
 function EmptyState({ label }: { label: string }) {
-  return <p className="text-sm text-lumma-ink/62">{label}</p>;
+  return <p className="text-sm text-white/62">{label}</p>;
 }

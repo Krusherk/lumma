@@ -10,7 +10,7 @@ import {
   Sparkles,
   Twitter,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LummaLogo } from "@/components/brand/lumma-logo";
 
@@ -57,14 +57,11 @@ function sectionProgress(element: HTMLElement | null) {
 }
 
 export default function LandingPage() {
-  const heroRef = useRef<HTMLElement | null>(null);
   const mapRef = useRef<HTMLElement | null>(null);
-  const [heroProgress, setHeroProgress] = useState(0);
   const [mapProgress, setMapProgress] = useState(0);
 
   useEffect(() => {
     const onScroll = () => {
-      setHeroProgress(sectionProgress(heroRef.current));
       setMapProgress(sectionProgress(mapRef.current));
     };
     onScroll();
@@ -98,13 +95,6 @@ export default function LandingPage() {
     return () => observer.disconnect();
   }, []);
 
-  const yearlyLoss = useMemo(() => {
-    const value = 1_300_000_000 + Math.round(heroProgress * 7_900_000_000);
-    return value.toLocaleString("en-US");
-  }, [heroProgress]);
-
-  const liveCredibility = useMemo(() => 1120 + Math.round(mapProgress * 980), [mapProgress]);
-
   const nodeScale = 0.82 + mapProgress * 0.42;
   const nodeShift = mapProgress * 86;
   const pulseOpacity = 0.25 + mapProgress * 0.75;
@@ -137,7 +127,6 @@ export default function LandingPage() {
         </nav>
 
         <section
-          ref={heroRef}
           className="lumma-reveal relative mt-7 overflow-hidden border border-white/12 bg-[linear-gradient(180deg,#080d18_0%,#050913_100%)] px-4 py-14 sm:px-8 sm:py-20"
           data-reveal
         >
@@ -172,10 +161,23 @@ export default function LandingPage() {
             </div>
 
             <div className="mt-12 border border-[#ff5a1f]/45 bg-black/40 px-4 py-5 sm:px-6 sm:py-7">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#ff6d33]">Fragmentation Cost</p>
-              <p className="mt-2 font-display text-[clamp(2rem,8vw,6.1rem)] leading-none text-[#ff5a1f]">${yearlyLoss}</p>
-              <p className="mt-2 max-w-xl text-sm text-white/65">
-                Estimated yearly value lost to fragmented stablecoin UX across vaulting, swapping, and reward surfaces.
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#ff6d33]">Protocol Surface</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="border border-white/14 bg-black/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/58">Vault Rails</p>
+                  <p className="mt-1 font-display text-3xl leading-none text-white">3</p>
+                </div>
+                <div className="border border-white/14 bg-black/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/58">Swap Pairs V1</p>
+                  <p className="mt-1 font-display text-3xl leading-none text-white">1</p>
+                </div>
+                <div className="border border-white/14 bg-black/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/58">NFT Tiers</p>
+                  <p className="mt-1 font-display text-3xl leading-none text-white">4</p>
+                </div>
+              </div>
+              <p className="mt-3 max-w-xl text-sm text-white/65">
+                Measured values only. No fabricated counters.
               </p>
             </div>
           </div>
@@ -259,8 +261,8 @@ export default function LandingPage() {
               <div className="absolute left-[48%] top-[52%] h-[1px] w-[26%] -rotate-[42deg] bg-lumma-lime/55" />
 
               <div className="absolute left-[54%] top-[34%] rounded-md border border-lumma-lime/42 bg-black/58 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-lumma-lime/78">Live Credibility</p>
-                <p className="mt-1 font-display text-4xl leading-none text-lumma-lime">{liveCredibility}</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-lumma-lime/78">Risk Engine</p>
+                <p className="mt-1 font-display text-3xl leading-none text-lumma-lime">Active</p>
               </div>
 
               <div className="absolute right-4 top-5 space-y-2 text-xs text-white/55">
@@ -304,7 +306,7 @@ export default function LandingPage() {
                     <span className="text-sm font-semibold">{item.label}</span>
                     <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-white/62">
                       <Icon size={14} />
-                      Soon
+                      Pending Link
                     </span>
                   </a>
                 );
