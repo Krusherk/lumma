@@ -482,32 +482,32 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
     const rows = typeof limit === "number" ? vaults.slice(0, limit) : vaults;
     return (
       <Panel title="Yield Vaults" subtitle="Estimated APY model, testnet execution rails.">
-        {loading && <p className="text-sm text-lumma-ink/70">Loading vault rails...</p>}
+        {loading && <p className="text-sm text-white/66">Loading vault rails...</p>}
         <div className="grid gap-4">
           {rows.map((vault) => (
             <article
               key={vault.id}
-              className="rounded-2xl border border-lumma-ink/15 bg-[var(--lumma-panel-strong)]/95 p-4 shadow-[0_20px_50px_-36px_rgba(8,14,26,0.6)]"
+              className="rounded-md border border-white/14 bg-black/35 p-4 shadow-[0_20px_50px_-36px_rgba(8,14,26,0.6)]"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-display text-lg font-semibold text-lumma-ink">{vault.name}</h3>
+                <h3 className="font-display text-lg font-semibold text-white">{vault.name}</h3>
                 <span
                   className={cn(
-                    "rounded-lg px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
+                    "rounded-sm px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
                     vault.risk === "aggressive"
-                      ? "bg-lumma-alert/18 text-lumma-ink"
+                      ? "bg-lumma-alert/18 text-white"
                       : vault.risk === "balanced"
-                        ? "bg-lumma-sky/22 text-lumma-ink"
-                        : "bg-lumma-lime/32 text-lumma-ink",
+                        ? "bg-lumma-sky/22 text-white"
+                        : "bg-lumma-lime/32 text-white",
                   )}
                 >
                   {vault.risk}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-lumma-ink/72">
+              <p className="mt-1 text-sm text-white/66">
                 {vault.estimatedApyLabel}: {vault.estimatedApy}% | TVL ${vault.tvlUsd.toLocaleString()} | Cap ${vault.txCapUsd.toLocaleString()}
               </p>
-              <p className="mt-2 text-sm font-medium text-lumma-ink">
+              <p className="mt-2 text-sm font-medium text-white">
                 Balance: ${vault.position.principalUsd.toFixed(2)} | Earned: ${vault.position.earnedUsd.toFixed(2)}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -522,19 +522,19 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                       [vault.id]: event.target.value,
                     }))
                   }
-                  className="w-32 rounded-lg border border-lumma-ink/25 bg-[var(--lumma-panel)] px-2.5 py-1.5 text-sm text-lumma-ink"
+                  className="w-32 rounded-sm border border-white/20 bg-black/45 px-2.5 py-1.5 text-sm text-white"
                 />
                 <button
                   disabled={busy || vault.paused}
                   onClick={() => handleDeposit(vault.id)}
-                  className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-semibold text-[var(--lumma-bg)] transition hover:-translate-y-0.5 disabled:opacity-60"
+                  className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-3 py-1.5 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-60"
                 >
                   Deposit
                 </button>
                 <button
                   disabled={busy}
                   onClick={() => handleWithdraw(vault.id)}
-                  className="rounded-lg border border-lumma-ink/30 bg-[var(--lumma-panel)] px-3 py-1.5 text-sm font-semibold text-lumma-ink transition hover:-translate-y-0.5 disabled:opacity-60"
+                  className="rounded-sm border border-white/28 bg-black/45 px-3 py-1.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
                 >
                   Withdraw
                 </button>
@@ -547,7 +547,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <div className="mt-4">
             <Link
               href="/app/vaults"
-              className="inline-flex items-center gap-2 rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
+              className="inline-flex items-center gap-2 rounded-sm border border-white/24 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/8"
             >
               Open Full Vault Deck
             </Link>
@@ -565,10 +565,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <button
             onClick={() => setSwapDirection("USDC_EURC")}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-semibold",
+              "rounded-sm px-3 py-1.5 text-sm font-semibold",
               swapDirection === "USDC_EURC"
-                ? "bg-lumma-ink text-[var(--lumma-bg)]"
-                : "border border-lumma-ink/30 bg-[var(--lumma-panel)] text-lumma-ink",
+                ? "border border-lumma-sky/56 bg-lumma-sky/14 text-lumma-sky"
+                : "border border-white/28 bg-black/45 text-white",
             )}
           >
             USDC to EURC
@@ -576,10 +576,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <button
             onClick={() => setSwapDirection("EURC_USDC")}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-semibold",
+              "rounded-sm px-3 py-1.5 text-sm font-semibold",
               swapDirection === "EURC_USDC"
-                ? "bg-lumma-ink text-[var(--lumma-bg)]"
-                : "border border-lumma-ink/30 bg-[var(--lumma-panel)] text-lumma-ink",
+                ? "border border-lumma-sky/56 bg-lumma-sky/14 text-lumma-sky"
+                : "border border-white/28 bg-black/45 text-white",
             )}
           >
             EURC to USDC
@@ -589,22 +589,22 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             min="1"
             value={swapAmount}
             onChange={(event) => setSwapAmount(event.target.value)}
-            className="w-32 rounded-lg border border-lumma-ink/25 bg-[var(--lumma-panel)] px-2.5 py-1.5 text-sm text-lumma-ink"
+            className="w-32 rounded-sm border border-white/20 bg-black/45 px-2.5 py-1.5 text-sm text-white"
           />
           <button
             disabled={busy}
             onClick={handleSwap}
-            className="rounded-lg bg-lumma-ink px-3 py-1.5 text-sm font-semibold text-[var(--lumma-bg)] transition hover:-translate-y-0.5 disabled:opacity-60"
+            className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-3 py-1.5 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-60"
           >
             Execute Swap
           </button>
         </div>
-        <p className="mt-2 text-xs text-lumma-ink/72">Swap milestones: {milestoneProgress.join(" | ")}</p>
+        <p className="mt-2 text-xs text-white/66">Swap milestones: {milestoneProgress.join(" | ")}</p>
         <div className="mt-4 space-y-2">
           {rows.map((swap) => (
             <div
               key={swap.id}
-              className="rounded-lg border border-lumma-ink/12 bg-lumma-sand/65 px-3 py-2 text-sm text-lumma-ink"
+              className="rounded-sm border border-white/12 bg-black/32 px-3 py-2 text-sm text-white"
             >
               {swap.from} to {swap.to} | ${swap.amount.toFixed(2)} | {new Date(swap.createdAt).toLocaleString()}
             </div>
@@ -615,7 +615,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <div className="mt-4">
             <Link
               href="/app/swap"
-              className="inline-flex items-center gap-2 rounded-lg border border-lumma-ink/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-lumma-ink transition hover:bg-[var(--lumma-panel-strong)]"
+              className="inline-flex items-center gap-2 rounded-sm border border-white/24 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/8"
             >
               Open Full Swap Log
             </Link>
@@ -647,7 +647,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             key={task.key}
             disabled={busy}
             onClick={() => handleTask(task.key, task.label)}
-            className="flex items-center justify-between rounded-lg border border-lumma-ink/15 bg-[var(--lumma-panel-strong)] px-3 py-2 text-left text-sm text-lumma-ink transition hover:-translate-y-0.5 hover:border-lumma-sky/65 disabled:opacity-60"
+            className="flex items-center justify-between rounded-sm border border-white/16 bg-black/34 px-3 py-2 text-left text-sm text-white transition hover:-translate-y-0.5 hover:border-lumma-sky/65 disabled:opacity-60"
           >
             <span>{task.label}</span>
             <span className="font-semibold">+{task.points}</span>
@@ -658,10 +658,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   );
   const renderReferralsPanel = () => (
     <Panel title="Referral Engine" subtitle="Permanent point share with anti-abuse activation controls.">
-      <p className="text-sm text-lumma-ink/82">
-        Your code: <span className="font-semibold text-lumma-ink">{summary?.referrals.referralCode ?? "..."}</span>
+      <p className="text-sm text-white/80">
+        Your code: <span className="font-semibold text-white">{summary?.referrals.referralCode ?? "..."}</span>
       </p>
-      <p className="mt-1 text-sm text-lumma-ink/72">
+      <p className="mt-1 text-sm text-white/66">
         Invites {summary?.referrals.totalInvites ?? 0} | Active {summary?.referrals.activeInvites ?? 0} | Rewards {summary?.referrals.rewardsEarned ?? 0}
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -669,12 +669,12 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           value={referralCodeInput}
           onChange={(event) => setReferralCodeInput(event.target.value.toUpperCase())}
           placeholder="Enter referral code"
-          className="w-full rounded-lg border border-lumma-ink/25 bg-[var(--lumma-panel)] px-3 py-2 text-sm text-lumma-ink"
+          className="w-full rounded-sm border border-white/20 bg-black/45 px-3 py-2 text-sm text-white"
         />
         <button
           disabled={busy}
           onClick={handleApplyReferral}
-          className="rounded-lg bg-lumma-ink px-4 py-2 text-sm font-semibold text-[var(--lumma-bg)] transition hover:-translate-y-0.5 disabled:opacity-60"
+          className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-60"
         >
           Apply
         </button>
@@ -684,7 +684,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
 
   const renderNftsPanel = () => (
     <Panel title="NFT Milestones" subtitle="Claim tiers as swap counts unlock each level.">
-      <p className="text-sm text-lumma-ink/75">
+      <p className="text-sm text-white/72">
         Eligible: {(summary?.nft.eligible ?? []).join(", ") || "none"} | Claimed: {(summary?.nft.claimed ?? []).join(", ") || "none"}
       </p>
       <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -693,7 +693,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             key={tier}
             disabled={busy}
             onClick={() => handleClaimNft(tier)}
-            className="rounded-lg border border-lumma-ink/22 bg-[var(--lumma-panel-strong)] px-3 py-2 text-sm font-semibold capitalize text-lumma-ink transition hover:-translate-y-0.5 hover:border-lumma-lime/60 disabled:opacity-60"
+            className="rounded-sm border border-white/24 bg-black/34 px-3 py-2 text-sm font-semibold capitalize text-white transition hover:-translate-y-0.5 hover:border-lumma-lime/60 disabled:opacity-60"
           >
             Claim {tier}
           </button>
@@ -708,22 +708,22 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         {quests.map((quest) => (
           <article
             key={quest.id}
-            className="rounded-xl border border-lumma-ink/15 bg-[var(--lumma-panel-strong)] p-3 shadow-[0_20px_44px_-36px_rgba(8,16,30,0.62)]"
+            className="rounded-sm border border-white/16 bg-black/35 p-3 shadow-[0_20px_44px_-36px_rgba(8,16,30,0.62)]"
           >
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="font-semibold text-lumma-ink">{quest.name}</p>
-                <p className="text-xs text-lumma-ink/65">+{quest.points} points | scarcity {quest.scarcity}</p>
+                <p className="font-semibold text-white">{quest.name}</p>
+                <p className="text-xs text-white/62">+{quest.points} points | scarcity {quest.scarcity}</p>
               </div>
               <button
                 disabled={busy || quest.status === "completed"}
                 onClick={() => handleCompleteQuest(quest.id)}
-                className="rounded-lg bg-lumma-ink px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--lumma-bg)] transition hover:-translate-y-0.5 disabled:opacity-50"
+                className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-50"
               >
                 {quest.status === "completed" ? "Done" : "Complete"}
               </button>
             </div>
-            <ul className="mt-2 space-y-1 text-xs text-lumma-ink/76">
+            <ul className="mt-2 space-y-1 text-xs text-white/72">
               {quest.tasks.map((task) => (
                 <li key={task.id}>
                   {task.label} ({task.target})
@@ -745,20 +745,20 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             key={period}
             onClick={() => setLeaderboardPeriod(period)}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-semibold capitalize",
+              "rounded-sm px-3 py-1.5 text-sm font-semibold capitalize",
               leaderboardPeriod === period
-                ? "bg-lumma-ink text-[var(--lumma-bg)]"
-                : "border border-lumma-ink/30 bg-[var(--lumma-panel)] text-lumma-ink",
+                ? "border border-lumma-sky/56 bg-lumma-sky/14 text-lumma-sky"
+                : "border border-white/24 bg-black/40 text-white",
             )}
           >
             {period.replace("_", " ")}
           </button>
         ))}
       </div>
-      <div className="overflow-x-auto rounded-xl border border-lumma-ink/12 bg-[var(--lumma-panel-strong)]/90 p-2">
-        <table className="min-w-full border-collapse text-sm text-lumma-ink">
+      <div className="overflow-x-auto rounded-sm border border-white/14 bg-black/36 p-2">
+        <table className="min-w-full border-collapse text-sm text-white">
           <thead>
-            <tr className="border-b border-lumma-ink/20 text-left text-xs uppercase tracking-[0.14em] text-lumma-ink/70">
+            <tr className="border-b border-white/20 text-left text-xs uppercase tracking-[0.14em] text-white/66">
               <th className="py-2 pr-2">Rank</th>
               <th className="py-2 pr-2">User</th>
               <th className="py-2">Points</th>
@@ -766,7 +766,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           </thead>
           <tbody>
             {leaderboardRows.map((row) => (
-              <tr key={row.userId} className="border-b border-lumma-ink/10">
+              <tr key={row.userId} className="border-b border-white/10">
                 <td className="py-2 pr-2 font-semibold">{row.rank}</td>
                 <td className="py-2 pr-2">{row.userId}</td>
                 <td className="py-2">{row.points.toFixed(2)}</td>
@@ -774,7 +774,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             ))}
             {!leaderboardRows.length && (
               <tr>
-                <td colSpan={3} className="py-5 text-center text-lumma-ink/62">
+                <td colSpan={3} className="py-5 text-center text-white/60">
                   No ranking entries yet.
                 </td>
               </tr>
@@ -792,7 +792,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
       </div>
 
       <div className="mx-auto max-w-7xl px-5 py-9">
-        <header className="lumma-reveal relative overflow-hidden rounded-[2rem] border border-white/16 bg-[#050913] p-6 shadow-[0_34px_80px_-48px_rgba(3,10,20,0.78)]" data-reveal>
+        <header className="lumma-reveal relative overflow-hidden rounded-sm border border-white/16 bg-[#050913] p-6 shadow-[0_34px_80px_-48px_rgba(3,10,20,0.78)]" data-reveal>
           <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-60" />
           <div className="relative">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -824,7 +824,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                     key={item.view}
                     href={item.href}
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition",
+                      "inline-flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition",
                       isActive
                         ? "bg-white text-[#050913]"
                         : "border border-white/20 bg-white/5 text-white/85 hover:-translate-y-0.5 hover:border-lumma-sky/60",
@@ -839,24 +839,24 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <article className="lumma-scanline rounded-2xl border border-white/18 bg-black/40 p-4">
+            <article className="lumma-scanline rounded-sm border border-white/18 bg-black/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/64">Active View</p>
               <h1 className="mt-1 font-display text-3xl font-semibold text-white">{activeNav.label}</h1>
               <p className="mt-2 text-sm text-white/72">{activeNav.blurb}</p>
             </article>
-            <article className="rounded-2xl border border-white/18 bg-black/40 p-4">
+            <article className="rounded-sm border border-white/18 bg-black/40 p-4">
               <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <label className="text-sm text-white">
                   Active User ID
                   <input
-                    className="mt-1 w-full rounded-xl border border-white/20 bg-black/45 px-3 py-2 text-white"
+                    className="mt-1 w-full rounded-sm border border-white/20 bg-black/45 px-3 py-2 text-white"
                     value={userId}
                     onChange={(event) => setUserId(event.target.value || "demo-user")}
                   />
                 </label>
                 <button
                   onClick={() => void refresh()}
-                  className="h-fit rounded-xl border border-lumma-sky/52 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5"
+                  className="h-fit rounded-sm border border-lumma-sky/52 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5"
                 >
                   Refresh
                 </button>
@@ -882,7 +882,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         </header>
 
         {status && (
-          <div className="lumma-reveal mt-5 rounded-2xl border border-white/20 bg-black/45 px-4 py-3 text-sm text-white/86" data-reveal>
+          <div className="lumma-reveal mt-5 rounded-sm border border-white/20 bg-black/45 px-4 py-3 text-sm text-white/86" data-reveal>
             {status}
           </div>
         )}
@@ -915,11 +915,11 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         </section>
 
         {summary && summary.summary.user.riskFlag !== "none" && (
-          <section className="mt-4 rounded-2xl border border-lumma-alert/40 bg-lumma-alert/12 p-3 text-sm text-lumma-ink">
+          <section className="mt-4 rounded-sm border border-lumma-alert/40 bg-lumma-alert/12 p-3 text-sm text-white">
             <div className="flex items-center gap-2 font-semibold">
               <ShieldAlert size={16} /> Risk posture: {summary.summary.user.riskFlag.toUpperCase()}
             </div>
-            <p className="mt-1 text-lumma-ink/82">
+            <p className="mt-1 text-white/75">
               Strict anti-sybil is active. Abnormal bursts and suspicious referral patterns may delay rewards.
             </p>
           </section>
@@ -933,13 +933,13 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                     <Link
                       key={item.view}
                       href={item.href}
-                      className="group rounded-xl border border-lumma-ink/16 bg-[var(--lumma-panel-strong)] p-3 transition hover:-translate-y-1 hover:border-lumma-sky/58"
+                      className="group rounded-sm border border-white/16 bg-black/36 p-3 transition hover:-translate-y-1 hover:border-lumma-sky/58"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-lumma-ink">{item.label}</span>
-                        <item.icon size={14} className="text-lumma-ink/70 transition group-hover:text-lumma-ink" />
+                        <span className="text-sm font-semibold text-white">{item.label}</span>
+                        <item.icon size={14} className="text-white/65 transition group-hover:text-white" />
                       </div>
-                      <p className="mt-2 text-xs leading-relaxed text-lumma-ink/70">{item.blurb}</p>
+                      <p className="mt-2 text-xs leading-relaxed text-white/66">{item.blurb}</p>
                     </Link>
                   ))}
                 </div>
@@ -959,10 +959,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                     {quests.slice(0, 3).map((quest) => (
                       <div
                         key={quest.id}
-                        className="rounded-xl border border-lumma-ink/15 bg-[var(--lumma-panel-strong)] px-3 py-2"
+                        className="rounded-sm border border-white/14 bg-black/35 px-3 py-2"
                       >
-                        <p className="text-sm font-semibold text-lumma-ink">{quest.name}</p>
-                        <p className="text-xs text-lumma-ink/68">
+                        <p className="text-sm font-semibold text-white">{quest.name}</p>
+                        <p className="text-xs text-white/62">
                           {quest.status === "completed" ? "Completed" : "In progress"} | +{quest.points}
                         </p>
                       </div>
@@ -1007,18 +1007,21 @@ function Panel({
     <section
       id={id}
       data-reveal
-      className="lumma-reveal scroll-mt-24 rounded-[1.65rem] border border-white/14 bg-black/38 p-5 shadow-[0_20px_56px_-44px_rgba(4,11,22,0.72)] backdrop-blur"
+      className="lumma-reveal relative scroll-mt-24 overflow-hidden rounded-sm border border-white/14 bg-black/38 p-5 shadow-[0_20px_56px_-44px_rgba(4,11,22,0.72)] backdrop-blur"
     >
-      <h2 className="font-display text-xl font-semibold text-white">{title}</h2>
-      {subtitle && <p className="mt-1 text-sm text-white/66">{subtitle}</p>}
-      <div className="mt-4">{children}</div>
+      <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-35" />
+      <div className="relative">
+        <h2 className="font-display text-xl font-semibold text-white">{title}</h2>
+        {subtitle && <p className="mt-1 text-sm text-white/66">{subtitle}</p>}
+        <div className="mt-4">{children}</div>
+      </div>
     </section>
   );
 }
 
 function PrivySetupHint() {
   return (
-    <div className="rounded-2xl border border-lumma-alert/35 bg-lumma-alert/12 p-4 text-sm text-white">
+    <div className="rounded-sm border border-lumma-alert/35 bg-lumma-alert/12 p-4 text-sm text-white">
       <p className="font-semibold">Privy wallet login is not configured for this deployment.</p>
       <p className="mt-1 text-white/75">
         Add <code>NEXT_PUBLIC_PRIVY_APP_ID</code> in Vercel project envs and redeploy.
@@ -1041,7 +1044,7 @@ function MetricCard({
   return (
     <article
       className={cn(
-        "rounded-2xl border border-white/14 bg-black/36 p-4 backdrop-blur",
+        "rounded-sm border border-white/14 bg-black/36 p-4 backdrop-blur",
         pulse === "sky" && "lumma-pulse-sky",
         pulse === "lime" && "lumma-pulse-lime",
       )}
@@ -1055,7 +1058,7 @@ function MetricCard({
 
 function PulseTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-white/14 bg-black/38 px-3 py-2">
+    <div className="rounded-sm border border-white/14 bg-black/38 px-3 py-2">
       <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">{label}</p>
       <p className="mt-1 text-lg font-semibold text-white">{value.toLocaleString()}</p>
     </div>
