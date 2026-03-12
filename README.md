@@ -51,8 +51,15 @@ npm run dev
 - Official trade endpoint: `POST https://api.circle.com/v1/exchange/stablefx/trades`
 - App behavior:
 - If `STABLEFX_QUOTE_API_URL` is set, `/api/swap/quote` uses your custom signer/provider.
-- Else if `CIRCLE_API_KEY` is set, `/api/swap/quote` pulls Circle quotes.
-- Optional: set `CIRCLE_API_BASE_URL` if your key is pinned to a specific host.
+- Else if `CIRCLE_API_KEY` is set, `/api/swap/quote` pulls Circle quotes and `/api/swap/execute` runs the full Circle flow:
+- Create trade
+- Fetch trade presign typed data (taker)
+- Wallet signs trade intent
+- Register trade signature
+- Fetch funding presign typed data (permit2)
+- Wallet signs funding permit
+- Submit funding
+- Optional: set `CIRCLE_API_BASE_URL` (use `https://api-sandbox.circle.com` for sandbox keys).
 - Else it falls back to simulation quotes.
 
 ## API Endpoints

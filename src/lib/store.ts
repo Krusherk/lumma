@@ -371,17 +371,21 @@ export function executeSwap(
   from: "USDC" | "EURC",
   to: "USDC" | "EURC",
   amount: number,
+  overrides?: { rate?: number; outAmount?: number },
 ) {
   getOrCreateUser(userId);
   const quote = quoteSwap(from, to, amount);
+  const rate = typeof overrides?.rate === "number" ? overrides.rate : quote.rate;
+  const outAmount =
+    typeof overrides?.outAmount === "number" ? overrides.outAmount : quote.outAmount;
   const event: SwapEvent = {
     id: randomId("swap"),
     userId,
     from,
     to,
     amount: quote.amount,
-    rate: quote.rate,
-    outAmount: quote.outAmount,
+    rate,
+    outAmount,
     createdAt: nowIso(),
   };
   state.swapEvents.push(event);

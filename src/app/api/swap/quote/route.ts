@@ -27,6 +27,23 @@ function normalizeBaseUrl(url: string) {
   return url.replace(/\/+$/, "");
 }
 
+async function circleRequest<T>(path: string, body: Record<string, unknown>, apiKey: string, baseUrl: string) {
+  const endpoint = `${baseUrl}${path}`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  const text = await response.text();
+  const payload = text ? (JSON.parse(text) as T) : ({} as T);
+  return { response, payload, endpoint };
+}
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
@@ -80,85 +97,52 @@ export async function GET(request: Request) {
     }
 
     const circleApiKey = process.env.CIRCLE_API_KEY;
-    if (!circleApiKey) {
+    if (circleApiKey) {
+      const baseUrl = normalizeBaseUrl(
+        (process.env.CIRCLE_API_BASE_URL ?? "https://api.circle.com").trim(),
+      );
+      const { response, payload, endpoint } = await circleRequest<CircleQuotePayload>(
+        "/v1/exchange/stablefx/quotes",
+        {
+          from: { currency: from, amount: amount.toFixed(2) },
+          to: { currency: to },
+          tenor: "instant",
+        },
+        circleApiKey,
+        baseUrl,
+      );
+      if (response.ok && payload.id) {
+        const rate = Number(payload.rate ?? quote.rate);
+        const outAmount = Number(payload.to?.amount ?? quote.outAmount);
+        return ok({
+          ...quote,
+          rate,
+          outAmount,
+          mode: "circle",
+          source: "circle_stablefx",
+          circleQuoteId: payload.id,
+          circleQuote: {
+            id: payload.id,
+            rate,
+            fromAmount: Number(payload.from?.amount ?? amount),
+            toAmount: outAmount,
+            feeAmount: Number(payload.fee?.amount ?? 0),
+            expiresAt: payload.expiresAt ?? payload.expiry ?? null,
+            endpoint,
+          },
+        });
+      }
       return ok({
         ...quote,
         mode: "simulation",
-        warning: "Set CIRCLE_API_KEY to use official StableFX quotes from Circle.",
+        warning: `Circle StableFX quote failed (${response.status}): ${payload.message ?? payload.error ?? "Unknown error"}. Falling back to simulation quote.`,
       });
     }
 
-    const configuredBase = process.env.CIRCLE_API_BASE_URL?.trim();
-    const baseUrls = configuredBase
-      ? [normalizeBaseUrl(configuredBase)]
-      : ["https://api.circle.com", "https://api-sandbox.circle.com"];
-    const quotePaths = ["/v1/exchange/stablefx/quotes", "/v1/stablefx/quotes"];
-    const attempts: Array<{ url: string; status?: number; code?: string | number; message?: string }> = [];
-
-    for (const baseUrl of baseUrls) {
-      for (const path of quotePaths) {
-        const endpoint = `${baseUrl}${path}`;
-        try {
-          const circleResponse = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              Authorization: `Bearer ${circleApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: { currency: from, amount: amount.toFixed(2) },
-              to: { currency: to },
-              tenor: "instant",
-            }),
-            cache: "no-store",
-          });
-
-          const text = await circleResponse.text();
-          const circlePayload = text ? (JSON.parse(text) as CircleQuotePayload) : ({} as CircleQuotePayload);
-          if (circleResponse.ok && circlePayload.id) {
-            return ok({
-              ...quote,
-              mode: "simulation",
-              source: "circle_stablefx",
-              circleQuote: {
-                id: circlePayload.id,
-                rate: Number(circlePayload.rate ?? quote.rate),
-                toAmount: Number(circlePayload.to?.amount ?? quote.outAmount),
-                feeAmount: Number(circlePayload.fee?.amount ?? 0),
-                expiresAt: circlePayload.expiresAt ?? circlePayload.expiry ?? null,
-                endpoint,
-              },
-              warning:
-                "Quote is fetched from Circle StableFX. Full onchain settlement path requires trade signature + funding signature flow.",
-            });
-          }
-
-          attempts.push({
-            url: endpoint,
-            status: circleResponse.status,
-            code: circlePayload.code,
-            message: circlePayload.message ?? circlePayload.error ?? "Unknown Circle API error.",
-          });
-        } catch (error) {
-          attempts.push({
-            url: endpoint,
-            message: error instanceof Error ? error.message : "Network error contacting Circle.",
-          });
-        }
-      }
-    }
-
-    const topAttempt = attempts[0];
     return ok({
       ...quote,
       mode: "simulation",
-      warning: topAttempt
-        ? `Circle StableFX quote request failed (${topAttempt.status ?? "network"}${
-            topAttempt.code ? `/${topAttempt.code}` : ""
-          }): ${topAttempt.message ?? "Unknown error"}. Falling back to simulation quote.`
-        : "Circle StableFX quote request failed. Falling back to simulation quote.",
-      circleDebug: attempts.slice(0, 3),
+      warning: "Set CIRCLE_API_KEY to use official StableFX quotes from Circle.",
     });
   } catch (error) {
     return fail(error instanceof Error ? error.message : "Failed to quote swap.", 400);

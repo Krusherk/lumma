@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useWallets } from "@privy-io/react-auth";
 
 import { LummaLogo } from "@/components/brand/lumma-logo";
 import { PrivyAuth } from "@/components/platform/privy-auth";
@@ -93,19 +94,44 @@ interface MutationResponse {
   txPayload?: TxPayload;
 }
 
+interface CircleSwapState {
+  stage?: string;
+  tradeId?: string;
+  contractTradeId?: string;
+  tradeSignatureTypedData?: Record<string, unknown>;
+  fundingTypedData?: Record<string, unknown>;
+  trade?: Record<string, unknown>;
+  status?: string;
+  message?: string;
+}
+
+interface SwapExecutionResponse extends MutationResponse {
+  circle?: CircleSwapState;
+}
+
 interface SwapQuoteView {
   from: "USDC" | "EURC";
   to: "USDC" | "EURC";
   amount: number;
   rate: number;
   outAmount: number;
-  mode?: "simulation" | "onchain";
+  mode?: "simulation" | "onchain" | "circle";
   warning?: string;
   quote?: {
     minOut: number;
     fee: number;
     expiresAt: number;
     signature: string;
+  };
+  circleQuoteId?: string;
+  circleQuote?: {
+    id: string;
+    rate: number;
+    fromAmount: number;
+    toAmount: number;
+    feeAmount: number;
+    expiresAt: string | null;
+    endpoint: string;
   };
 }
 
@@ -226,6 +252,8 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   const currentView = normalizeView(view);
 
   const [userId, setUserId] = useState("demo-user");
+  const { wallets } = useWallets();
+  const primaryWallet = useMemo(() => wallets[0] ?? null, [wallets]);
   const [vaults, setVaults] = useState<VaultView[]>([]);
   const [summary, setSummary] = useState<AppSummary | null>(null);
   const [swaps, setSwaps] = useState<
@@ -245,6 +273,21 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   const [busy, setBusy] = useState(false);
   const [walletExecutor, setWalletExecutor] = useState<((payload: TxPayload) => Promise<string[]>) | null>(
     null,
+  );
+
+  const signTypedData = useCallback(
+    async (typedData: Record<string, unknown>) => {
+      if (!primaryWallet) {
+        throw new Error("Connect wallet with Privy before signing.");
+      }
+      const provider = await primaryWallet.getEthereumProvider();
+      const signature = await provider.request({
+        method: "eth_signTypedData_v4",
+        params: [primaryWallet.address, JSON.stringify(typedData)],
+      });
+      return String(signature);
+    },
+    [primaryWallet],
   );
 
   const refresh = useCallback(async () => {
@@ -383,6 +426,89 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         amount: amount.toString(),
       }).toString();
       const swapQuote = await api<SwapQuoteView>(`/api/swap/quote?${query}`, {}, userId);
+      if (swapQuote.mode === "circle" && swapQuote.circleQuoteId) {
+        if (!primaryWallet?.address) {
+          throw new Error("Connect wallet with Privy before running StableFX.");
+        }
+        setStatus("Preparing Circle StableFX trade...");
+        const prepare = await api<SwapExecutionResponse>(
+          "/api/swap/execute",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              from,
+              to,
+              amount,
+              circle: {
+                stage: "trade",
+                quoteId: swapQuote.circleQuoteId,
+                recipientAddress: primaryWallet.address,
+              },
+            }),
+          },
+          userId,
+        );
+        const tradeTypedData = prepare.circle?.tradeSignatureTypedData;
+        if (!tradeTypedData || !prepare.circle?.tradeId) {
+          return prepare.circle?.message ?? "Circle trade preparation incomplete.";
+        }
+
+        setStatus("Sign trade intent in your wallet...");
+        const tradeSignature = await signTypedData(tradeTypedData);
+        const tradeSigned = await api<SwapExecutionResponse>(
+          "/api/swap/execute",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              from,
+              to,
+              amount,
+              circle: {
+                stage: "trade_signature",
+                tradeId: prepare.circle.tradeId,
+                recipientAddress: primaryWallet.address,
+                signature: tradeSignature,
+                typedData: tradeTypedData,
+              },
+            }),
+          },
+          userId,
+        );
+        const fundingTypedData = tradeSigned.circle?.fundingTypedData;
+        if (!fundingTypedData || !tradeSigned.circle?.contractTradeId) {
+          return (
+            tradeSigned.circle?.message ??
+            tradeSigned.circle?.status ??
+            "Funding data not ready yet. Retry shortly."
+          );
+        }
+
+        setStatus("Sign funding permit in your wallet...");
+        const fundingSignature = await signTypedData(fundingTypedData);
+        const funded = await api<SwapExecutionResponse>(
+          "/api/swap/execute",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              from,
+              to,
+              amount,
+              circle: {
+                stage: "funding_submit",
+                tradeId: prepare.circle.tradeId,
+                contractTradeId: tradeSigned.circle.contractTradeId,
+                signature: fundingSignature,
+                typedData: fundingTypedData,
+                rate: swapQuote.rate,
+                outAmount: swapQuote.outAmount,
+              },
+            }),
+          },
+          userId,
+        );
+        return funded.txPayload?.note ?? "Circle StableFX funding submitted.";
+      }
+
       const body: Record<string, unknown> = {
         from,
         to,
@@ -406,7 +532,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
       }
       return txStatus;
     });
-  }, [run, submitTxPayload, swapAmount, swapDirection, userId]);
+  }, [run, submitTxPayload, swapAmount, swapDirection, userId, primaryWallet, signTypedData]);
 
   const handleTask = useCallback(
     (taskKey: string, label: string) => {

@@ -365,12 +365,21 @@ export async function quoteSwap(from: "USDC" | "EURC", to: "USDC" | "EURC", amou
   };
 }
 
-export async function executeSwap(userId: string, from: "USDC" | "EURC", to: "USDC" | "EURC", amount: number) {
+export async function executeSwap(
+  userId: string,
+  from: "USDC" | "EURC",
+  to: "USDC" | "EURC",
+  amount: number,
+  overrides?: { rate?: number; outAmount?: number },
+) {
   const db = getDbOrNull();
-  if (!db) return memoryStore.executeSwap(userId, from, to, amount);
+  if (!db) return memoryStore.executeSwap(userId, from, to, amount, overrides);
 
   await ensureUserDb(userId);
   const quote = await quoteSwap(from, to, amount);
+  const rate = typeof overrides?.rate === "number" ? overrides.rate : quote.rate;
+  const outAmount =
+    typeof overrides?.outAmount === "number" ? overrides.outAmount : quote.outAmount;
   const { data, error } = await db
     .from("swap_events")
     .insert({
@@ -378,8 +387,8 @@ export async function executeSwap(userId: string, from: "USDC" | "EURC", to: "US
       from_asset: quote.from,
       to_asset: quote.to,
       amount: quote.amount,
-      rate: quote.rate,
-      out_amount: quote.outAmount,
+      rate,
+      out_amount: outAmount,
     })
     .select("*")
     .single();
