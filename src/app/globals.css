@@ -14,16 +14,17 @@
 }
 
 html[data-theme="dark"] {
-  --lumma-bg: #060b12;
-  --lumma-fg: #e8edf6;
-  --lumma-ink: #e8edf6;
+  --lumma-bg: #000000;
+  --lumma-fg: #f5f7fa;
+  --lumma-ink: #f5f7fa;
   --lumma-sky: #58ccff;
-  --lumma-lime: #bff05f;
-  --lumma-sand: #101926;
+  --lumma-lime: #c6ff5c;
+  --lumma-sand: #080c14;
   --lumma-alert: #ff8f8f;
-  --lumma-panel: rgba(14, 23, 34, 0.72);
-  --lumma-panel-strong: rgba(12, 20, 30, 0.88);
-  --lumma-border: rgba(232, 237, 246, 0.16);
+  --lumma-panel: rgba(10, 15, 22, 0.45);
+  --lumma-panel-strong: rgba(12, 18, 26, 0.85);
+  --lumma-border: rgba(255, 255, 255, 0.08);
+  --lumma-glass-border: rgba(255, 255, 255, 0.12);
 }
 
 @theme inline {
@@ -56,10 +57,12 @@ a {
 }
 
 @keyframes lumma-float {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -70,6 +73,7 @@ a {
     opacity: 0;
     transform: translateY(14px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -80,6 +84,7 @@ a {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -90,10 +95,12 @@ a {
     transform: translateX(-40%);
     opacity: 0;
   }
+
   40%,
   70% {
     opacity: 0.4;
   }
+
   100% {
     transform: translateX(140%);
     opacity: 0;
@@ -101,11 +108,13 @@ a {
 }
 
 @keyframes lumma-drift {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
     opacity: 0.56;
   }
+
   50% {
     transform: translate3d(28px, -22px, 0) scale(1.08);
     opacity: 0.86;
@@ -113,20 +122,24 @@ a {
 }
 
 @keyframes lumma-glow-sky {
+
   0%,
   100% {
     box-shadow: 0 16px 46px -38px rgba(94, 233, 255, 0.7);
   }
+
   50% {
     box-shadow: 0 22px 54px -36px rgba(94, 233, 255, 0.95);
   }
 }
 
 @keyframes lumma-glow-lime {
+
   0%,
   100% {
     box-shadow: 0 16px 46px -38px rgba(198, 255, 92, 0.68);
   }
+
   50% {
     box-shadow: 0 22px 54px -36px rgba(198, 255, 92, 0.92);
   }
@@ -142,8 +155,18 @@ a {
 
 .lumma-glass {
   background: var(--lumma-panel);
-  border: 1px solid var(--lumma-border);
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--lumma-glass-border);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.lumma-glass-panel {
+  background: linear-gradient(145deg, rgba(20, 25, 35, 0.4) 0%, rgba(10, 15, 22, 0.2) 100%);
+  border: 1px solid var(--lumma-glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
 }
 
 .lumma-grid {
@@ -174,12 +197,10 @@ a {
   left: -20%;
   width: 40%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(94, 233, 255, 0.22) 45%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(94, 233, 255, 0.22) 45%,
+      transparent 100%);
   animation: lumma-scan 4.5s ease-in-out infinite;
 }
 
@@ -187,22 +208,21 @@ a {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 0%, rgba(88, 204, 255, 0.16), transparent 38%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 18%);
+    radial-gradient(circle at 50% -20%, rgba(88, 204, 255, 0.15), transparent 50%),
+    radial-gradient(circle at 80% 40%, rgba(198, 255, 92, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0) 25%);
 }
 
 .lumma-noir-grid::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.07) 0px,
-    rgba(255, 255, 255, 0.07) 1px,
-    rgba(255, 255, 255, 0) 3px,
-    rgba(255, 255, 255, 0) 6px
-  );
-  opacity: 0.18;
+  background: repeating-linear-gradient(180deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 1px,
+      rgba(255, 255, 255, 0) 3px,
+      rgba(255, 255, 255, 0) 6px);
+  opacity: 0.15;
 }
 
 .lumma-noir-app {
@@ -216,13 +236,11 @@ a {
 }
 
 .lumma-scanlines {
-  background: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.09) 0px,
-    rgba(255, 255, 255, 0.09) 1px,
-    rgba(255, 255, 255, 0) 4px,
-    rgba(255, 255, 255, 0) 8px
-  );
+  background: repeating-linear-gradient(180deg,
+      rgba(255, 255, 255, 0.09) 0px,
+      rgba(255, 255, 255, 0.09) 1px,
+      rgba(255, 255, 255, 0) 4px,
+      rgba(255, 255, 255, 0) 8px);
 }
 
 .lumma-reveal {
@@ -305,6 +323,7 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -312,4 +331,3 @@ a {
     transition: none !important;
   }
 }
-
