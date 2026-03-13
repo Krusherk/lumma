@@ -17,10 +17,28 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useWallets } from "@privy-io/react-auth";
+import { motion, Variants } from "framer-motion";
 
 import { LummaLogo } from "@/components/brand/lumma-logo";
 import { PrivyAuth } from "@/components/platform/privy-auth";
 import { taskDefinitions } from "@/lib/tasks";
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 100, damping: 20 },
+  },
+};
 import type { TxPayload } from "@/lib/tx";
 import { cn } from "@/lib/utils";
 
@@ -166,63 +184,63 @@ const navItems: Array<{
   icon: LucideIcon;
   blurb: string;
 }> = [
-  {
-    view: "overview",
-    href: "/app",
-    label: "Overview",
-    icon: LayoutDashboard,
-    blurb: "Mission control across the whole protocol loop.",
-  },
-  {
-    view: "vaults",
-    href: "/app/vaults",
-    label: "Vaults",
-    icon: Vault,
-    blurb: "Manage deposits and withdrawals by risk tier.",
-  },
-  {
-    view: "swap",
-    href: "/app/swap",
-    label: "Swap",
-    icon: ArrowLeftRight,
-    blurb: "Run USDC/EURC swaps and track milestones.",
-  },
-  {
-    view: "tasks",
-    href: "/app/tasks",
-    label: "Tasks + Points",
-    icon: ListTodo,
-    blurb: "Farm points through daily, social, and activity tasks.",
-  },
-  {
-    view: "leaderboard",
-    href: "/app/leaderboard",
-    label: "Leaderboard",
-    icon: Trophy,
-    blurb: "Weekly, monthly, and all-time ranking boards.",
-  },
-  {
-    view: "referrals",
-    href: "/app/referrals",
-    label: "Referrals",
-    icon: Link2,
-    blurb: "Track invite performance and referral rewards.",
-  },
-  {
-    view: "quests",
-    href: "/app/quests",
-    label: "Yield Quests",
-    icon: Orbit,
-    blurb: "Complete mission chains and unlock multipliers.",
-  },
-  {
-    view: "nfts",
-    href: "/app/nfts",
-    label: "NFT Milestones",
-    icon: BadgeCheck,
-    blurb: "Claim reward NFTs as swap counts climb.",
-  },
-];
+    {
+      view: "overview",
+      href: "/app",
+      label: "Overview",
+      icon: LayoutDashboard,
+      blurb: "Mission control across the whole protocol loop.",
+    },
+    {
+      view: "vaults",
+      href: "/app/vaults",
+      label: "Vaults",
+      icon: Vault,
+      blurb: "Manage deposits and withdrawals by risk tier.",
+    },
+    {
+      view: "swap",
+      href: "/app/swap",
+      label: "Swap",
+      icon: ArrowLeftRight,
+      blurb: "Run USDC/EURC swaps and track milestones.",
+    },
+    {
+      view: "tasks",
+      href: "/app/tasks",
+      label: "Tasks + Points",
+      icon: ListTodo,
+      blurb: "Farm points through daily, social, and activity tasks.",
+    },
+    {
+      view: "leaderboard",
+      href: "/app/leaderboard",
+      label: "Leaderboard",
+      icon: Trophy,
+      blurb: "Weekly, monthly, and all-time ranking boards.",
+    },
+    {
+      view: "referrals",
+      href: "/app/referrals",
+      label: "Referrals",
+      icon: Link2,
+      blurb: "Track invite performance and referral rewards.",
+    },
+    {
+      view: "quests",
+      href: "/app/quests",
+      label: "Yield Quests",
+      icon: Orbit,
+      blurb: "Complete mission chains and unlock multipliers.",
+    },
+    {
+      view: "nfts",
+      href: "/app/nfts",
+      label: "NFT Milestones",
+      icon: BadgeCheck,
+      blurb: "Claim reward NFTs as swap counts climb.",
+    },
+  ];
 
 async function api<T>(path: string, init: RequestInit = {}, userId: string): Promise<T> {
   const response = await fetch(path, {
@@ -912,24 +930,29 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   );
 
   return (
-    <main className="lumma-noir-app relative min-h-screen overflow-hidden bg-[#04070e] pb-20 text-[#eceef2]">
+    <main className="lumma-noir-app relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] pb-20 text-[var(--lumma-fg)]">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="lumma-noir-grid" />
+        <div className="lumma-noir-grid opacity-60" />
       </div>
 
-      <div className="mx-auto max-w-7xl px-5 py-9">
-        <header className="lumma-reveal relative overflow-hidden rounded-sm border border-white/16 bg-[#050913] p-6 shadow-[0_34px_80px_-48px_rgba(3,10,20,0.78)]" data-reveal>
-          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-60" />
-          <div className="relative">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <motion.header
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="relative overflow-hidden rounded-[32px] border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-6 sm:p-10 lumma-glass-panel"
+        >
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
+          <div className="relative z-10">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               <LummaLogo />
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <span className="rounded-full border border-white/22 bg-white/6 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/82">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <span className="rounded-full border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lumma-fg)]/80 backdrop-blur-md">
                   Built on Arc
                 </span>
                 <a
                   href="https://docs.lumma.xyz"
-                  className="rounded-lg border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-white/86 transition hover:bg-white/10"
+                  className="rounded-full border border-[var(--lumma-border)] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--lumma-fg)]/80 transition hover:bg-[var(--lumma-fg)]/10"
                 >
                   Docs
                 </a>
@@ -944,12 +967,12 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
               </div>
             </div>
 
-            <p className="mt-5 max-w-4xl text-xl font-semibold leading-tight text-white sm:text-2xl">
+            <p className="mt-8 max-w-3xl font-display text-2xl font-semibold leading-tight text-[var(--lumma-fg)] sm:text-3xl tracking-tight">
               Cockpit rebuilt into a modular command deck. No more one-page overload.
             </p>
 
-            <div className="mt-5 overflow-x-auto pb-1">
-              <nav className="flex min-w-max items-center gap-2">
+            <div className="mt-8 overflow-x-auto pb-2 scrollbar-hide">
+              <nav className="flex min-w-max items-center gap-2 rounded-2xl border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 p-2 backdrop-blur-md w-max">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.view === currentView;
@@ -958,13 +981,13 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                       key={item.view}
                       href={item.href}
                       className={cn(
-                        "inline-flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition",
+                        "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold uppercase tracking-[0.13em] transition-all relative overflow-hidden",
                         isActive
-                          ? "bg-white text-[#050913]"
-                          : "border border-white/20 bg-white/5 text-white/85 hover:-translate-y-0.5 hover:border-lumma-sky/60",
+                          ? "bg-[var(--lumma-fg)] text-[var(--lumma-bg)] shadow-md"
+                          : "text-[var(--lumma-fg)]/70 hover:text-[var(--lumma-fg)] hover:bg-[var(--lumma-fg)]/10",
                       )}
                     >
-                      <Icon size={14} />
+                      <Icon size={14} className={isActive ? "opacity-100" : "opacity-70"} />
                       {item.label}
                     </Link>
                   );
@@ -972,18 +995,19 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
               </nav>
             </div>
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <article className="lumma-scanline rounded-sm border border-white/18 bg-black/40 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/64">Active View</p>
-                <h1 className="mt-1 font-display text-3xl font-semibold text-white">{activeNav.label}</h1>
-                <p className="mt-2 text-sm text-white/72">{activeNav.blurb}</p>
+            <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <article className="relative overflow-hidden rounded-[24px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 p-6 backdrop-blur-md transition hover:bg-[var(--lumma-fg)]/[0.08]">
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--lumma-fg)]/[0.05] to-transparent opacity-0 transition-opacity hover:opacity-100" />
+                <p className="relative z-10 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lumma-sky)]">Active View</p>
+                <h1 className="relative z-10 mt-2 font-display text-3xl font-semibold text-[var(--lumma-fg)] group-hover:text-[var(--lumma-sky)] transition-colors">{activeNav.label}</h1>
+                <p className="relative z-10 mt-2 text-[15px] leading-relaxed text-[var(--lumma-fg)]/70">{activeNav.blurb}</p>
               </article>
-              <article className="rounded-sm border border-white/18 bg-black/40 p-4">
+              <article className="rounded-[24px] border border-[var(--lumma-border)] bg-[var(--lumma-bg)]/80 p-6 backdrop-blur-md shadow-sm">
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                  <label className="text-sm text-white">
+                  <label className="text-sm font-medium text-[var(--lumma-fg)]">
                     Active User ID
                     <input
-                      className="mt-1 w-full rounded-sm border border-white/20 bg-black/45 px-3 py-2 text-white disabled:cursor-not-allowed disabled:opacity-70"
+                      className="mt-2 w-full rounded-xl border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 px-4 py-2.5 text-[var(--lumma-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--lumma-sky)]/50 focus:border-transparent transition-all disabled:opacity-50"
                       value={userId}
                       onChange={(event) => setUserId(event.target.value || "demo-user")}
                       disabled={privyEnabled}
@@ -991,7 +1015,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                   </label>
                   <button
                     onClick={() => void refresh()}
-                    className="h-fit rounded-sm border border-lumma-sky/52 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5"
+                    className="h-fit rounded-xl border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-5 py-2.5 text-sm font-semibold text-[var(--lumma-sky)] hover:bg-[var(--lumma-sky)]/20 transition-all hover:scale-[1.02] shadow-[0_0_15px_rgba(14,165,233,0.1)] active:scale-95"
                   >
                     Refresh
                   </button>
@@ -1006,14 +1030,14 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
               </article>
             </div>
 
-            <p className="mt-3 text-xs text-white/62">
+            <p className="mt-3 text-[13px] text-[var(--lumma-fg)]/50">
               APY values are estimated from the testnet model and update every 15 minutes.
             </p>
           </div>
-        </header>
+        </motion.header>
 
         {!privyEnabled && (
-          <div className="mt-4">
+          <div className="mt-6">
             <PrivySetupHint />
           </div>
         )}
@@ -1024,7 +1048,12 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           </div>
         )}
 
-        <section className="lumma-reveal mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-reveal>
+        <motion.section
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        >
           <MetricCard
             icon={<Trophy size={18} />}
             label="Settled Points"
@@ -1049,19 +1078,19 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             value={summary?.summary.totalVaultValue ?? 0}
             pulse="sky"
           />
-        </section>
+        </motion.section>
 
         {summary && summary.summary.user.riskFlag !== "none" && (
-          <section className="mt-4 rounded-sm border border-lumma-alert/40 bg-lumma-alert/12 p-3 text-sm text-white">
-            <div className="flex items-center gap-2 font-semibold">
-              <ShieldAlert size={16} /> Risk posture: {summary.summary.user.riskFlag.toUpperCase()}
+          <motion.section variants={fadeUp} className="mt-4 rounded-xl border border-[var(--lumma-alert)]/40 bg-[var(--lumma-alert)]/10 p-4 text-[15px] text-[var(--lumma-fg)] backdrop-blur-md shadow-sm">
+            <div className="flex items-center gap-2 font-semibold text-[var(--lumma-alert)]">
+              <ShieldAlert size={18} /> Risk posture: {summary.summary.user.riskFlag.toUpperCase()}
             </div>
-            <p className="mt-1 text-white/75">
+            <p className="mt-2 text-[14px] text-[var(--lumma-fg)]/70">
               Strict anti-sybil is active. Abnormal bursts and suspicious referral patterns may delay rewards.
             </p>
-          </section>
+          </motion.section>
         )}
-        <section className="mt-8 space-y-6">
+        <div className="mt-8 space-y-6">
           {currentView === "overview" && (
             <>
               <Panel title="Command Deck" subtitle="Each system is now isolated in dedicated pages.">
@@ -1123,7 +1152,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           {currentView === "referrals" && renderReferralsPanel()}
           {currentView === "quests" && renderQuestsPanel()}
           {currentView === "nfts" && renderNftsPanel()}
-        </section>
+        </div>
       </div>
     </main>
   );
@@ -1141,18 +1170,18 @@ function Panel({
   id?: string;
 }) {
   return (
-    <section
+    <motion.section
+      variants={fadeUp}
       id={id}
-      data-reveal
-      className="lumma-reveal relative scroll-mt-24 overflow-hidden rounded-sm border border-white/14 bg-black/38 p-5 shadow-[0_20px_56px_-44px_rgba(4,11,22,0.72)] backdrop-blur"
+      className="relative scroll-mt-24 overflow-hidden rounded-[32px] border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-6 sm:p-10 lumma-glass-panel"
     >
-      <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-35" />
-      <div className="relative">
-        <h2 className="font-display text-xl font-semibold text-white">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-white/66">{subtitle}</p>}
-        <div className="mt-4">{children}</div>
+      <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-20 mix-blend-overlay" />
+      <div className="relative z-10">
+        <h2 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-semibold text-[var(--lumma-fg)]">{title}</h2>
+        {subtitle && <p className="mt-2 text-[15px] text-[var(--lumma-fg)]/60 max-w-2xl">{subtitle}</p>}
+        <div className="mt-8">{children}</div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -1187,17 +1216,26 @@ function MetricCard({
   pulse: "sky" | "lime" | "none";
 }) {
   return (
-    <article
+    <motion.article
+      variants={fadeUp}
       className={cn(
-        "rounded-sm border border-white/14 bg-black/36 p-4 backdrop-blur",
-        pulse === "sky" && "lumma-pulse-sky",
-        pulse === "lime" && "lumma-pulse-lime",
+        "relative overflow-hidden rounded-[24px] border border-[var(--lumma-border)] bg-[var(--lumma-bg)]/80 p-5 sm:p-6 backdrop-blur-md shadow-sm transition-transform hover:-translate-y-1 hover:shadow-lg",
+        pulse === "sky" && "group",
+        pulse === "lime" && "group",
       )}
     >
-      <div className="flex items-center gap-2 text-white/74">{icon}</div>
-      <p className="mt-2 text-xs uppercase tracking-[0.13em] text-white/58">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-white">{value.toLocaleString()}</p>
-    </article>
+      {pulse === "sky" && (
+        <div className="absolute inset-0 bg-gradient-radial from-[var(--lumma-sky)]/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      )}
+      {pulse === "lime" && (
+        <div className="absolute inset-0 bg-gradient-radial from-[var(--lumma-lime)]/10 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      )}
+      <div className="relative z-10 flex items-center gap-3 text-[var(--lumma-fg)]/80">
+        <div className="rounded-full bg-[var(--lumma-fg)]/5 p-2">{icon}</div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lumma-fg)]/60">{label}</p>
+      </div>
+      <p className="relative z-10 mt-4 text-[clamp(1.8rem,4vw,2.5rem)] font-semibold text-[var(--lumma-fg)] tabular-nums leading-none tracking-tight">{value.toLocaleString()}</p>
+    </motion.article>
   );
 }
 

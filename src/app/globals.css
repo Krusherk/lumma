@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --lumma-bg: #f7f4ea;
+  --lumma-bg: #fafafa;
   --lumma-fg: #10151d;
   --lumma-ink: #10151d;
-  --lumma-sky: #5ee9ff;
-  --lumma-lime: #c6ff5c;
-  --lumma-sand: #fffcf4;
-  --lumma-alert: #ff6b6b;
-  --lumma-panel: rgba(255, 255, 255, 0.72);
-  --lumma-panel-strong: rgba(255, 255, 255, 0.9);
-  --lumma-border: rgba(16, 21, 29, 0.16);
+  --lumma-sky: #0ea5e9;
+  --lumma-lime: #65a30d;
+  --lumma-sand: #ffffff;
+  --lumma-alert: #ef4444;
+  --lumma-panel: rgba(255, 255, 255, 0.75);
+  --lumma-panel-strong: rgba(255, 255, 255, 0.95);
+  --lumma-border: rgba(16, 21, 29, 0.08);
+  --lumma-glass-border: rgba(16, 21, 29, 0.12);
 }
 
 html[data-theme="dark"] {
@@ -169,6 +170,19 @@ a {
   border-radius: 24px;
 }
 
+html[data-theme="light"] .lumma-glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+html[data-theme="light"] .lumma-glass {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 .lumma-grid {
   position: relative;
 }
@@ -183,6 +197,12 @@ a {
     linear-gradient(to bottom, rgba(120, 130, 150, 0.08) 1px, transparent 1px);
   background-size: 36px 36px;
   mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+}
+
+html[data-theme="light"] .lumma-grid::before {
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
 }
 
 .lumma-scanline {
@@ -204,6 +224,13 @@ a {
   animation: lumma-scan 4.5s ease-in-out infinite;
 }
 
+html[data-theme="light"] .lumma-scanline::after {
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.03) 45%,
+      transparent 100%);
+}
+
 .lumma-noir-grid {
   position: absolute;
   inset: 0;
@@ -222,6 +249,23 @@ a {
       rgba(255, 255, 255, 0.03) 1px,
       rgba(255, 255, 255, 0) 3px,
       rgba(255, 255, 255, 0) 6px);
+  opacity: 0.15;
+}
+
+html[data-theme="light"] .lumma-noir-grid {
+  background:
+    radial-gradient(circle at 50% -20%, rgba(14, 165, 233, 0.08), transparent 50%),
+    radial-gradient(circle at 80% 40%, rgba(101, 163, 13, 0.04), transparent 40%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.01), rgba(0, 0, 0, 0) 25%);
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+html[data-theme="light"] .lumma-noir-grid::before {
+  background: none;
+
   opacity: 0.15;
 }
 
