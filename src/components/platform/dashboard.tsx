@@ -626,32 +626,32 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
     const rows = typeof limit === "number" ? vaults.slice(0, limit) : vaults;
     return (
       <Panel title="Yield Vaults" subtitle="Estimated APY model, testnet execution rails.">
-        {loading && <p className="text-sm text-white/66">Loading vault rails...</p>}
+        {loading && <p className="text-sm text-[var(--lumma-fg)]/60">Loading vault rails...</p>}
         <div className="grid gap-4">
           {rows.map((vault) => (
             <article
               key={vault.id}
-              className="rounded-md border border-white/14 bg-black/35 p-4 shadow-[0_20px_50px_-36px_rgba(8,14,26,0.6)]"
+              className="rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-4 shadow-sm backdrop-blur-md"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-display text-lg font-semibold text-white">{vault.name}</h3>
+                <h3 className="font-display text-lg font-semibold text-[var(--lumma-fg)]">{vault.name}</h3>
                 <span
                   className={cn(
-                    "rounded-sm px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
+                    "rounded-[6px] px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em]",
                     vault.risk === "aggressive"
-                      ? "bg-lumma-alert/18 text-white"
+                      ? "bg-[var(--lumma-alert)]/10 text-[var(--lumma-alert)]"
                       : vault.risk === "balanced"
-                        ? "bg-lumma-sky/22 text-white"
-                        : "bg-lumma-lime/32 text-white",
+                        ? "bg-[var(--lumma-sky)]/10 text-[var(--lumma-sky)]"
+                        : "bg-[var(--lumma-lime)]/10 text-[var(--lumma-lime)]",
                   )}
                 >
                   {vault.risk}
                 </span>
               </div>
-              <p className="mt-1 text-sm text-white/66">
+              <p className="mt-1 text-sm text-[var(--lumma-fg)]/60">
                 {vault.estimatedApyLabel}: {vault.estimatedApy}% | TVL ${vault.tvlUsd.toLocaleString()} | Cap ${vault.txCapUsd.toLocaleString()}
               </p>
-              <p className="mt-2 text-sm font-medium text-white">
+              <p className="mt-2 text-sm font-medium text-[var(--lumma-fg)]">
                 Balance: ${vault.position.principalUsd.toFixed(2)} | Earned: ${vault.position.earnedUsd.toFixed(2)}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -666,19 +666,19 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                       [vault.id]: event.target.value,
                     }))
                   }
-                  className="w-32 rounded-sm border border-white/20 bg-black/45 px-2.5 py-1.5 text-sm text-white"
+                  className="w-32 rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-bg)] px-2.5 py-1.5 text-sm text-[var(--lumma-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--lumma-sky)]/50 focus:border-transparent transition-all"
                 />
                 <button
                   disabled={busy || vault.paused}
                   onClick={() => handleDeposit(vault.id)}
-                  className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-3 py-1.5 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-60"
+                  className="rounded-md border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20 disabled:opacity-50"
                 >
                   Deposit
                 </button>
                 <button
                   disabled={busy}
                   onClick={() => handleWithdraw(vault.id)}
-                  className="rounded-sm border border-white/28 bg-black/45 px-3 py-1.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
+                  className="rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-bg)]/50 px-3 py-1.5 text-sm font-semibold text-[var(--lumma-fg)] transition hover:bg-[var(--lumma-fg)]/5 disabled:opacity-50"
                 >
                   Withdraw
                 </button>
@@ -691,7 +691,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <div className="mt-4">
             <Link
               href="/app/vaults"
-              className="inline-flex items-center gap-2 rounded-sm border border-white/24 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/8"
+              className="inline-flex items-center gap-2 rounded-md border border-[var(--lumma-border)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lumma-fg)] transition hover:bg-[var(--lumma-fg)]/5"
             >
               Open Full Vault Deck
             </Link>
@@ -709,10 +709,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <button
             onClick={() => setSwapDirection("USDC_EURC")}
             className={cn(
-              "rounded-sm px-3 py-1.5 text-sm font-semibold",
+              "rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
               swapDirection === "USDC_EURC"
-                ? "border border-lumma-sky/56 bg-lumma-sky/14 text-lumma-sky"
-                : "border border-white/28 bg-black/45 text-white",
+                ? "border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 text-[var(--lumma-sky)]"
+                : "border border-[var(--lumma-border)] bg-[var(--lumma-bg)]/50 text-[var(--lumma-fg)] hover:bg-[var(--lumma-fg)]/5",
             )}
           >
             USDC to EURC
@@ -720,10 +720,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <button
             onClick={() => setSwapDirection("EURC_USDC")}
             className={cn(
-              "rounded-sm px-3 py-1.5 text-sm font-semibold",
+              "rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
               swapDirection === "EURC_USDC"
-                ? "border border-lumma-sky/56 bg-lumma-sky/14 text-lumma-sky"
-                : "border border-white/28 bg-black/45 text-white",
+                ? "border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 text-[var(--lumma-sky)]"
+                : "border border-[var(--lumma-border)] bg-[var(--lumma-bg)]/50 text-[var(--lumma-fg)] hover:bg-[var(--lumma-fg)]/5",
             )}
           >
             EURC to USDC
@@ -733,22 +733,22 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             min="1"
             value={swapAmount}
             onChange={(event) => setSwapAmount(event.target.value)}
-            className="w-32 rounded-sm border border-white/20 bg-black/45 px-2.5 py-1.5 text-sm text-white"
+            className="w-32 rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-bg)] px-2.5 py-1.5 text-sm text-[var(--lumma-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--lumma-sky)]/50 focus:border-transparent transition-all"
           />
           <button
             disabled={busy}
             onClick={handleSwap}
-            className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-3 py-1.5 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-60"
+            className="rounded-md border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20 disabled:opacity-50"
           >
             Execute Swap
           </button>
         </div>
-        <p className="mt-2 text-xs text-white/66">Swap milestones: {milestoneProgress.join(" | ")}</p>
+        <p className="mt-2 text-xs text-[var(--lumma-fg)]/60">Swap milestones: {milestoneProgress.join(" | ")}</p>
         <div className="mt-4 space-y-2">
           {rows.map((swap) => (
             <div
               key={swap.id}
-              className="rounded-sm border border-white/12 bg-black/32 px-3 py-2 text-sm text-white"
+              className="rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] px-3 py-2 text-sm text-[var(--lumma-fg)]"
             >
               {swap.from} to {swap.to} | ${swap.amount.toFixed(2)} | {new Date(swap.createdAt).toLocaleString()}
             </div>
@@ -759,7 +759,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           <div className="mt-4">
             <Link
               href="/app/swap"
-              className="inline-flex items-center gap-2 rounded-sm border border-white/24 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/8"
+              className="inline-flex items-center gap-2 rounded-md border border-[var(--lumma-border)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lumma-fg)] transition hover:bg-[var(--lumma-fg)]/5"
             >
               Open Full Swap Log
             </Link>
@@ -791,7 +791,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             key={task.key}
             disabled={busy}
             onClick={() => handleTask(task.key, task.label)}
-            className="flex items-center justify-between rounded-sm border border-white/16 bg-black/34 px-3 py-2 text-left text-sm text-white transition hover:-translate-y-0.5 hover:border-lumma-sky/65 disabled:opacity-60"
+            className="flex items-center justify-between rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] px-3 py-2 text-left text-sm text-[var(--lumma-fg)] transition hover:-translate-y-0.5 hover:border-[var(--lumma-sky)]/50 hover:bg-[var(--lumma-fg)]/5 disabled:opacity-50"
           >
             <span>{task.label}</span>
             <span className="font-semibold">+{task.points}</span>
@@ -802,10 +802,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   );
   const renderReferralsPanel = () => (
     <Panel title="Referral Engine" subtitle="Permanent point share with anti-abuse activation controls.">
-      <p className="text-sm text-white/80">
-        Your code: <span className="font-semibold text-white">{summary?.referrals.referralCode ?? "..."}</span>
+      <p className="text-sm text-[var(--lumma-fg)]/80">
+        Your code: <span className="font-semibold text-[var(--lumma-fg)]">{summary?.referrals.referralCode ?? "..."}</span>
       </p>
-      <p className="mt-1 text-sm text-white/66">
+      <p className="mt-1 text-sm text-[var(--lumma-fg)]/60">
         Invites {summary?.referrals.totalInvites ?? 0} | Active {summary?.referrals.activeInvites ?? 0} | Rewards {summary?.referrals.rewardsEarned ?? 0}
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -813,12 +813,12 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
           value={referralCodeInput}
           onChange={(event) => setReferralCodeInput(event.target.value.toUpperCase())}
           placeholder="Enter referral code"
-          className="w-full rounded-sm border border-white/20 bg-black/45 px-3 py-2 text-sm text-white"
+          className="w-full rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-bg)] px-3 py-2 text-sm text-[var(--lumma-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--lumma-sky)]/50 focus:border-transparent transition-all"
         />
         <button
           disabled={busy}
           onClick={handleApplyReferral}
-          className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-60"
+          className="rounded-md border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-4 py-2 text-sm font-semibold text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20 disabled:opacity-50"
         >
           Apply
         </button>
@@ -828,7 +828,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
 
   const renderNftsPanel = () => (
     <Panel title="NFT Milestones" subtitle="Claim tiers as swap counts unlock each level.">
-      <p className="text-sm text-white/72">
+      <p className="text-sm text-[var(--lumma-fg)]/70">
         Eligible: {(summary?.nft.eligible ?? []).join(", ") || "none"} | Claimed: {(summary?.nft.claimed ?? []).join(", ") || "none"}
       </p>
       <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -837,7 +837,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             key={tier}
             disabled={busy}
             onClick={() => handleClaimNft(tier)}
-            className="rounded-sm border border-white/24 bg-black/34 px-3 py-2 text-sm font-semibold capitalize text-white transition hover:-translate-y-0.5 hover:border-lumma-lime/60 disabled:opacity-60"
+            className="rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] px-3 py-2 text-sm font-semibold capitalize text-[var(--lumma-fg)] transition hover:-translate-y-0.5 hover:border-[var(--lumma-lime)]/50 hover:bg-[var(--lumma-fg)]/5 disabled:opacity-50"
           >
             Claim {tier}
           </button>
@@ -852,24 +852,25 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         {quests.map((quest) => (
           <article
             key={quest.id}
-            className="rounded-sm border border-white/16 bg-black/35 p-3 shadow-[0_20px_44px_-36px_rgba(8,16,30,0.62)]"
+            className="rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-4 shadow-sm backdrop-blur-md"
           >
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="font-semibold text-white">{quest.name}</p>
-                <p className="text-xs text-white/62">+{quest.points} points | scarcity {quest.scarcity}</p>
+                <p className="font-semibold text-[var(--lumma-fg)]">{quest.name}</p>
+                <p className="text-[13px] text-[var(--lumma-fg)]/60">+{quest.points} points | scarcity {quest.scarcity}</p>
               </div>
               <button
                 disabled={busy || quest.status === "completed"}
                 onClick={() => handleCompleteQuest(quest.id)}
-                className="rounded-sm border border-lumma-sky/55 bg-lumma-sky/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-lumma-sky transition hover:-translate-y-0.5 disabled:opacity-50"
+                className="rounded-md border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20 disabled:opacity-50"
               >
                 {quest.status === "completed" ? "Done" : "Complete"}
               </button>
             </div>
-            <ul className="mt-2 space-y-1 text-xs text-white/72">
+            <ul className="mt-3 space-y-1 text-[13px] text-[var(--lumma-fg)]/70">
               {quest.tasks.map((task) => (
-                <li key={task.id}>
+                <li key={task.id} className="flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--lumma-fg)]/30" />
                   {task.label} ({task.target})
                 </li>
               ))}
@@ -889,36 +890,36 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             key={period}
             onClick={() => setLeaderboardPeriod(period)}
             className={cn(
-              "rounded-sm px-3 py-1.5 text-sm font-semibold capitalize",
+              "rounded-md px-3 py-1.5 text-sm font-semibold capitalize transition-colors",
               leaderboardPeriod === period
-                ? "border border-lumma-sky/56 bg-lumma-sky/14 text-lumma-sky"
-                : "border border-white/24 bg-black/40 text-white",
+                ? "border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 text-[var(--lumma-sky)]"
+                : "border border-[var(--lumma-border)] bg-[var(--lumma-bg)]/50 text-[var(--lumma-fg)] hover:bg-[var(--lumma-fg)]/5",
             )}
           >
             {period.replace("_", " ")}
           </button>
         ))}
       </div>
-      <div className="overflow-x-auto rounded-sm border border-white/14 bg-black/36 p-2">
-        <table className="min-w-full border-collapse text-sm text-white">
+      <div className="overflow-x-auto rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-2 backdrop-blur-md">
+        <table className="min-w-full border-collapse text-sm text-[var(--lumma-fg)]">
           <thead>
-            <tr className="border-b border-white/20 text-left text-xs uppercase tracking-[0.14em] text-white/66">
-              <th className="py-2 pr-2">Rank</th>
+            <tr className="border-b border-[var(--lumma-border)] text-left text-[11px] uppercase tracking-[0.14em] text-[var(--lumma-fg)]/60">
+              <th className="py-2 pl-2 pr-2">Rank</th>
               <th className="py-2 pr-2">User</th>
               <th className="py-2">Points</th>
             </tr>
           </thead>
           <tbody>
             {leaderboardRows.map((row) => (
-              <tr key={row.userId} className="border-b border-white/10">
-                <td className="py-2 pr-2 font-semibold">{row.rank}</td>
-                <td className="py-2 pr-2">{row.userId}</td>
-                <td className="py-2">{row.points.toFixed(2)}</td>
+              <tr key={row.userId} className="border-b border-[var(--lumma-border)]/50 hover:bg-[var(--lumma-fg)]/[0.02] transition-colors">
+                <td className="py-2 pl-2 pr-2 font-semibold">{row.rank}</td>
+                <td className="py-2 pr-2 font-mono text-[13px]">{row.userId}</td>
+                <td className="py-2 tabular-nums">{row.points.toFixed(2)}</td>
               </tr>
             ))}
             {!leaderboardRows.length && (
               <tr>
-                <td colSpan={3} className="py-5 text-center text-white/60">
+                <td colSpan={3} className="py-5 text-center text-[var(--lumma-fg)]/50">
                   No ranking entries yet.
                 </td>
               </tr>
@@ -930,7 +931,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   );
 
   return (
-    <main className="lumma-noir-app relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] pb-20 text-[var(--lumma-fg)]">
+    <main className="relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] pb-20 text-[var(--lumma-fg)]">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="lumma-noir-grid opacity-60" />
       </div>
@@ -1099,13 +1100,13 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                     <Link
                       key={item.view}
                       href={item.href}
-                      className="group rounded-sm border border-white/16 bg-black/36 p-3 transition hover:-translate-y-1 hover:border-lumma-sky/58"
+                      className="group rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-4 transition-all hover:-translate-y-1 hover:border-[var(--lumma-sky)]/50 hover:bg-[var(--lumma-fg)]/5 shadow-sm backdrop-blur-md"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-white">{item.label}</span>
-                        <item.icon size={14} className="text-white/65 transition group-hover:text-white" />
+                        <span className="text-[15px] font-semibold text-[var(--lumma-fg)]">{item.label}</span>
+                        <item.icon size={16} className="text-[var(--lumma-fg)]/50 transition group-hover:text-[var(--lumma-sky)]" />
                       </div>
-                      <p className="mt-2 text-xs leading-relaxed text-white/66">{item.blurb}</p>
+                      <p className="mt-2 text-[13px] leading-relaxed text-[var(--lumma-fg)]/60">{item.blurb}</p>
                     </Link>
                   ))}
                 </div>
@@ -1125,10 +1126,10 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                     {quests.slice(0, 3).map((quest) => (
                       <div
                         key={quest.id}
-                        className="rounded-sm border border-white/14 bg-black/35 px-3 py-2"
+                        className="rounded-md border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] px-3 py-2"
                       >
-                        <p className="text-sm font-semibold text-white">{quest.name}</p>
-                        <p className="text-xs text-white/62">
+                        <p className="text-sm font-semibold text-[var(--lumma-fg)]">{quest.name}</p>
+                        <p className="text-xs text-[var(--lumma-fg)]/60">
                           {quest.status === "completed" ? "Completed" : "In progress"} | +{quest.points}
                         </p>
                       </div>
@@ -1187,9 +1188,9 @@ function Panel({
 
 function PrivySetupHint() {
   return (
-    <div className="rounded-sm border border-lumma-alert/35 bg-lumma-alert/12 p-4 text-sm text-white">
-      <p className="font-semibold">Privy wallet login is not configured for this deployment.</p>
-      <p className="mt-1 text-white/75">
+    <div className="rounded-md border border-[var(--lumma-alert)]/30 bg-[var(--lumma-alert)]/10 p-4 text-sm text-[var(--lumma-fg)]">
+      <p className="font-semibold text-[var(--lumma-alert)]">Privy wallet login is not configured for this deployment.</p>
+      <p className="mt-1 text-[var(--lumma-fg)]/70">
         Add <code>NEXT_PUBLIC_PRIVY_APP_ID</code> in Vercel project envs and redeploy.
       </p>
     </div>
@@ -1241,13 +1242,13 @@ function MetricCard({
 
 function PulseTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-sm border border-white/14 bg-black/38 px-3 py-2">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-white">{value.toLocaleString()}</p>
+    <div className="rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] px-4 py-3 shadow-sm backdrop-blur-md">
+      <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--lumma-fg)]/60">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-[var(--lumma-fg)]">{value.toLocaleString()}</p>
     </div>
   );
 }
 
 function EmptyState({ label }: { label: string }) {
-  return <p className="text-sm text-white/62">{label}</p>;
+  return <p className="text-[14px] text-[var(--lumma-fg)]/50">{label}</p>;
 }

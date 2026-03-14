@@ -55,33 +55,33 @@ export default function DocsPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#04070e] text-[#eceef2]">
+    <main className="relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] text-[var(--lumma-fg)]">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="lumma-noir-grid opacity-90" />
       </div>
       <div className="mx-auto max-w-7xl px-3 py-6 sm:px-5 sm:py-8">
-        <header className="lumma-reveal relative overflow-hidden border border-white/16 bg-[#050913] px-5 py-7" data-reveal>
-          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-65" />
-          <div className="relative">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/62">
+        <header className="lumma-reveal relative overflow-hidden border border-[var(--lumma-border)] bg-[var(--lumma-bg)] px-5 py-7 lumma-glass-panel" data-reveal>
+          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
+          <div className="relative z-10">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lumma-fg)]/60">
               Lumma Protocol Docs
             </p>
-            <h1 className="mt-3 max-w-5xl font-display text-[clamp(2rem,6.6vw,4.8rem)] leading-[0.94] text-white">
+            <h1 className="mt-3 max-w-5xl font-display text-[clamp(2rem,6.6vw,4.8rem)] leading-[0.94] text-[var(--lumma-fg)]">
               System documentation for a quest-native stablecoin utility protocol.
             </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-white/70">
+            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[var(--lumma-fg)]/70">
               Contracts, data rails, reward logic, and operational controls for Lumma on Arc testnet.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <a
                 href="https://testnet.lumma.xyz"
-                className="rounded-lg border border-lumma-sky/52 bg-lumma-sky/10 px-4 py-2 text-sm font-semibold text-lumma-sky transition hover:bg-lumma-sky/16"
+                className="rounded-lg border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-4 py-2 text-sm font-semibold text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20"
               >
                 Open Cockpit
               </a>
               <Link
                 href="/"
-                className="rounded-lg border border-white/24 px-4 py-2 text-sm font-semibold text-white/86 transition hover:bg-white/8"
+                className="rounded-lg border border-[var(--lumma-border)] px-4 py-2 text-sm font-semibold text-[var(--lumma-fg)]/80 transition hover:bg-[var(--lumma-fg)]/5"
               >
                 Landing
               </Link>
@@ -89,7 +89,7 @@ export default function DocsPage() {
                 href="https://docs.arc.network/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-lg border border-white/24 px-4 py-2 text-sm font-semibold text-white/86 transition hover:bg-white/8"
+                className="rounded-lg border border-[var(--lumma-border)] px-4 py-2 text-sm font-semibold text-[var(--lumma-fg)]/80 transition hover:bg-[var(--lumma-fg)]/5"
               >
                 Arc Docs <ArrowUpRight className="ml-1 inline" size={14} />
               </a>
@@ -98,8 +98,8 @@ export default function DocsPage() {
         </header>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
-          <aside className="lumma-reveal h-fit border border-white/14 bg-black/36 p-4 lg:sticky lg:top-5" data-reveal>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/58">
+          <aside className="lumma-reveal h-fit border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-4 lg:sticky lg:top-5 lumma-glass-panel" data-reveal>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lumma-fg)]/60">
               Navigation
             </p>
             <nav className="mt-3 flex flex-col gap-1.5">
@@ -107,7 +107,7 @@ export default function DocsPage() {
                 <a
                   key={section.id}
                   href={`#${section.id}`}
-                  className="rounded-md border border-transparent px-2 py-1.5 text-sm text-white/84 transition hover:border-white/18 hover:bg-white/6"
+                  className="rounded-md border border-transparent px-2 py-1.5 text-sm text-[var(--lumma-fg)]/80 transition hover:border-[var(--lumma-border)] hover:bg-[var(--lumma-fg)]/5"
                 >
                   {section.label}
                 </a>
@@ -270,13 +270,13 @@ function DocCard({
     <section
       id={id}
       data-reveal
-      className="lumma-reveal relative overflow-hidden border border-white/14 bg-[#050913] p-5 text-sm text-white/86"
+      className="lumma-reveal relative overflow-hidden border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-5 text-sm text-[var(--lumma-fg)]/80 lumma-glass-panel"
     >
-      <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-45" />
-      <div className="relative">
+      <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
+      <div className="relative z-10">
         <div className="flex items-center gap-2">
-          <span className="text-white/72">{icon}</span>
-          <h2 className="font-display text-2xl font-semibold text-white">{title}</h2>
+          <span className="text-[var(--lumma-fg)]/70">{icon}</span>
+          <h2 className="font-display text-2xl font-semibold text-[var(--lumma-fg)]">{title}</h2>
         </div>
         <div className="mt-3 space-y-3 leading-relaxed">{children}</div>
       </div>
@@ -286,8 +286,8 @@ function DocCard({
 
 function MiniPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <article className="border border-white/14 bg-black/36 p-3 text-sm text-white/82">
-      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-white/56">{title}</p>
+    <article className="border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-3 text-sm text-[var(--lumma-fg)]/80 rounded-[16px]">
+      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[var(--lumma-fg)]/60">{title}</p>
       <p className="mt-1 leading-relaxed">{children}</p>
     </article>
   );
@@ -295,7 +295,7 @@ function MiniPanel({ title, children }: { title: string; children: React.ReactNo
 
 function CodeBlock({ code }: { code: string }) {
   return (
-    <pre className="overflow-x-auto border border-white/14 bg-black/44 p-4 text-xs text-[#d8f8ff]">
+    <pre className="overflow-x-auto border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.04] p-4 text-xs text-[var(--lumma-fg)] rounded-[16px]">
       <code>{code}</code>
     </pre>
   );
