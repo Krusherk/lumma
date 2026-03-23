@@ -123,7 +123,7 @@ export default function ExperiencePage() {
             </a>
           </motion.div>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
-            {layers.map((layer, index) => (
+            {layers.map((layer) => (
               <motion.article
                 variants={fadeUp}
                 key={layer.title}

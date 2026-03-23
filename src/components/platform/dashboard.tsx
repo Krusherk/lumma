@@ -931,12 +931,48 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
   );
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] pb-20 text-[var(--lumma-fg)]">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="lumma-noir-grid opacity-60" />
+    <main className="lumma-systems-root relative min-h-screen overflow-x-hidden bg-[#131313] pb-20 text-[#e5e2e1]">
+      <div className="lumma-systems-supernova fixed inset-0 z-0 opacity-40 grayscale" />
+      <div className="lumma-systems-grid-overlay fixed inset-0 z-10 pointer-events-none" />
+      <div className="lumma-systems-vertical-text fixed left-8 top-32 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
+        COCKPIT_MODE: MISSION_CONTROL
+      </div>
+      <div className="lumma-systems-vertical-text fixed bottom-32 right-8 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
+        ROUTE_SCOPE: /APP/*
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <header className="fixed top-0 z-50 flex h-20 w-full items-center justify-between border-b border-white/10 bg-[#131313]/90 px-8 backdrop-blur-xl md:px-12">
+        <div className="font-display text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+          LUMMA//SYSTEMS
+        </div>
+        <nav className="hidden gap-10 font-display text-[11px] font-bold uppercase tracking-widest md:flex">
+          <Link className="border-b border-white pb-1 text-white transition-all hover:opacity-70" href="/app">
+            COCKPIT
+          </Link>
+          <Link className="text-[#919191] transition-all hover:text-white" href="/docs">
+            DOCS
+          </Link>
+          <Link className="text-[#919191] transition-all hover:text-white" href="/">
+            LANDING
+          </Link>
+        </nav>
+        <div className="flex items-center gap-3">
+          <div className="hidden gap-4 sm:flex">
+            <span className="material-symbols-outlined text-xl text-white/50">sensors</span>
+            <span className="material-symbols-outlined text-xl text-white/50">barcode_scanner</span>
+          </div>
+          {privyEnabled ? (
+            <PrivyAuth
+              onResolvedUserId={setUserId}
+              onWalletExecutorReady={(executor) => setWalletExecutor(() => executor)}
+            />
+          ) : (
+            <PrivySetupBadge />
+          )}
+        </div>
+      </header>
+
+      <div className="relative z-30 mx-auto max-w-7xl px-4 pb-8 pt-24 sm:px-6">
         <motion.header
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -957,14 +993,6 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
                 >
                   Docs
                 </a>
-                {privyEnabled ? (
-                  <PrivyAuth
-                    onResolvedUserId={setUserId}
-                    onWalletExecutorReady={(executor) => setWalletExecutor(() => executor)}
-                  />
-                ) : (
-                  <PrivySetupBadge />
-                )}
               </div>
             </div>
 

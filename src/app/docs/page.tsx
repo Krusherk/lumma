@@ -55,11 +55,48 @@ export default function DocsPage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] text-[var(--lumma-fg)]">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="lumma-noir-grid opacity-90" />
+    <main className="lumma-systems-root relative min-h-screen overflow-x-hidden bg-[#131313] text-[#e5e2e1]">
+      <div className="lumma-systems-supernova fixed inset-0 z-0 opacity-40 grayscale" />
+      <div className="lumma-systems-grid-overlay fixed inset-0 z-10 pointer-events-none" />
+      <div className="lumma-systems-vertical-text fixed left-8 top-32 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
+        DOC_INSTANCE: LUMMA_DOCS_V1
       </div>
-      <div className="mx-auto max-w-7xl px-3 py-6 sm:px-5 sm:py-8">
+      <div className="lumma-systems-vertical-text fixed bottom-32 right-8 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
+        CHAIN_SCOPE: ARC_TESTNET
+      </div>
+
+      <header className="fixed top-0 z-50 flex h-20 w-full items-center justify-between border-b border-white/10 bg-[#131313]/90 px-8 backdrop-blur-xl md:px-12">
+        <div className="font-display text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+          LUMMA//SYSTEMS
+        </div>
+        <nav className="hidden gap-10 font-display text-[11px] font-bold uppercase tracking-widest md:flex">
+          <a className="border-b border-white pb-1 text-white transition-all hover:opacity-70" href="#overview">
+            OVERVIEW
+          </a>
+          <a className="text-[#919191] transition-all hover:text-white" href="#contracts">
+            CONTRACTS
+          </a>
+          <a className="text-[#919191] transition-all hover:text-white" href="#ops">
+            OPS
+          </a>
+        </nav>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="hidden border border-white/20 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/80 transition hover:bg-white/8 sm:inline-flex"
+          >
+            Landing
+          </Link>
+          <a
+            href="https://testnet.lumma.xyz"
+            className="border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/20"
+          >
+            Open Cockpit
+          </a>
+        </div>
+      </header>
+
+      <div className="relative z-30 mx-auto max-w-7xl px-4 pb-10 pt-24 sm:px-6">
         <header className="lumma-reveal relative overflow-hidden border border-[var(--lumma-border)] bg-[var(--lumma-bg)] px-5 py-7 lumma-glass-panel" data-reveal>
           <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
           <div className="relative z-10">
@@ -73,18 +110,6 @@ export default function DocsPage() {
               Contracts, data rails, reward logic, and operational controls for Lumma on Arc testnet.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <a
-                href="https://testnet.lumma.xyz"
-                className="rounded-lg border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-4 py-2 text-sm font-semibold text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20"
-              >
-                Open Cockpit
-              </a>
-              <Link
-                href="/"
-                className="rounded-lg border border-[var(--lumma-border)] px-4 py-2 text-sm font-semibold text-[var(--lumma-fg)]/80 transition hover:bg-[var(--lumma-fg)]/5"
-              >
-                Landing
-              </Link>
               <a
                 href="https://docs.arc.network/"
                 target="_blank"

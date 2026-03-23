@@ -1,354 +1,432 @@
-"use client";
-
+﻿import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  CirclePlus,
-  MessageCircle,
-  Send,
-  ShieldCheck,
-  Sparkles,
-  Twitter,
-} from "lucide-react";
-import { useEffect, useRef } from "react";
-import { motion, useScroll, useTransform, useSpring, Variants } from "framer-motion";
 
-import { LummaLogo } from "@/components/brand/lumma-logo";
-
-const socialCards = [
-  { label: "X", icon: Twitter, href: "#" },
-  { label: "Discord", icon: MessageCircle, href: "#" },
-  { label: "Telegram", icon: Send, href: "#" },
-];
-
-const rails = [
+const capabilityCards = [
   {
-    title: "Yield Vaults",
-    points: ["Conservative / Balanced / Aggressive rails", "APY marked as estimated", "Onchain tx cap + pause controls"],
+    title: "Network Throughput",
+    icon: "hub",
+    value: "4.8",
+    unit: "TB/S",
+    footerLeft: "Peak: 5.2 TB/S",
+    footerRight: "Status: Nominal",
   },
   {
-    title: "StableFX Swaps",
-    points: ["USDC <-> EURC quotes and execution", "Milestone progress tracking", "History wired to reward engine"],
+    title: "Active Nodes",
+    icon: "memory",
+    value: "12,402",
+    unit: "",
+    footerLeft: "Global Coverage: 98.4%",
+    footerRight: "Uptime: 100%",
   },
   {
-    title: "Quest Economy",
-    points: ["Weekly mission chains", "Referral share + anti-sybil checks", "NFT milestone evolution states"],
+    title: "System Uptime",
+    icon: "history_edu",
+    value: "342:12",
+    unit: "",
+    footerLeft: "Last Reboot: 04.22.24",
+    footerRight: "Session: Verified",
   },
 ];
 
-const trustRows = [
-  "Wallet identity is required for reward settlement.",
-  "Referral rewards activate only after first real onchain action.",
-  "Suspicious bursts are throttled before points settle.",
+const systemFeed = [
+  { event: "ENCRYPTION_KEY_ROTATED", time: "12:04:22" },
+  { event: "NODE_HANDSHAKE_COMPLETE [X72]", time: "12:02:15" },
+  { event: "QUANT_VAULT_01_SYNCED", time: "11:58:04" },
+  { event: "GATEWAY_AUTHENTICATED", time: "11:45:30" },
+  { event: "INTEGRITY_CHECK_PASS", time: "11:30:12" },
 ];
-
-const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 100, damping: 20 },
-  },
-};
 
 export default function LandingPage() {
-  const mapRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: mapRef,
-    offset: ["start end", "end start"],
-  });
-
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  });
-
-  const nodeScale = useTransform(smoothProgress, [0.3, 0.7], [0.82, 1.24]);
-  const nodeShift = useTransform(smoothProgress, [0.2, 0.8], [0, 86]);
-  const pulseOpacity = useTransform(smoothProgress, [0.4, 0.6], [0.25, 1]);
-
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--lumma-bg)] text-[var(--lumma-fg)]">
-      <div className="pointer-events-none absolute inset-0 -z-10 opacity-90">
-        <div className="lumma-noir-grid" />
+    <main className="lumma-systems-root relative min-h-screen overflow-x-hidden bg-[#131313] font-sans text-[#e5e2e1]">
+      <div className="lumma-systems-supernova fixed inset-0 z-0 opacity-40 grayscale" />
+      <div className="lumma-systems-grid-overlay fixed inset-0 z-10 pointer-events-none" />
+
+      <div className="lumma-systems-vertical-text fixed left-8 top-32 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
+        GLOBAL_COORD: 40.7128° N / 74.0060° W
+      </div>
+      <div className="lumma-systems-vertical-text fixed bottom-32 right-8 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
+        INSTANCE_ID: OP_CORE_01_SCROLL
       </div>
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1320px] flex-col px-3 pb-16 pt-4 sm:px-5 sm:pt-6">
-        <motion.nav
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="sticky top-3 z-40 border border-[var(--lumma-border)] lumma-glass px-4 py-3 sm:px-5 rounded-2xl mx-1"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <LummaLogo />
-            <div className="flex flex-wrap items-center gap-2">
-              <a
-                href="https://docs.lumma.xyz"
-                className="rounded-lg md:rounded-full border border-[var(--lumma-border)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lumma-fg)]/80 transition-all hover:bg-[var(--lumma-bg)]/10 hover:border-[var(--lumma-border)]"
-              >
-                Docs
-              </a>
-              <a
-                href="https://testnet.lumma.xyz"
-                className="rounded-lg md:rounded-full border border-[var(--lumma-sky)]/45 bg-[var(--lumma-sky)]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lumma-sky)] transition-all hover:bg-[var(--lumma-sky)]/20 hover:border-[var(--lumma-sky)]/80 hover:shadow-[0_0_20px_rgba(94,233,255,0.3)]"
-              >
-                Open Cockpit
-              </a>
-            </div>
+      <header className="fixed top-0 z-50 flex h-20 w-full items-center justify-between border-b border-white/10 bg-[#131313]/90 px-8 backdrop-blur-xl md:px-12">
+        <div className="font-display text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+          LUMMA//SYSTEMS
+        </div>
+
+        <nav className="hidden gap-10 font-display text-[11px] font-bold uppercase tracking-widest md:flex">
+          <a className="border-b border-white pb-1 text-white transition-all hover:opacity-70" href="#network">
+            NETWORK
+          </a>
+          <a className="text-[#919191] transition-all hover:text-white" href="#capabilities">
+            CAPABILITIES
+          </a>
+          <a className="text-[#919191] transition-all hover:text-white" href="#terminal">
+            TERMINAL
+          </a>
+        </nav>
+
+        <div className="flex items-center gap-6">
+          <div className="hidden gap-4 sm:flex">
+            <span className="material-symbols-outlined text-xl text-white/50">sensors</span>
+            <span className="material-symbols-outlined text-xl text-white/50">barcode_scanner</span>
           </div>
-        </motion.nav>
+          <Image
+            alt="System operator avatar"
+            className="h-9 w-9 border border-white/20 object-cover grayscale"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhMMJ67-_Ov9G9mYaqm-q10CEKt7M-ez6R4fipyRw6f7qWUvxVekC_d8M70oapqEAVbfwVrzagGSLvI6FKCmNNiaQ5mTtEW81QiB5B-KT_jihceni3S5M3K5yUkBFqS3f2gbT83_Mtz4zFLiJTMGnjboQ6gq5XC5bT-hMlCw5Vv06XT8kNrvhMVyNzUHlatRHnnOlLXKFHWGg58GSgNZ9zjewKHEwg_pmSKixFMYtaaXxVCFoYi0q6rTQ8IGukLILZ134Ik7hZJ0Ar"
+            width={36}
+            height={36}
+          />
+        </div>
+      </header>
 
-        <motion.section
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
-          className="relative mt-7 overflow-hidden rounded-[32px] border border-[var(--lumma-border)] bg-[linear-gradient(180deg,var(--lumma-bg)_0%,var(--lumma-bg)_100%)] px-4 py-16 sm:px-12 sm:py-32 lumma-glass-panel"
-        >
-          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
-          <motion.div variants={fadeUp} className="relative z-10">
-            <p className="inline-flex items-center gap-2 rounded-full border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--lumma-fg)]/70 backdrop-blur-md">
-              <Sparkles size={11} className="text-[var(--lumma-sky)]" />
-              Built on Arc
-            </p>
-            <h1 className="mt-8 max-w-5xl font-display text-[clamp(2.4rem,8.2vw,7.8rem)] leading-[0.92] tracking-[-0.02em] text-[var(--lumma-fg)]">
-              Stablecoin utility,
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[var(--lumma-fg)] to-[var(--lumma-fg)]/40">engineered for trust loops.</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-[var(--lumma-fg)]/60 sm:text-lg font-light">
-              Lumma merges vaults, swaps, and progression into one protocol surface. Every user action can be verified, scored, and rewarded.
-            </p>
-
-            <div className="mt-12 flex flex-wrap gap-4 sm:grid-cols-2">
-              <Link
-                href="/experience"
-                className="group relative overflow-hidden rounded-full border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lumma-fg)] transition-all hover:bg-[var(--lumma-fg)]/10 hover:border-[var(--lumma-border)] flex items-center gap-3 backdrop-blur-sm"
-              >
-                Enter App Experience
-                <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--lumma-fg)]/10 to-transparent -translate-x-full group-hover:animate-[lumma-scan_1.5s_ease-in-out_infinite]" />
-              </Link>
-              <a
-                href="https://docs.lumma.xyz"
-                className="rounded-full flex items-center justify-between border border-[var(--lumma-border)] px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--lumma-fg)]/60 transition-all hover:text-[var(--lumma-fg)] hover:bg-[var(--lumma-fg)]/5 hover:border-[var(--lumma-fg)]/20"
-              >
-                Open Lumma Docs
-              </a>
-            </div>
-
-            <motion.div variants={fadeUp} className="mt-16 rounded-[24px] border border-[var(--lumma-border)] lumma-glass max-w-3xl overflow-hidden">
-              <div className="bg-[var(--lumma-fg)]/[0.02] border-b border-[var(--lumma-border)] px-6 py-4 flex items-center gap-3">
-                <div className="flex gap-1.5 opacity-50">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[var(--lumma-fg)]/40"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-[var(--lumma-fg)]/40"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-[var(--lumma-fg)]/40"></div>
-                </div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--lumma-fg)]/40 ml-2">Protocol Surface</p>
-              </div>
-              <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[var(--lumma-border)] backdrop-blur-2xl">
-                <div className="px-6 py-8 transition-colors hover:bg-[var(--lumma-fg)]/[0.03]">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--lumma-fg)]/50 mb-2">Vault Rails</p>
-                  <p className="font-display text-4xl leading-none text-[var(--lumma-fg)] font-medium">3</p>
-                </div>
-                <div className="px-6 py-8 transition-colors hover:bg-[var(--lumma-fg)]/[0.03]">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--lumma-fg)]/50 mb-2">Swap Pairs V1</p>
-                  <p className="font-display text-4xl leading-none text-[var(--lumma-fg)] font-medium">1</p>
-                </div>
-                <div className="px-6 py-8 transition-colors hover:bg-[var(--lumma-fg)]/[0.03]">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--lumma-fg)]/50 mb-2">NFT Tiers</p>
-                  <p className="font-display text-4xl leading-none text-[var(--lumma-fg)] font-medium">4</p>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </motion.section>
-
-        <motion.section
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: "-100px" }}
-          className="mt-6 px-1 sm:px-0"
-        >
-          <div className="rounded-[32px] border border-[var(--lumma-border)] lumma-glass px-5 py-16 sm:px-12 sm:py-24">
-            <motion.h2 variants={fadeUp} className="max-w-4xl font-display text-[clamp(2.1rem,7vw,5.5rem)] leading-[0.92] tracking-tight text-[var(--lumma-fg)]">
-              Decentralizing utility
-              <span className="block text-[var(--lumma-fg)]/40">& reputation signals.</span>
-            </motion.h2>
-
-            <div className="mt-12 grid gap-5 lg:grid-cols-3">
-              {rails.map((rail, index) => (
-                <motion.article
-                  variants={fadeUp}
-                  key={rail.title}
-                  className="group relative overflow-hidden rounded-[24px] border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-6 sm:p-8 transition-colors hover:bg-[var(--lumma-fg)]/[0.04] hover:border-[var(--lumma-border)] shadow-sm"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-[var(--lumma-fg)]/[0.02] to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                  <h3 className="relative z-10 font-display text-[2rem] leading-none text-[var(--lumma-fg)] mb-6">{rail.title}</h3>
-                  <ul className="relative z-10 space-y-3.5 text-[15px] text-[var(--lumma-fg)]/60">
-                    {rail.points.map((point) => (
-                      <li key={point} className="flex items-start gap-3">
-                        <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lumma-sky/80" />
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.article>
-              ))}
-            </div>
-          </div>
-        </motion.section>
-
+      <div className="relative z-30 pt-20">
         <section
-          ref={mapRef}
-          className="relative mt-6 overflow-hidden rounded-[32px] border border-[var(--lumma-border)] bg-[linear-gradient(180deg,var(--lumma-bg)_0%,var(--lumma-bg)_100%)] px-5 py-16 sm:p-12 lumma-glass-panel"
+          id="network"
+          className="group relative flex min-h-screen flex-col items-center justify-center overflow-hidden border-b border-white/5 px-8 md:px-12"
         >
-          <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
-          <div className="relative grid gap-12 lg:grid-cols-[1fr_1.2fr] items-center">
-            <motion.div
-              style={{ opacity: useTransform(smoothProgress, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.5]) }}
-              className="lg:pr-8"
-            >
-              <h2 className="font-display text-[clamp(2.5rem,6vw,5.5rem)] leading-[0.92] text-[var(--lumma-fg)] tracking-tight">
-                How trust is
-                <span className="block text-[var(--lumma-fg)]/40">gained or lost.</span>
-              </h2>
-              <p className="mt-8 max-w-xl text-[15px] leading-relaxed text-[var(--lumma-fg)]/60 sm:text-lg font-light">
-                Lumma tracks behaviors that matter. Verified activity pushes users upward. Suspicious activity throttles and blocks reward extraction.
-              </p>
-              <div className="mt-10 space-y-4">
-                {trustRows.map((row, i) => (
-                  <motion.div
-                    key={row}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex items-start gap-4 rounded-2xl border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-4 backdrop-blur-md"
-                  >
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--lumma-fg)]/10 text-[10px] font-bold text-[var(--lumma-fg)]/70">
-                      0{i + 1}
+          <div className="lumma-systems-scanline absolute left-0 top-0 opacity-20 transition-opacity group-hover:opacity-40" />
+
+          <div className="relative mb-12 h-48 w-48">
+            <Image
+              alt="L circuit logo"
+              className="h-full w-full object-contain brightness-200 grayscale"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgDey_hqL3N-MhOhEYTVnhNN5rJixEYVpC5TYFOYlIBNy0lqOmgxNQivr5Bo38f9x2fO2A4V67Zd9Vcl8r_VNrz7moqqpe13KsgJAk-cqzaAGVy-6ZA7Bi8PztPrR5K4S6D8ea5Q7Hu5GYe0065Lfm-95UvQXOAJ2T2uK7v_JM1gvJ7mh5mcCEWmIWhO9c0YnVKaGZTVFzloNev8HhfHyIhszKEb_M61CZsSpw5tah9JnPxlMuHlu5YlziyWAFSJZjODhttzVODimz"
+              width={192}
+              height={192}
+            />
+            <div className="absolute inset-0 animate-pulse bg-white/10 blur-3xl" />
+          </div>
+
+          <div className="text-center">
+            <h1 className="mb-4 font-display text-4xl font-black uppercase tracking-[0.25em] text-white md:text-6xl lg:text-7xl">
+              SYSTEM_OPERATIONAL
+            </h1>
+            <p className="flex flex-wrap justify-center gap-4 text-[10px] uppercase tracking-[0.6em] text-[#919191] md:text-xs">
+              <span>PHASE: INITIALIZING</span>
+              <span className="hidden sm:inline">{"//"}</span>
+              <span>CORE_TEMP: 32°C</span>
+              <span className="hidden sm:inline">{"//"}</span>
+              <span>SECURITY: ACTIVE</span>
+            </p>
+          </div>
+
+          <div className="absolute bottom-12 flex flex-col items-center gap-4">
+            <span className="animate-bounce text-[9px] uppercase tracking-widest text-[#919191]">
+              SCROLL_FOR_METRICS
+            </span>
+            <div className="h-16 w-px bg-gradient-to-b from-white to-transparent" />
+          </div>
+
+          <div className="absolute left-12 top-24 hidden border-l border-white/20 py-2 pl-4 lg:block">
+            <span className="block text-[10px] text-[#919191]">X_LATENCY</span>
+            <span className="block font-display text-xl text-white">0.002ms</span>
+          </div>
+
+          <div className="absolute bottom-24 right-12 hidden border-r border-white/20 py-2 pr-4 text-right lg:block">
+            <span className="block text-[10px] text-[#919191]">SYNC_RATIO</span>
+            <span className="block font-display text-xl text-white">1:1.0024</span>
+          </div>
+        </section>
+
+        <section id="capabilities" className="mx-auto max-w-7xl px-8 py-24 md:px-12 md:py-32">
+          <div className="mb-20">
+            <span className="mb-2 block text-[10px] uppercase tracking-[0.4em] text-[#919191]">
+              SUBSECTION_01
+            </span>
+            <h2 className="font-display text-4xl font-bold uppercase tracking-tight text-white">
+              PROTOCOL_CAPABILITIES
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            {capabilityCards.map((card) => (
+              <article
+                key={card.title}
+                className="group border border-white/10 bg-[#353534]/40 p-8 backdrop-blur-xl transition-all hover:border-white/30"
+              >
+                <div className="mb-16 flex items-start justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-[#919191]">{card.title}</span>
+                  <span className="material-symbols-outlined text-sm text-white">{card.icon}</span>
+                </div>
+
+                <div className="mb-6 flex items-baseline gap-2">
+                  <span className="font-display text-5xl font-bold text-white">{card.value}</span>
+                  {card.unit ? <span className="text-sm uppercase tracking-wider text-[#919191]">{card.unit}</span> : null}
+                  {card.title === "Active Nodes" ? (
+                    <span
+                      className="material-symbols-outlined animate-pulse text-xs text-white"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      circle
+                    </span>
+                  ) : null}
+                </div>
+
+                {card.title === "Network Throughput" ? (
+                  <>
+                    <div className="relative h-1 w-full bg-white/10">
+                      <div className="absolute left-0 top-0 h-full w-2/3 bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
                     </div>
-                    <p className="text-sm text-[var(--lumma-fg)]/70 leading-relaxed">{row}</p>
-                  </motion.div>
+                    <div className="mt-6 flex justify-between text-[10px] uppercase tracking-tight text-[#919191]">
+                      <span>{card.footerLeft}</span>
+                      <span>{card.footerRight}</span>
+                    </div>
+                  </>
+                ) : null}
+
+                {card.title === "Active Nodes" ? (
+                  <>
+                    <div className="grid h-1 grid-cols-12 gap-1">
+                      <div className="bg-white" />
+                      <div className="bg-white" />
+                      <div className="bg-white" />
+                      <div className="bg-white/20" />
+                      <div className="bg-white" />
+                      <div className="bg-white" />
+                      <div className="bg-white/20" />
+                      <div className="bg-white" />
+                      <div className="bg-white" />
+                      <div className="bg-white" />
+                      <div className="bg-white" />
+                      <div className="bg-white/20" />
+                    </div>
+                    <div className="mt-6 flex justify-between text-[10px] uppercase tracking-tight text-[#919191]">
+                      <span>{card.footerLeft}</span>
+                      <span>{card.footerRight}</span>
+                    </div>
+                  </>
+                ) : null}
+
+                {card.title === "System Uptime" ? (
+                  <>
+                    <div className="flex h-8 items-end gap-1">
+                      <div className="h-[20%] w-full bg-white/20" />
+                      <div className="h-[40%] w-full bg-white/20" />
+                      <div className="h-[30%] w-full bg-white/20" />
+                      <div className="h-[60%] w-full bg-white/20" />
+                      <div className="h-[20%] w-full bg-white/20" />
+                      <div className="h-[90%] w-full bg-white/60" />
+                      <div className="h-[100%] w-full bg-white" />
+                    </div>
+                    <div className="mt-6 flex justify-between text-[10px] uppercase tracking-tight text-[#919191]">
+                      <span>{card.footerLeft}</span>
+                      <span>{card.footerRight}</span>
+                    </div>
+                  </>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="terminal" className="border-y border-white/10 bg-white/5 py-24 md:py-32">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-8 lg:grid-cols-2 md:px-12">
+            <div>
+              <div className="mb-12">
+                <span className="mb-2 block text-[10px] uppercase tracking-[0.4em] text-[#919191]">
+                  REALTIME_OUTPUT
+                </span>
+                <h2 className="font-display text-3xl font-bold uppercase tracking-tight text-white">
+                  SYSTEM_FEED
+                </h2>
+              </div>
+
+              <div className="space-y-4 text-[11px] uppercase tracking-wider">
+                {systemFeed.map((item) => (
+                  <div
+                    key={item.event}
+                    className="group flex items-center justify-between border border-white/10 bg-black/40 p-4 transition-colors hover:bg-white/5"
+                  >
+                    <span className="text-white">{item.event}</span>
+                    <span className="text-[#919191]">{item.time}</span>
+                  </div>
                 ))}
               </div>
-            </motion.div>
 
-            <div className="relative aspect-square w-full max-w-[600px] mx-auto overflow-visible rounded-full border border-[var(--lumma-border)] bg-[radial-gradient(circle_at_center,var(--lumma-fg)0.03_0%,transparent_70%)]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,233,255,0.08)_0%,transparent_50%)]" />
+              <button className="mt-8 w-full border border-[#919191]/30 py-4 text-[10px] font-display uppercase tracking-[0.4em] transition-all hover:bg-white/5">
+                LOAD_EXTENDED_LOGS
+              </button>
+            </div>
 
-              {/* Outer Orbit */}
-              <motion.div
-                style={{ rotate: useTransform(smoothProgress, [0, 1], [0, 90]) }}
-                className="absolute inset-[10%] rounded-full border border-dashed border-[var(--lumma-border)]"
-              >
-                <motion.div
-                  style={{ scale: nodeScale }}
-                  className="absolute -top-3 left-1/2 -ml-3 h-6 w-6 rounded-full border border-lumma-lime/65 bg-lumma-lime/20 shadow-[0_0_20px_rgba(198,255,92,0.4)]"
-                />
-              </motion.div>
+            <div>
+              <div className="mb-12">
+                <span className="mb-2 block text-[10px] uppercase tracking-[0.4em] text-[#919191]">
+                  SECURE_STORAGE
+                </span>
+                <h2 className="font-display text-3xl font-bold uppercase tracking-tight text-white">
+                  VAULT_TERMINAL
+                </h2>
+              </div>
 
-              {/* Inner Orbit */}
-              <motion.div
-                style={{ rotate: useTransform(smoothProgress, [0, 1], [360, 0]) }}
-                className="absolute inset-[25%] rounded-full border border-[var(--lumma-border)]"
-              >
-                <motion.div
-                  style={{ opacity: pulseOpacity }}
-                  className="absolute top-1/2 -ml-2 -left-2 h-4 w-4 rounded-full border border-lumma-sky/72 bg-lumma-sky/20 shadow-[0_0_15px_rgba(94,233,255,0.5)]"
-                />
-              </motion.div>
-
-              {/* Center Core */}
-              <motion.div
-                style={{ scale: useTransform(smoothProgress, [0.2, 0.8], [0.9, 1.1]) }}
-                className="absolute left-1/2 top-1/2 flex h-40 w-40 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-lumma-lime/30 bg-[radial-gradient(circle_at_center,rgba(198,255,92,0.15)_0%,rgba(198,255,92,0.05)_100%)] shadow-[0_0_80px_rgba(198,255,92,0.2)] backdrop-blur-xl"
-              >
-                <div className="text-center">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-lumma-lime/80 font-semibold">Risk Engine</p>
-                  <p className="mt-2 font-display text-4xl leading-none text-[var(--lumma-fg)] tracking-tight">Active</p>
+              <div className="relative border border-white/10 bg-black/40 p-8 backdrop-blur-sm">
+                <div className="mb-8 flex items-center gap-4">
+                  <div className="h-2 w-2 animate-pulse bg-white" />
+                  <span className="font-display text-xs uppercase tracking-widest text-white">
+                    ACCESS_LEVEL: ALPHA_ROOT
+                  </span>
                 </div>
-              </motion.div>
 
-              <div className="absolute right-0 top-[10%] space-y-3 rounded-2xl border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-4 backdrop-blur-xl shadow-lg">
-                <p className="flex items-center gap-2 text-xs text-[var(--lumma-fg)]/70">
-                  <CirclePlus size={14} className="text-lumma-lime" />
-                  Verified adds score
-                </p>
-                <div className="h-px w-full bg-[var(--lumma-border)]" />
-                <p className="flex items-center gap-2 text-xs text-[var(--lumma-fg)]/70">
-                  <ShieldCheck size={14} className="text-[var(--lumma-alert)]" />
-                  Risk cuts rewards
-                </p>
+                <div className="mb-12 space-y-6">
+                  <div className="flex items-end justify-between border-b border-white/10 pb-2">
+                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Vault Assets</span>
+                    <span className="font-display text-2xl text-white">402.82 BTC</span>
+                  </div>
+                  <div className="flex items-end justify-between border-b border-white/10 pb-2">
+                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Active Keys</span>
+                    <span className="font-display text-2xl text-white">1,024</span>
+                  </div>
+                  <div className="flex items-end justify-between border-b border-white/10 pb-2">
+                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Security Audit</span>
+                    <span className="font-display text-lg uppercase tracking-widest text-white">
+                      CRITICAL_PASS
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href="https://testnet.lumma.xyz"
+                  className="block w-full bg-white py-4 text-center font-display text-[11px] font-black uppercase tracking-[0.4em] text-black transition-all hover:bg-white/80 active:scale-95"
+                >
+                  INITIALIZE_VAULT_TRANSFER
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        <motion.section
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
-          className="relative mt-6 overflow-hidden rounded-[32px] border border-[var(--lumma-border)] bg-[var(--lumma-bg)] px-4 py-24 sm:px-12 lumma-glass-panel mb-6"
-        >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(94,233,255,0.08)_0%,transparent_60%)] mix-blend-overlay" />
-          <div className="relative text-center z-10">
-            <p className="inline-block rounded-full border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/5 px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[var(--lumma-fg)]/50 backdrop-blur-md">
-              Ready to enter the loop?
-            </p>
-            <h2 className="mx-auto mt-6 max-w-3xl font-display text-[clamp(2.5rem,7vw,6.5rem)] leading-[0.92] text-[var(--lumma-fg)] tracking-tight">
-              Sound interesting?
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[var(--lumma-fg)] to-[var(--lumma-fg)]/30">Try Lumma yourself.</span>
+        <section className="relative overflow-hidden px-8 py-36 text-center md:px-12 md:py-48">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-8 font-display text-5xl font-black uppercase tracking-tight text-white md:text-6xl">
+              SECURE_THE_PROTOCOL
             </h2>
-            <div className="mt-10 flex justify-center">
-              <a
+            <p className="mx-auto mb-12 max-w-xl text-lg text-[#919191]/80">
+              Access the core infrastructure and join the distributed network of the next generation of
+              decentralized management.
+            </p>
+            <div className="flex flex-col justify-center gap-4 sm:flex-row">
+              <Link
                 href="https://testnet.lumma.xyz"
-                className="group relative overflow-hidden rounded-full border border-lumma-sky/40 bg-lumma-sky/10 px-8 py-4 text-sm font-semibold uppercase tracking-[0.14em] text-lumma-sky transition-all hover:bg-lumma-sky/20 hover:border-lumma-sky/80 hover:shadow-[0_0_30px_rgba(94,233,255,0.2)] flex items-center gap-3 backdrop-blur-md"
+                className="px-12 py-5 font-display text-xs font-black uppercase tracking-[0.4em] text-black transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] bg-white"
               >
-                Open Lumma
-                <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-              </a>
-            </div>
-
-            <div className="mt-16 grid gap-4 max-w-4xl mx-auto sm:grid-cols-3">
-              {socialCards.map((item, i) => {
-                const Icon = item.icon;
-                return (
-                  <motion.a
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 + i * 0.1 }}
-                    key={item.label}
-                    href={item.href}
-                    className="group relative overflow-hidden flex items-center justify-between rounded-2xl border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] px-6 py-5 text-[var(--lumma-fg)]/80 transition-all hover:-translate-y-1 hover:border-[var(--lumma-border)] hover:bg-[var(--lumma-fg)]/[0.04] hover:shadow-xl backdrop-blur-md"
-                  >
-                    <span className="text-[15px] font-semibold">{item.label}</span>
-                    <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-[var(--lumma-fg)]/40 transition-colors group-hover:text-[var(--lumma-fg)]/80">
-                      <Icon size={16} />
-                      Link
-                    </span>
-                  </motion.a>
-                );
-              })}
+                GET_STARTED_X72
+              </Link>
+              <Link
+                href="https://docs.lumma.xyz"
+                className="border border-white/20 px-12 py-5 font-display text-xs font-black uppercase tracking-[0.4em] text-white transition-all hover:bg-white/5"
+              >
+                DOCUMENTATION
+              </Link>
             </div>
           </div>
-        </motion.section>
+        </section>
       </div>
+
+      <footer className="relative z-50 overflow-hidden border-t border-white/10 bg-[#0a0a0a] px-8 pb-12 pt-20 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-24 grid grid-cols-1 gap-12 md:grid-cols-4">
+            <div className="md:col-span-2">
+              <div className="mb-6 font-display text-2xl font-black uppercase tracking-tight text-white">
+                LUMMA//SYSTEMS
+              </div>
+              <p className="mb-8 max-w-sm text-xs uppercase tracking-wider text-[#919191]">
+                The definitive operating core for distributed ledger management and cross-chain orchestration.
+                Engineered for the future of decentralized sovereignty.
+              </p>
+              <div className="flex gap-4">
+                <div className="flex h-10 w-10 cursor-pointer items-center justify-center border border-white/10 text-white/50 transition-colors hover:text-white">
+                  <span className="material-symbols-outlined text-lg">terminal</span>
+                </div>
+                <div className="flex h-10 w-10 cursor-pointer items-center justify-center border border-white/10 text-white/50 transition-colors hover:text-white">
+                  <span className="material-symbols-outlined text-lg">code</span>
+                </div>
+                <div className="flex h-10 w-10 cursor-pointer items-center justify-center border border-white/10 text-white/50 transition-colors hover:text-white">
+                  <span className="material-symbols-outlined text-lg">podcasts</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="mb-8 font-display text-[10px] font-black uppercase tracking-[0.4em] text-white">
+                NAVIGATION
+              </h4>
+              <ul className="space-y-4 text-[10px] uppercase tracking-widest text-[#919191]">
+                <li>
+                  <a className="transition-colors hover:text-white" href="#network">
+                    NETWORK_STATUS
+                  </a>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-white" href="#capabilities">
+                    PROTOCOL_CAP
+                  </a>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-white" href="#terminal">
+                    SYSTEM_FEED
+                  </a>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-white" href="#">
+                    NODE_REGISTRY
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="mb-8 font-display text-[10px] font-black uppercase tracking-[0.4em] text-white">
+                RESOURCES
+              </h4>
+              <ul className="space-y-4 text-[10px] uppercase tracking-widest text-[#919191]">
+                <li>
+                  <a className="transition-colors hover:text-white" href="#">
+                    WHITEPAPER_V2
+                  </a>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-white" href="#">
+                    API_TERMINAL
+                  </a>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-white" href="#">
+                    SECURITY_AUDIT
+                  </a>
+                </li>
+                <li>
+                  <a className="transition-colors hover:text-white" href="#">
+                    STATUS_UIP
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-between gap-8 border-t border-white/5 pt-12 md:flex-row">
+            <div className="text-[9px] uppercase tracking-[0.3em] text-[#919191]/50">
+              ©2024 LUMMA_PROTOCOL.V1 // AUTH_LEVEL_7 // BUILD_HASH: 0x8a92f...
+            </div>
+            <div className="flex gap-8 text-[9px] uppercase tracking-[0.3em] text-[#919191]/50">
+              <a className="transition-all hover:text-white" href="#">
+                PRIVACY_ENCRYPTION
+              </a>
+              <a className="transition-all hover:text-white" href="#">
+                TERM_OF_SERVICE
+              </a>
+              <a className="transition-all hover:text-white" href="#">
+                DMCA_INTELLECTUAL
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      </footer>
     </main>
   );
 }
+
+
+
