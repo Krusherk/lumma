@@ -935,7 +935,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
       <div className="lumma-systems-supernova fixed inset-0 z-0 opacity-40 grayscale" />
       <div className="lumma-systems-grid-overlay fixed inset-0 z-10 pointer-events-none" />
       <div className="lumma-systems-vertical-text fixed left-8 top-32 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
-        COCKPIT_MODE: MISSION_CONTROL
+        TESTNET_MODE: MISSION_CONTROL
       </div>
       <div className="lumma-systems-vertical-text fixed bottom-32 right-8 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
         ROUTE_SCOPE: /APP/*
@@ -947,7 +947,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
         </div>
         <nav className="hidden gap-10 font-display text-[11px] font-bold uppercase tracking-widest md:flex">
           <Link className="border-b border-white pb-1 text-white transition-all hover:opacity-70" href="/app">
-            COCKPIT
+            TESTNET_APP
           </Link>
           <Link className="text-[#919191] transition-all hover:text-white" href="/docs">
             DOCS
@@ -997,7 +997,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             </div>
 
             <p className="mt-8 max-w-3xl font-display text-2xl font-semibold leading-tight text-[var(--lumma-fg)] sm:text-3xl tracking-tight">
-              Cockpit rebuilt into a modular command deck. No more one-page overload.
+              Lumma testnet command deck for vaults, swaps, points, quests, referrals, and NFT rewards.
             </p>
 
             <div className="mt-8 overflow-x-auto pb-2 scrollbar-hide">
@@ -1060,7 +1060,7 @@ export function Dashboard({ view = "overview" }: DashboardProps) {
             </div>
 
             <p className="mt-3 text-[13px] text-[var(--lumma-fg)]/50">
-              APY values are estimated from the testnet model and update every 15 minutes.
+              Built on Arc testnet with USDC gas. APY values are estimated and refresh every 15 minutes.
             </p>
           </div>
         </motion.header>

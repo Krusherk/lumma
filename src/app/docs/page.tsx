@@ -9,31 +9,46 @@ import {
   Network,
   Shield,
   Sparkles,
-  Wallet,
+  Wrench,
 } from "lucide-react";
 import { useEffect } from "react";
 
 const sections = [
   { id: "overview", label: "Overview" },
+  { id: "features", label: "Core Features" },
   { id: "architecture", label: "Architecture" },
-  { id: "contracts", label: "Contracts" },
-  { id: "functions", label: "Core Functions" },
-  { id: "apy", label: "APY Model" },
-  { id: "security", label: "Security" },
-  { id: "integrate", label: "Integration" },
-  { id: "ops", label: "Ops Runbook" },
+  { id: "contracts", label: "Contract Registry" },
+  { id: "api", label: "API Map" },
+  { id: "deploy", label: "Deploy Runbook" },
+  { id: "ops", label: "Ops" },
+  { id: "troubleshoot", label: "Troubleshooting" },
 ];
 
 const addresses = {
-  chainId: "5042002",
-  rpc: "https://rpc.testnet.arc.network",
-  explorer: "https://testnet.arcscan.app",
-  usdc: "0x3600000000000000000000000000000000000000",
-  eurc: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a",
-  stableFxRouter: "0x1f91886C7028986aD885ffCee0e40b75C9cd5aC1",
-  vaultManager: "0xe40675fe67868d7c646110ca65c09a7f47f0cf54",
-  milestones: "0x75f162947ed90906e5d0dbdac8ac10b97434bc99",
+  chainId: process.env.NEXT_PUBLIC_ARC_CHAIN_ID ?? "5042002",
+  rpc: process.env.NEXT_PUBLIC_ARC_RPC_URL ?? "https://rpc.testnet.arc.network",
+  explorer: process.env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
+  usdc:
+    process.env.NEXT_PUBLIC_ARC_USDC_ADDRESS ??
+    process.env.NEXT_PUBLIC_ARC_USDC ??
+    process.env.NEXT_PUBLIC_USDC_ADDRESS ??
+    "",
+  eurc:
+    process.env.NEXT_PUBLIC_ARC_EURC_ADDRESS ??
+    process.env.NEXT_PUBLIC_ARC_EURC ??
+    process.env.NEXT_PUBLIC_EURC_ADDRESS ??
+    "",
+  stableFxRouter:
+    process.env.NEXT_PUBLIC_STABLEFX_ROUTER ?? process.env.NEXT_PUBLIC_STABLEFX_ROUTER_ADDRESS ?? "",
+  vaultManager:
+    process.env.NEXT_PUBLIC_LUMMA_VAULT_MANAGER ?? process.env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS ?? "",
+  milestones:
+    process.env.NEXT_PUBLIC_LUMMA_MILESTONES ?? process.env.NEXT_PUBLIC_MILESTONE_NFT_ADDRESS ?? "",
 };
+
+function presentAddress(value: string) {
+  return value && value.trim().length > 0 ? value : "Not configured";
+}
 
 export default function DocsPage() {
   useEffect(() => {
@@ -59,10 +74,10 @@ export default function DocsPage() {
       <div className="lumma-systems-supernova fixed inset-0 z-0 opacity-40 grayscale" />
       <div className="lumma-systems-grid-overlay fixed inset-0 z-10 pointer-events-none" />
       <div className="lumma-systems-vertical-text fixed left-8 top-32 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
-        DOC_INSTANCE: LUMMA_DOCS_V1
+        DOC_INSTANCE: LUMMA_PROTOCOL
       </div>
       <div className="lumma-systems-vertical-text fixed bottom-32 right-8 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
-        CHAIN_SCOPE: ARC_TESTNET
+        NETWORK_SCOPE: ARC_TESTNET
       </div>
 
       <header className="fixed top-0 z-50 flex h-20 w-full items-center justify-between border-b border-white/10 bg-[#131313]/90 px-8 backdrop-blur-xl md:px-12">
@@ -71,13 +86,13 @@ export default function DocsPage() {
         </div>
         <nav className="hidden gap-10 font-display text-[11px] font-bold uppercase tracking-widest md:flex">
           <a className="border-b border-white pb-1 text-white transition-all hover:opacity-70" href="#overview">
-            OVERVIEW
+            PRODUCT
           </a>
-          <a className="text-[#919191] transition-all hover:text-white" href="#contracts">
-            CONTRACTS
+          <a className="text-[#919191] transition-all hover:text-white" href="#deploy">
+            DEPLOY
           </a>
-          <a className="text-[#919191] transition-all hover:text-white" href="#ops">
-            OPS
+          <a className="text-[#919191] transition-all hover:text-white" href="#api">
+            API
           </a>
         </nav>
         <div className="flex items-center gap-3">
@@ -91,7 +106,7 @@ export default function DocsPage() {
             href="https://testnet.lumma.xyz"
             className="border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/20"
           >
-            Open Cockpit
+            Enter Testnet
           </a>
         </div>
       </header>
@@ -101,15 +116,21 @@ export default function DocsPage() {
           <div className="pointer-events-none absolute inset-0 lumma-scanlines opacity-40 mix-blend-overlay" />
           <div className="relative z-10">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lumma-fg)]/60">
-              Lumma Protocol Docs
+              Lumma Documentation
             </p>
             <h1 className="mt-3 max-w-5xl font-display text-[clamp(2rem,6.6vw,4.8rem)] leading-[0.94] text-[var(--lumma-fg)]">
-              System documentation for a quest-native stablecoin utility protocol.
+              Stablecoin utility + game loops on Arc testnet.
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[var(--lumma-fg)]/70">
-              Contracts, data rails, reward logic, and operational controls for Lumma on Arc testnet.
+              Lumma combines yield vaults, USDC/EURC swaps, points, referrals, quests, and milestone NFTs with Privy wallet authentication.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
+              <a
+                href="https://testnet.lumma.xyz"
+                className="rounded-lg border border-[var(--lumma-sky)]/50 bg-[var(--lumma-sky)]/10 px-4 py-2 text-sm font-semibold text-[var(--lumma-sky)] transition hover:bg-[var(--lumma-sky)]/20"
+              >
+                Enter Testnet
+              </a>
               <a
                 href="https://docs.arc.network/"
                 target="_blank"
@@ -122,7 +143,7 @@ export default function DocsPage() {
           </div>
         </header>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[250px_1fr]">
           <aside className="lumma-reveal h-fit border border-[var(--lumma-border)] bg-[var(--lumma-bg)] p-4 lg:sticky lg:top-5 lumma-glass-panel" data-reveal>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--lumma-fg)]/60">
               Navigation
@@ -141,36 +162,51 @@ export default function DocsPage() {
           </aside>
 
           <div className="space-y-5">
-            <DocCard id="overview" title="Overview" icon={<Sparkles size={16} />}>
+            <DocCard id="overview" title="What Is Lumma" icon={<Sparkles size={16} />}>
               <p>
-                Lumma is a loop-based DeFi system: vault actions + stable swaps + validated incentive scoring.
+                Lumma is a yield app on Arc testnet. Users connect with Privy wallets, deposit to risk-tiered vaults, swap between USDC and EURC, and earn points across activity and social loops.
               </p>
               <ul className="list-disc space-y-1 pl-5 text-white/74">
-                <li>Arc-native gas model (USDC as native gas).</li>
-                <li>Offchain anti-sybil scoring engine with settlement gates.</li>
-                <li>Onchain milestone NFTs for durable reward states.</li>
+                <li>Arc testnet first, with USDC as native gas token.</li>
+                <li>Privy login + embedded wallet + external wallet support.</li>
+                <li>Hybrid rewards: offchain points + onchain milestone NFTs.</li>
               </ul>
+            </DocCard>
+
+            <DocCard id="features" title="Core Feature Loops" icon={<Flame size={16} />}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <MiniPanel title="Yield Vaults">
+                  Conservative (5-8%), Balanced (8-12%), Aggressive (12-20%). Deposit/withdraw with estimated APY labels.
+                </MiniPanel>
+                <MiniPanel title="Stable Swaps">
+                  USDC ↔ EURC quote + execute flow, history tracking, milestone swap counters.
+                </MiniPanel>
+                <MiniPanel title="Points + Tasks">
+                  Daily/social/activity tasks with anti-sybil checks and cooldowns.
+                </MiniPanel>
+                <MiniPanel title="Referrals + NFTs">
+                  Unique referral code, reward sharing activation rules, and Bronze/Silver/Gold/Diamond claims.
+                </MiniPanel>
+              </div>
             </DocCard>
 
             <DocCard id="architecture" title="Architecture" icon={<Blocks size={16} />}>
               <div className="grid gap-3 md:grid-cols-2">
-                <MiniPanel title="Frontend">
-                  Next.js host-routed surfaces:
-                  <br />
+                <MiniPanel title="Surfaces">
                   `lumma.xyz` landing
                   <br />
-                  `testnet.lumma.xyz` cockpit
-                  <br />
                   `docs.lumma.xyz` docs
+                  <br />
+                  `testnet.lumma.xyz` app
                 </MiniPanel>
-                <MiniPanel title="Execution Layer">
-                  Vault manager + milestones contracts on Arc testnet and StableFX router integration.
+                <MiniPanel title="Auth Layer">
+                  Privy access token verification + wallet-based identity mapped to user profile and referral code.
                 </MiniPanel>
-                <MiniPanel title="Reward Layer">
-                  Points, referrals, quests, and leaderboard snapshots in API + Supabase.
+                <MiniPanel title="Data Layer">
+                  Supabase-backed persistence with in-memory fallback when service role key is missing.
                 </MiniPanel>
-                <MiniPanel title="Control Layer">
-                  Admin pause controls, anti-abuse flags, and scheduled settlement windows.
+                <MiniPanel title="Onchain Layer">
+                  LummaVaultManager + LummaMilestones contracts on Arc testnet, plus StableFX routing for swaps.
                 </MiniPanel>
               </div>
             </DocCard>
@@ -181,96 +217,73 @@ export default function DocsPage() {
 RPC: ${addresses.rpc}
 Explorer: ${addresses.explorer}
 
-USDC: ${addresses.usdc}
-EURC: ${addresses.eurc}
-StableFX Router: ${addresses.stableFxRouter}
-LummaVaultManager: ${addresses.vaultManager}
-LummaMilestones: ${addresses.milestones}`}
-              />
-              <ul className="list-disc pl-5 text-sm text-white/75">
-                <li>
-                  <a
-                    href={`https://testnet.arcscan.app/address/${addresses.vaultManager}`}
-                    className="underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    LummaVaultManager on Arcscan
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={`https://testnet.arcscan.app/address/${addresses.milestones}`}
-                    className="underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    LummaMilestones on Arcscan
-                  </a>
-                </li>
-              </ul>
-            </DocCard>
-
-            <DocCard id="functions" title="Core Functions" icon={<FileCode2 size={16} />}>
-              <h3 className="font-display text-xl font-semibold text-white">Vault Manager</h3>
-              <CodeBlock
-                code={`configureVault(bytes32 vaultId, uint8 risk, uint256 txCap)
-setGlobalPause(bool paused)
-setVaultPause(bytes32 vaultId, bool paused)
-deposit(bytes32 vaultId, uint256 amount)
-withdraw(bytes32 vaultId, uint256 amount)
-getUserPosition(address user, bytes32 vaultId)`}
-              />
-              <h3 className="font-display text-xl font-semibold text-white">Milestones NFT</h3>
-              <CodeBlock
-                code={`claimMilestone(address account, string tier, string tokenUri)
-setContractMetadataURI(string uri)
-contractURI()
-tokenURI(uint256 tokenId)`}
-              />
-            </DocCard>
-
-            <DocCard id="apy" title="Estimated APY Model (Testnet)" icon={<Flame size={16} />}>
-              <p>
-                APY is modeled offchain for iteration speed and displayed explicitly as estimated.
-              </p>
-              <CodeBlock
-                code={`estimated_apy = clamp(
-  center + wave_drift + time_bucket_noise,
-  vault.apy_min,
-  vault.apy_max
-)`}
+USDC: ${presentAddress(addresses.usdc)}
+EURC: ${presentAddress(addresses.eurc)}
+StableFX Router: ${presentAddress(addresses.stableFxRouter)}
+LummaVaultManager: ${presentAddress(addresses.vaultManager)}
+LummaMilestones: ${presentAddress(addresses.milestones)}`}
               />
               <p className="text-sm text-white/74">
-                Conservative: 5-8%, Balanced: 8-12%, Aggressive: 12-20%.
+                Values are read from `NEXT_PUBLIC_*` env vars with safe fallbacks.
               </p>
             </DocCard>
 
-            <DocCard id="security" title="Security Model" icon={<Shield size={16} />}>
+            <DocCard id="api" title="Public API Map" icon={<FileCode2 size={16} />}>
+              <CodeBlock
+                code={`GET  /api/vaults
+POST /api/vaults/deposit
+POST /api/vaults/withdraw
+GET  /api/swap/quote
+POST /api/swap/execute
+GET  /api/swaps/history
+POST /api/points/event
+GET  /api/leaderboard
+POST /api/referrals/apply
+GET  /api/referrals/stats
+GET  /api/quests/active
+POST /api/quests/complete
+POST /api/nft/claim
+GET  /api/user/profile
+POST /api/user/profile`}
+              />
+              <p className="text-sm text-white/74">
+                API calls are user-scoped via `x-user-id`; authenticated sessions resolve to Privy user IDs.
+              </p>
+            </DocCard>
+
+            <DocCard id="deploy" title="Deploy Runbook (Lumma on Arc Testnet)" icon={<Wrench size={16} />}>
+              <ol className="list-decimal space-y-2 pl-5 text-white/74">
+                <li>Install Foundry (`foundryup`) and set Arc RPC + deployer key in env.</li>
+                <li>Fund deployer wallet with testnet USDC from Circle faucet (USDC is gas on Arc).</li>
+                <li>Deploy Lumma contracts using project script: `npm run deploy:arc`.</li>
+                <li>Copy deployed addresses into env vars and redeploy web app.</li>
+                <li>Verify contracts and deployment tx on `testnet.arcscan.app`.</li>
+              </ol>
+              <CodeBlock
+                code={`NEXT_PUBLIC_ARC_RPC_URL=https://rpc.testnet.arc.network
+NEXT_PUBLIC_ARC_CHAIN_ID=5042002
+DEPLOYER_PRIVATE_KEY=0x...
+NEXT_PUBLIC_USDC_ADDRESS=0x...
+
+npm run deploy:arc`}
+              />
+            </DocCard>
+
+            <DocCard id="ops" title="Operations" icon={<Shield size={16} />}>
               <ul className="list-disc space-y-1 pl-5 text-white/74">
-                <li>Per-vault tx cap enforcement onchain.</li>
-                <li>Global + per-vault pause switches for emergency controls.</li>
-                <li>Anti-sybil scoring before social/referral settlement.</li>
-                <li>Delayed social reward windows with block rules.</li>
+                <li>Pause vault rails with `POST /api/admin/vaults/pause` using `ADMIN_API_TOKEN`.</li>
+                <li>Track quote mode warnings (`circle`, `onchain`, `simulation`) in swap responses.</li>
+                <li>Keep Supabase service role key configured to avoid temporary in-memory profile mode.</li>
+                <li>Keep Privy app ID configured on deployed environments for wallet auth visibility.</li>
               </ul>
             </DocCard>
 
-            <DocCard id="integrate" title="Integration Quickstart" icon={<ArrowUpRight size={16} />}>
-              <ol className="list-decimal space-y-1 pl-5 text-white/74">
-                <li>Set Arc chain/RPC/explorer env vars.</li>
-                <li>Configure Privy + Supabase keys.</li>
-                <li>Set deployed contract addresses in env.</li>
-                <li>Use Circle StableFX quotes with `CIRCLE_API_KEY`.</li>
-                <li>Use `/api/*` routes for app flows and scoring events.</li>
-              </ol>
-            </DocCard>
-
-            <DocCard id="ops" title="Ops Runbook" icon={<Wallet size={16} />}>
+            <DocCard id="troubleshoot" title="Troubleshooting" icon={<ArrowUpRight size={16} />}>
               <ul className="list-disc space-y-1 pl-5 text-white/74">
-                <li>Pause rails with `POST /api/admin/vaults/pause` + admin token.</li>
-                <li>Deploy contracts via `npm run deploy:arc`.</li>
-                <li>Rotate compromised secrets before production activation.</li>
-                <li>Verify DNS + TLS before launch messaging.</li>
+                <li>Wallet connect missing: set `NEXT_PUBLIC_PRIVY_APP_ID` and redeploy.</li>
+                <li>Username not persisting: set `SUPABASE_SERVICE_ROLE_KEY` and run migrations.</li>
+                <li>Swap fallback warning: check `CIRCLE_API_KEY` and `CIRCLE_API_BASE_URL`.</li>
+                <li>NFT claim fails: confirm `DEPLOYER_PRIVATE_KEY` and milestone contract address.</li>
               </ul>
             </DocCard>
           </div>
@@ -311,7 +324,7 @@ function DocCard({
 
 function MiniPanel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <article className="border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-3 text-sm text-[var(--lumma-fg)]/80 rounded-[16px]">
+    <article className="rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.02] p-3 text-sm text-[var(--lumma-fg)]/80">
       <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[var(--lumma-fg)]/60">{title}</p>
       <p className="mt-1 leading-relaxed">{children}</p>
     </article>
@@ -320,7 +333,7 @@ function MiniPanel({ title, children }: { title: string; children: React.ReactNo
 
 function CodeBlock({ code }: { code: string }) {
   return (
-    <pre className="overflow-x-auto border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.04] p-4 text-xs text-[var(--lumma-fg)] rounded-[16px]">
+    <pre className="overflow-x-auto rounded-[16px] border border-[var(--lumma-border)] bg-[var(--lumma-fg)]/[0.04] p-4 text-xs text-[var(--lumma-fg)]">
       <code>{code}</code>
     </pre>
   );

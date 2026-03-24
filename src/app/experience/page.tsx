@@ -77,7 +77,7 @@ export default function ExperiencePage() {
                 href="https://testnet.lumma.xyz"
                 className="rounded-full border border-[var(--lumma-sky)]/40 bg-[var(--lumma-sky)]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--lumma-sky)] transition-all hover:bg-[var(--lumma-sky)]/20 shadow-[0_0_15px_rgba(14,165,233,0.15)] backdrop-blur-md"
               >
-                Enter Cockpit
+                Enter Testnet
               </a>
             </div>
           </div>

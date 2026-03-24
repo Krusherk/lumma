@@ -149,6 +149,22 @@ const globalStore = globalThis as typeof globalThis & {
 const state = globalStore.__lummaState ?? createState();
 globalStore.__lummaState = state;
 
+const oneTimeTaskKeys = new Set([
+  "first_deposit",
+  "deposit_100",
+  "deposit_1000",
+  "hold_7d",
+  "hold_30d",
+  "swaps_10",
+  "swaps_50",
+  "follow_twitter",
+  "retweet_announcement",
+  "join_discord",
+  "invite_friend",
+  "share_referral",
+  "like_comment",
+]);
+
 export function getOrCreateUser(userId: string, walletAddress?: string) {
   const existing = state.users.get(userId);
   if (existing) {
@@ -428,6 +444,20 @@ export function recordPointEvent(
   const task = taskByKey.get(taskKey);
   if (!task) {
     throw new Error("Unknown task key.");
+  }
+
+  if (oneTimeTaskKeys.has(task.key)) {
+    const existing = state.pointEvents
+      .filter(
+        (event) =>
+          event.userId === userId &&
+          event.key === task.key &&
+          (event.status === "settled" || event.status === "pending"),
+      )
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
+    if (existing) {
+      return existing;
+    }
   }
 
   const now = new Date();

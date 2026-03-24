@@ -3,37 +3,40 @@ import Link from "next/link";
 
 const capabilityCards = [
   {
-    title: "Network Throughput",
-    icon: "hub",
-    value: "4.8",
-    unit: "TB/S",
-    footerLeft: "Peak: 5.2 TB/S",
-    footerRight: "Status: Nominal",
+    kind: "throughput",
+    title: "Vault APY Bands",
+    icon: "savings",
+    value: "5-20",
+    unit: "%",
+    footerLeft: "Conservative: 5-8%",
+    footerRight: "Aggressive: 12-20%",
   },
   {
-    title: "Active Nodes",
-    icon: "memory",
-    value: "12,402",
+    kind: "nodes",
+    title: "Stablecoin Pair",
+    icon: "swap_horiz",
+    value: "USDC/EURC",
     unit: "",
-    footerLeft: "Global Coverage: 98.4%",
-    footerRight: "Uptime: 100%",
+    footerLeft: "Rail: Circle StableFX",
+    footerRight: "Live on Arc testnet",
   },
   {
-    title: "System Uptime",
-    icon: "history_edu",
-    value: "342:12",
-    unit: "",
-    footerLeft: "Last Reboot: 04.22.24",
-    footerRight: "Session: Verified",
+    kind: "uptime",
+    title: "Reward Engines",
+    icon: "stars",
+    value: "6",
+    unit: "LOOPS",
+    footerLeft: "Points, referrals, quests",
+    footerRight: "NFT milestones enabled",
   },
 ];
 
 const systemFeed = [
-  { event: "ENCRYPTION_KEY_ROTATED", time: "12:04:22" },
-  { event: "NODE_HANDSHAKE_COMPLETE [X72]", time: "12:02:15" },
-  { event: "QUANT_VAULT_01_SYNCED", time: "11:58:04" },
-  { event: "GATEWAY_AUTHENTICATED", time: "11:45:30" },
-  { event: "INTEGRITY_CHECK_PASS", time: "11:30:12" },
+  { event: "PRIVY_AUTH_PROVIDER_READY", time: "12:04:22" },
+  { event: "ARC_TESTNET_RPC_HEALTHY", time: "12:02:15" },
+  { event: "VAULT_APY_MODEL_REFRESHED", time: "11:58:04" },
+  { event: "STABLEFX_QUOTE_CHANNEL_ACTIVE", time: "11:45:30" },
+  { event: "POINTS_REFERRAL_ENGINE_SYNCED", time: "11:30:12" },
 ];
 
 export default function LandingPage() {
@@ -43,10 +46,10 @@ export default function LandingPage() {
       <div className="lumma-systems-grid-overlay fixed inset-0 z-10 pointer-events-none" />
 
       <div className="lumma-systems-vertical-text fixed left-8 top-32 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
-        GLOBAL_COORD: 40.7128° N / 74.0060° W
+        ARC_SCOPE: TESTNET_ONLY
       </div>
       <div className="lumma-systems-vertical-text fixed bottom-32 right-8 z-20 hidden text-[9px] uppercase tracking-[0.4em] text-[#919191]/50 lg:block">
-        INSTANCE_ID: OP_CORE_01_SCROLL
+        APP_MODE: YIELD + QUESTS
       </div>
 
       <header className="fixed top-0 z-50 flex h-20 w-full items-center justify-between border-b border-white/10 bg-[#131313]/90 px-8 backdrop-blur-xl md:px-12">
@@ -56,13 +59,13 @@ export default function LandingPage() {
 
         <nav className="hidden gap-10 font-display text-[11px] font-bold uppercase tracking-widest md:flex">
           <a className="border-b border-white pb-1 text-white transition-all hover:opacity-70" href="#network">
-            NETWORK
+            PRODUCT
           </a>
           <a className="text-[#919191] transition-all hover:text-white" href="#capabilities">
-            CAPABILITIES
+            FEATURES
           </a>
           <a className="text-[#919191] transition-all hover:text-white" href="#terminal">
-            TERMINAL
+            TESTNET
           </a>
         </nav>
 
@@ -101,32 +104,32 @@ export default function LandingPage() {
 
           <div className="text-center">
             <h1 className="mb-4 font-display text-4xl font-black uppercase tracking-[0.25em] text-white md:text-6xl lg:text-7xl">
-              SYSTEM_OPERATIONAL
+              LUMMA_TESTNET_ACTIVE
             </h1>
             <p className="flex flex-wrap justify-center gap-4 text-[10px] uppercase tracking-[0.6em] text-[#919191] md:text-xs">
-              <span>PHASE: INITIALIZING</span>
+              <span>BUILT_ON: ARC_TESTNET</span>
               <span className="hidden sm:inline">{"//"}</span>
-              <span>CORE_TEMP: 32°C</span>
+              <span>GAS_TOKEN: USDC</span>
               <span className="hidden sm:inline">{"//"}</span>
-              <span>SECURITY: ACTIVE</span>
+              <span>AUTH: PRIVY_WALLET</span>
             </p>
           </div>
 
           <div className="absolute bottom-12 flex flex-col items-center gap-4">
             <span className="animate-bounce text-[9px] uppercase tracking-widest text-[#919191]">
-              SCROLL_FOR_METRICS
+              SCROLL_FOR_LUMMA
             </span>
             <div className="h-16 w-px bg-gradient-to-b from-white to-transparent" />
           </div>
 
           <div className="absolute left-12 top-24 hidden border-l border-white/20 py-2 pl-4 lg:block">
             <span className="block text-[10px] text-[#919191]">X_LATENCY</span>
-            <span className="block font-display text-xl text-white">0.002ms</span>
+            <span className="block font-display text-xl text-white">SWAP: USDC/EURC</span>
           </div>
 
           <div className="absolute bottom-24 right-12 hidden border-r border-white/20 py-2 pr-4 text-right lg:block">
-            <span className="block text-[10px] text-[#919191]">SYNC_RATIO</span>
-            <span className="block font-display text-xl text-white">1:1.0024</span>
+            <span className="block text-[10px] text-[#919191]">AUTH_LAYER</span>
+            <span className="block font-display text-xl text-white">PRIVY_READY</span>
           </div>
         </section>
 
@@ -136,7 +139,7 @@ export default function LandingPage() {
               SUBSECTION_01
             </span>
             <h2 className="font-display text-4xl font-bold uppercase tracking-tight text-white">
-              PROTOCOL_CAPABILITIES
+              LUMMA_CORE_FEATURES
             </h2>
           </div>
 
@@ -154,7 +157,7 @@ export default function LandingPage() {
                 <div className="mb-6 flex items-baseline gap-2">
                   <span className="font-display text-5xl font-bold text-white">{card.value}</span>
                   {card.unit ? <span className="text-sm uppercase tracking-wider text-[#919191]">{card.unit}</span> : null}
-                  {card.title === "Active Nodes" ? (
+                  {card.kind === "nodes" ? (
                     <span
                       className="material-symbols-outlined animate-pulse text-xs text-white"
                       style={{ fontVariationSettings: "'FILL' 1" }}
@@ -164,7 +167,7 @@ export default function LandingPage() {
                   ) : null}
                 </div>
 
-                {card.title === "Network Throughput" ? (
+                {card.kind === "throughput" ? (
                   <>
                     <div className="relative h-1 w-full bg-white/10">
                       <div className="absolute left-0 top-0 h-full w-2/3 bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
@@ -176,7 +179,7 @@ export default function LandingPage() {
                   </>
                 ) : null}
 
-                {card.title === "Active Nodes" ? (
+                {card.kind === "nodes" ? (
                   <>
                     <div className="grid h-1 grid-cols-12 gap-1">
                       <div className="bg-white" />
@@ -199,7 +202,7 @@ export default function LandingPage() {
                   </>
                 ) : null}
 
-                {card.title === "System Uptime" ? (
+                {card.kind === "uptime" ? (
                   <>
                     <div className="flex h-8 items-end gap-1">
                       <div className="h-[20%] w-full bg-white/20" />
@@ -226,10 +229,10 @@ export default function LandingPage() {
             <div>
               <div className="mb-12">
                 <span className="mb-2 block text-[10px] uppercase tracking-[0.4em] text-[#919191]">
-                  REALTIME_OUTPUT
+                  LUMMA_ACTIVITY_LOG
                 </span>
                 <h2 className="font-display text-3xl font-bold uppercase tracking-tight text-white">
-                  SYSTEM_FEED
+                  LIVE_SIGNAL_FEED
                 </h2>
               </div>
 
@@ -246,17 +249,17 @@ export default function LandingPage() {
               </div>
 
               <button className="mt-8 w-full border border-[#919191]/30 py-4 text-[10px] font-display uppercase tracking-[0.4em] transition-all hover:bg-white/5">
-                LOAD_EXTENDED_LOGS
+                VIEW_FULL_ACTIVITY
               </button>
             </div>
 
             <div>
               <div className="mb-12">
                 <span className="mb-2 block text-[10px] uppercase tracking-[0.4em] text-[#919191]">
-                  SECURE_STORAGE
+                  YIELD_VAULTS
                 </span>
                 <h2 className="font-display text-3xl font-bold uppercase tracking-tight text-white">
-                  VAULT_TERMINAL
+                  TESTNET_COMMANDS
                 </h2>
               </div>
 
@@ -264,23 +267,23 @@ export default function LandingPage() {
                 <div className="mb-8 flex items-center gap-4">
                   <div className="h-2 w-2 animate-pulse bg-white" />
                   <span className="font-display text-xs uppercase tracking-widest text-white">
-                    ACCESS_LEVEL: ALPHA_ROOT
+                    MODE: APP_TESTNET
                   </span>
                 </div>
 
                 <div className="mb-12 space-y-6">
                   <div className="flex items-end justify-between border-b border-white/10 pb-2">
-                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Vault Assets</span>
-                    <span className="font-display text-2xl text-white">402.82 BTC</span>
+                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Vault Types</span>
+                    <span className="font-display text-2xl text-white">3 Rails</span>
                   </div>
                   <div className="flex items-end justify-between border-b border-white/10 pb-2">
-                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Active Keys</span>
-                    <span className="font-display text-2xl text-white">1,024</span>
+                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Swap Pair</span>
+                    <span className="font-display text-2xl text-white">USDC/EURC</span>
                   </div>
                   <div className="flex items-end justify-between border-b border-white/10 pb-2">
-                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Security Audit</span>
+                    <span className="text-[10px] uppercase tracking-widest text-[#919191]">Wallet Auth</span>
                     <span className="font-display text-lg uppercase tracking-widest text-white">
-                      CRITICAL_PASS
+                      PRIVY
                     </span>
                   </div>
                 </div>
@@ -289,7 +292,7 @@ export default function LandingPage() {
                   href="https://testnet.lumma.xyz"
                   className="block w-full bg-white py-4 text-center font-display text-[11px] font-black uppercase tracking-[0.4em] text-black transition-all hover:bg-white/80 active:scale-95"
                 >
-                  INITIALIZE_VAULT_TRANSFER
+                  ENTER_TESTNET
                 </Link>
               </div>
             </div>
@@ -299,24 +302,23 @@ export default function LandingPage() {
         <section className="relative overflow-hidden px-8 py-36 text-center md:px-12 md:py-48">
           <div className="mx-auto max-w-3xl">
             <h2 className="mb-8 font-display text-5xl font-black uppercase tracking-tight text-white md:text-6xl">
-              SECURE_THE_PROTOCOL
+              START_EARNING_ON_TESTNET
             </h2>
             <p className="mx-auto mb-12 max-w-xl text-lg text-[#919191]/80">
-              Access the core infrastructure and join the distributed network of the next generation of
-              decentralized management.
+              Lumma is stablecoin utility plus game loops: vaults, swaps, points, referrals, quests, and NFT rewards on Arc testnet.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href="https://testnet.lumma.xyz"
                 className="px-12 py-5 font-display text-xs font-black uppercase tracking-[0.4em] text-black transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] bg-white"
               >
-                GET_STARTED_X72
+                ENTER_TESTNET
               </Link>
               <Link
                 href="https://docs.lumma.xyz"
                 className="border border-white/20 px-12 py-5 font-display text-xs font-black uppercase tracking-[0.4em] text-white transition-all hover:bg-white/5"
               >
-                DOCUMENTATION
+                READ_DOCS
               </Link>
             </div>
           </div>
@@ -331,8 +333,7 @@ export default function LandingPage() {
                 LUMMA//SYSTEMS
               </div>
               <p className="mb-8 max-w-sm text-xs uppercase tracking-wider text-[#919191]">
-                The definitive operating core for distributed ledger management and cross-chain orchestration.
-                Engineered for the future of decentralized sovereignty.
+                Stablecoin utility with game loops. Deposit, swap, earn points, unlock referrals, complete quests, and claim NFT milestones.
               </p>
               <div className="flex gap-4">
                 <div className="flex h-10 w-10 cursor-pointer items-center justify-center border border-white/10 text-white/50 transition-colors hover:text-white">
@@ -359,17 +360,17 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <a className="transition-colors hover:text-white" href="#capabilities">
-                    PROTOCOL_CAP
+                    VAULT_SWAP_POINTS
                   </a>
                 </li>
                 <li>
                   <a className="transition-colors hover:text-white" href="#terminal">
-                    SYSTEM_FEED
+                    ENTER_TESTNET
                   </a>
                 </li>
                 <li>
-                  <a className="transition-colors hover:text-white" href="#">
-                    NODE_REGISTRY
+                  <a className="transition-colors hover:text-white" href="https://docs.lumma.xyz">
+                    DOCS
                   </a>
                 </li>
               </ul>
@@ -382,22 +383,22 @@ export default function LandingPage() {
               <ul className="space-y-4 text-[10px] uppercase tracking-widest text-[#919191]">
                 <li>
                   <a className="transition-colors hover:text-white" href="#">
-                    WHITEPAPER_V2
+                    BUILT_ON_ARC
                   </a>
                 </li>
                 <li>
                   <a className="transition-colors hover:text-white" href="#">
-                    API_TERMINAL
+                    PRIVY_WALLET_AUTH
                   </a>
                 </li>
                 <li>
                   <a className="transition-colors hover:text-white" href="#">
-                    SECURITY_AUDIT
+                    USDC_GAS_MODEL
                   </a>
                 </li>
                 <li>
                   <a className="transition-colors hover:text-white" href="#">
-                    STATUS_UIP
+                    STABLEFX_SWAP_RAIL
                   </a>
                 </li>
               </ul>
@@ -406,7 +407,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col items-center justify-between gap-8 border-t border-white/5 pt-12 md:flex-row">
             <div className="text-[9px] uppercase tracking-[0.3em] text-[#919191]/50">
-              ©2024 LUMMA_PROTOCOL.V1 // AUTH_LEVEL_7 // BUILD_HASH: 0x8a92f...
+              ©2026 LUMMA_TESTNET // ARC_CHAIN // BUILD_HASH: 0xlumma
             </div>
             <div className="flex gap-8 text-[9px] uppercase tracking-[0.3em] text-[#919191]/50">
               <a className="transition-all hover:text-white" href="#">

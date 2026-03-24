@@ -10,11 +10,28 @@ export const config = {
       env.NEXT_PUBLIC_ARC_EXPLORER_URL ?? "https://testnet.arcscan.app",
   },
   contracts: {
-    vaultManager: env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS ?? "",
-    milestoneNft: env.NEXT_PUBLIC_MILESTONE_NFT_ADDRESS ?? "",
-    stableFxRouter: env.NEXT_PUBLIC_STABLEFX_ROUTER_ADDRESS ?? "",
-    usdc: env.NEXT_PUBLIC_USDC_ADDRESS ?? "",
-    eurc: env.NEXT_PUBLIC_EURC_ADDRESS ?? "",
+    vaultManager:
+      env.NEXT_PUBLIC_LUMMA_VAULT_MANAGER ??
+      env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS ??
+      "",
+    milestoneNft:
+      env.NEXT_PUBLIC_LUMMA_MILESTONES ??
+      env.NEXT_PUBLIC_MILESTONE_NFT_ADDRESS ??
+      "",
+    stableFxRouter:
+      env.NEXT_PUBLIC_STABLEFX_ROUTER ??
+      env.NEXT_PUBLIC_STABLEFX_ROUTER_ADDRESS ??
+      "",
+    usdc:
+      env.NEXT_PUBLIC_ARC_USDC_ADDRESS ??
+      env.NEXT_PUBLIC_ARC_USDC ??
+      env.NEXT_PUBLIC_USDC_ADDRESS ??
+      "",
+    eurc:
+      env.NEXT_PUBLIC_ARC_EURC_ADDRESS ??
+      env.NEXT_PUBLIC_ARC_EURC ??
+      env.NEXT_PUBLIC_EURC_ADDRESS ??
+      "",
   },
   privy: {
     appId: env.NEXT_PUBLIC_PRIVY_APP_ID ?? "",

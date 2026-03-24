@@ -59,6 +59,21 @@ const vaultCatalog: VaultCatalogEntry[] = [
 ];
 
 const socialKeys = ["follow_twitter", "retweet_announcement", "join_discord", "like_comment"];
+const oneTimeTaskKeys = new Set([
+  "first_deposit",
+  "deposit_100",
+  "deposit_1000",
+  "hold_7d",
+  "hold_30d",
+  "swaps_10",
+  "swaps_50",
+  "follow_twitter",
+  "retweet_announcement",
+  "join_discord",
+  "invite_friend",
+  "share_referral",
+  "like_comment",
+]);
 const USER_COLUMNS =
   "id, created_at, wallet_address, username, referral_code, referred_by, points_settled, points_pending, risk_flag";
 
@@ -629,6 +644,22 @@ export async function recordPointEvent(userId: string, taskKey: string, metadata
 
   const task = taskByKey.get(taskKey);
   if (!task) throw new Error("Unknown task key.");
+
+  if (oneTimeTaskKeys.has(task.key)) {
+    const { data: existing, error: existingError } = await db
+      .from("point_events")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("key", task.key)
+      .in("status", ["settled", "pending"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw mapDbError(existingError, "Failed checking one-time task state.");
+    if (existing) {
+      return mapPointEvent(existing as unknown as Record<string, unknown>);
+    }
+  }
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const [eventsInLastHour, referralAttemptsInLastHour] = await Promise.all([
