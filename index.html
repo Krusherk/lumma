@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/images/lumma.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Lumma — Cross-chain stablecoin settlement on Arc Network." />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Lumma" />
+    <meta property="og:title" content="Lumma — Cross-chain Stablecoin Settlement" />
+    <meta property="og:description" content="Swap, bridge, and pay with stablecoins across 60+ chains. Built on Arc Network." />
+    <meta property="og:image" content="https://lumma.xyz/images/payroll.jpg" />
+    <meta property="og:url" content="https://lumma.xyz" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lummaxyz" />
+    <meta name="twitter:title" content="Lumma — Cross-chain Stablecoin Settlement" />
+    <meta name="twitter:description" content="Swap, bridge, and pay with stablecoins across 60+ chains. Built on Arc Network." />
+    <meta name="twitter:image" content="https://lumma.xyz/images/payroll.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <title>Lumma</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>window.Buffer = window.Buffer || { from: function(a,b){ return typeof a==='string' ? new TextEncoder().encode(a) : new Uint8Array(a) }, alloc: function(n){ return new Uint8Array(n) }, isBuffer: function(){ return false }, concat: function(a){ let l=0; a.forEach(x=>l+=x.length); let r=new Uint8Array(l),o=0; a.forEach(x=>{r.set(x,o);o+=x.length}); return r } };</script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

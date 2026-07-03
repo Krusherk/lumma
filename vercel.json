@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/skills/lumma.md", "destination": "/api/skills/lumma" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+
+  "functions": {
+    "api/agent/chat.ts": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/payroll/cron",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

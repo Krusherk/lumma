@@ -1,0 +1,62 @@
+.wd{position:relative}
+
+.wd-chev{color:rgba(240,236,255,.35);transition:transform .25s cubic-bezier(.34,1.56,.64,1);margin-left:4px}
+.wd-chev.open{transform:rotate(180deg)}
+
+.wd-backdrop{position:fixed;inset:0;z-index:99}
+
+.wd-panel{
+  position:absolute;top:calc(100% + 10px);right:0;width:280px;
+  background:rgba(6,6,10,.98);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  z-index:100;padding:0;overflow:hidden;
+  animation:wdIn .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes wdIn{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+
+/* Address row */
+.wd-addr-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);
+}
+.wd-addr{font-size:.8rem;font-weight:600;color:#f0ecff;font-family:'JetBrains Mono',monospace}
+.wd-copy{
+  display:flex;align-items:center;gap:4px;
+  font-size:.62rem;font-weight:600;color:rgba(240,236,255,.35);
+  padding:4px 8px;border-radius:6px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+  cursor:pointer;transition:all .15s;
+}
+.wd-copy:hover{background:rgba(255,255,255,.08);color:#f0ecff}
+
+/* Section label */
+.wd-section-label{
+  font-size:.55rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(240,236,255,.2);padding:12px 16px 6px;
+}
+
+/* Balances */
+.wd-balances{padding:0 8px 8px}
+.wd-chain{
+  display:flex;align-items:center;gap:8px;
+  padding:8px;border-radius:7px;transition:background .12s;
+}
+.wd-chain:hover{background:rgba(255,255,255,.03)}
+.wd-chain-logo{width:18px;height:18px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.wd-chain-name{font-size:.72rem;font-weight:500;color:rgba(240,236,255,.5);flex:1}
+.wd-chain-bal{font-size:.72rem;font-weight:600;color:#f0ecff;font-family:'JetBrains Mono',monospace}
+
+/* Actions */
+.wd-actions{
+  border-top:1px solid rgba(255,255,255,.06);padding:6px;
+}
+.wd-action{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:9px 10px;border-radius:7px;
+  font-size:.72rem;font-weight:600;color:rgba(240,236,255,.45);
+  cursor:pointer;transition:all .12s;text-decoration:none;
+}
+.wd-action:hover{background:rgba(255,255,255,.05);color:#f0ecff}
+.wd-action.disconnect{color:rgba(248,113,113,.6)}
+.wd-action.disconnect:hover{background:rgba(248,113,113,.08);color:#f87171}

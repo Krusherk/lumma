@@ -1,0 +1,331 @@
+/* ══════════════════════════════════════
+   Unified Balance — Portfolio Profile
+   ══════════════════════════════════════ */
+
+.ub {
+  width: 100%;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.ub.mounted {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ub-panel {
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Title ── */
+.ub-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+/* ── Disconnected ── */
+.ub-disconnected {
+  padding: 40px 0;
+  text-align: center;
+}
+.ub-disc-text {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Wallet row ── */
+.ub-wallet-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.ub-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+}
+.ub-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ub-wallet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ub-wallet-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.ub-connected-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3fb950;
+  flex-shrink: 0;
+}
+.ub-connected-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+.ub-wallet-addr {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Balance ── */
+.ub-balance-big {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.ub-balance-change {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+.ub-change-pct {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #3fb950;
+}
+.ub-change-val {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Tabs ── */
+.ub-tabs {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 16px;
+  width: fit-content;
+}
+.ub-tab {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ub-tab:hover {
+  color: rgba(255, 255, 255, 0.55);
+}
+.ub-tab.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* ── Holdings ── */
+.ub-holdings {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ub-holdings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.12s;
+}
+.ub-holdings-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.ub-holdings-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+.ub-holdings-arrow {
+  color: rgba(255, 255, 255, 0.2);
+  transition: transform 0.2s;
+}
+.ub-holdings-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* ── Holding rows ── */
+.ub-holdings-list {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ub-holding-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  transition: background 0.12s;
+  animation: ub-fade-in 0.3s ease forwards;
+  opacity: 0;
+}
+.ub-holding-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.ub-holding-row.empty {
+  opacity: 0;
+  animation: ub-fade-in 0.3s ease forwards;
+}
+.ub-holding-row + .ub-holding-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+@keyframes ub-fade-in {
+  to { opacity: 1; }
+}
+.ub-holding-row.empty {
+  animation: ub-fade-in-dim 0.3s ease forwards;
+}
+@keyframes ub-fade-in-dim {
+  to { opacity: 0.3; }
+}
+
+.ub-holding-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ub-holding-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.04);
+}
+.ub-holding-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ub-holding-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ub-holding-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+.ub-holding-chain {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 500;
+}
+
+/* ── Holding values ── */
+.ub-holding-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ub-holding-val {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+.ub-holding-val.zero {
+  color: rgba(255, 255, 255, 0.1);
+}
+.ub-holding-qty {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.18);
+  font-weight: 500;
+}
+.ub-holding-qty.zero {
+  color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Activity empty ── */
+.ub-activity-empty {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+}
+
+/* ── Refresh ── */
+.ub-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.ub-refresh:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Skeleton ── */
+.ub-skel {
+  height: 14px;
+  width: 52px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  animation: ub-pulse 1.8s ease infinite;
+}
+.ub-skel-xl {
+  height: 28px;
+  width: 110px;
+}
+@keyframes ub-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

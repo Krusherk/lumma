@@ -1,0 +1,43 @@
+{
+  "name": "lumma",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@bigmi/react": "^0.8.0",
+    "@circle-fin/adapter-viem-v2": "^1.10.0",
+    "@circle-fin/app-kit": "^1.5.0",
+    "@circle-fin/developer-controlled-wallets": "^6.0.0",
+    "@circle-fin/swap-kit": "^1.2.0",
+    "@lifi/widget": "^3.40.12",
+    "@mysten/dapp-kit": "^1.0.6",
+    "@privy-io/react-auth": "^2.0.0",
+    "@privy-io/wagmi": "^1.0.0",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@supabase/supabase-js": "^2.105.4",
+    "@tanstack/react-query": "^5.0.0",
+    "@vercel/speed-insights": "^1.3.1",
+    "buffer": "^6.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.0.0",
+    "viem": "^2.30.0",
+    "wagmi": "^2.14.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vercel/node": "^5.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.0"
+  }
+}
