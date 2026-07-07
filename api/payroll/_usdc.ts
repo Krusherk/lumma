@@ -267,6 +267,30 @@ function safeAmount(field: string, value: unknown, opts: { allowZero: boolean })
   }
 }
 
+// ── Human employee pay frequency ──────────────────────────────────────
+// Human payroll is no longer monthly-only. A contractor's amount_usdc is the
+// salary PER PERIOD of this frequency (weekly / biweekly / monthly) and is
+// stored EXACTLY as the user specified — never converted to a monthly figure.
+// AI agents are paid `per_task` via payroll_rules and don't use this.
+export const HUMAN_PAY_FREQUENCIES = ['weekly', 'biweekly', 'monthly'] as const
+export type PayFrequency = (typeof HUMAN_PAY_FREQUENCIES)[number]
+
+/**
+ * Normalize a user-supplied pay frequency for a HUMAN employee.
+ * Preserves any valid frequency the user specified; only falls back to
+ * 'monthly' when the value is missing/unrecognized (never silently converts
+ * a specified weekly/biweekly amount into monthly).
+ */
+export function normalizePayFrequency(input: unknown): PayFrequency {
+  if (typeof input === 'string') {
+    const v = input.trim().toLowerCase()
+    if ((HUMAN_PAY_FREQUENCIES as readonly string[]).includes(v)) {
+      return v as PayFrequency
+    }
+  }
+  return 'monthly'
+}
+
 // ── internal ──
 function decimalStringFromNumber(n: number): string {
 

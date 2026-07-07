@@ -118,6 +118,13 @@ ALTER TABLE payroll_agents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payroll_work_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payroll_rules ENABLE ROW LEVEL SECURITY;
 
+-- Policy names are unique per table and CREATE POLICY has no IF NOT EXISTS,
+-- so DROP POLICY IF EXISTS first to make this section safe to re-run.
+DROP POLICY IF EXISTS "Allow all for anon" ON payroll_agents;
 CREATE POLICY "Allow all for anon" ON payroll_agents FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all for anon" ON payroll_work_logs;
 CREATE POLICY "Allow all for anon" ON payroll_work_logs FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow all for anon" ON payroll_rules;
 CREATE POLICY "Allow all for anon" ON payroll_rules FOR ALL USING (true) WITH CHECK (true);

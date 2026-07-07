@@ -30,12 +30,17 @@ CREATE INDEX IF NOT EXISTS idx_payroll_receipts_company
 -- RLS: receipts are publicly readable (like a block explorer)
 ALTER TABLE payroll_receipts ENABLE ROW LEVEL SECURITY;
 
+-- Policy names are unique per table and CREATE POLICY has no IF NOT EXISTS,
+-- so DROP POLICY IF EXISTS first to make this section safe to re-run.
+DROP POLICY IF EXISTS "Receipts are publicly readable" ON payroll_receipts;
 CREATE POLICY "Receipts are publicly readable"
   ON payroll_receipts FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Only service role can insert receipts" ON payroll_receipts;
 CREATE POLICY "Only service role can insert receipts"
   ON payroll_receipts FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Only service role can update receipts" ON payroll_receipts;
 CREATE POLICY "Only service role can update receipts"
   ON payroll_receipts FOR UPDATE USING (true) WITH CHECK (true);
 

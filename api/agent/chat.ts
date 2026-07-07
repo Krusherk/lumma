@@ -7,7 +7,7 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { formatBaseUnits, buildRuleRow } from '../payroll/_usdc.js'
+import { formatBaseUnits, buildRuleRow, normalizePayFrequency } from '../payroll/_usdc.js'
 
 // Use the same env vars as the working payroll API functions
 const supabase = createClient(
@@ -30,7 +30,7 @@ const SYSTEM_PROMPT = `You are Lumma Agent — an AI-powered payroll assistant b
 ## What You Do
 You help users manage USDC-based payroll for hybrid teams (humans + AI agents):
 - Create payroll vaults (Circle Developer-Controlled Wallets)
-- Add/remove contractors with names, wallet addresses, monthly USDC amounts
+- Add/remove contractors with names, wallet addresses, and USDC salaries at any pay frequency (weekly, biweekly, or monthly)
 - View contractor rosters and payment history
 - Check vault USDC balance
 - Run payroll (pay one or all contractors)
@@ -55,10 +55,12 @@ You MUST understand the difference between tools. NEVER confuse them:
   - Does NOT need: wallet address or amount
   - Triggers: "create vault", "set up payroll", "make a vault called X"
 
-**add_contractor** → Used when user wants to add a PERSON or AGENT to be paid.
+**add_contractor** → Used when user wants to add a HUMAN employee/contractor to be paid.
   - Needs: name, wallet_address (0x...), amount_usdc
   - ALL THREE fields are required. If any are missing, ASK for them.
-  - Triggers: "add contractor Alice 0x... at $500"
+  - pay_frequency is OPTIONAL: weekly, biweekly, or monthly. PRESERVE whatever the user says — e.g. "$500 a week" → amount_usdc=500, pay_frequency="weekly". "$2000 biweekly" → amount_usdc=2000, pay_frequency="biweekly". Do NOT convert amounts into a monthly equivalent, and do NOT ask the user to convert. Only default to monthly when the user gives no frequency at all.
+  - amount_usdc is the pay PER PERIOD of that frequency, stored exactly as given.
+  - Triggers: "add contractor Alice 0x... at $500/week", "add Bob at 2000 biweekly"
 
 **pay_all / pay_contractor** → Used when user wants to disburse payments.
   - Triggers: "pay them", "pay all", "run payroll", "pay my contractors"
@@ -131,13 +133,14 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'add_contractor',
-      description: 'Add a contractor to payroll. Validates wallet address format.',
+      description: 'Add a human contractor/employee to payroll. Validates wallet address format. Supports weekly, biweekly, or monthly salaries — store the amount for whatever period the user specifies (do NOT convert to monthly).',
       parameters: {
         type: 'object',
         properties: {
           name: { type: 'string', description: 'Contractor name' },
           wallet_address: { type: 'string', description: 'EVM wallet address (0x...)' },
-          amount_usdc: { type: 'number', description: 'Monthly USDC amount (e.g. 500)' },
+          amount_usdc: { type: 'number', description: 'USDC salary PER PERIOD of pay_frequency (e.g. 500 per week if pay_frequency=weekly). Do NOT normalize to monthly.' },
+          pay_frequency: { type: 'string', enum: ['weekly', 'biweekly', 'monthly'], description: 'How often this employee is paid. Preserve exactly what the user says. Defaults to monthly only if unspecified.' },
           role: { type: 'string', description: 'Role (e.g. Developer, Designer)' },
         },
         required: ['name', 'wallet_address', 'amount_usdc'],
@@ -377,21 +380,27 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
           return `Invalid address: "${args.wallet_address || 'none'}". Must be 0x + 40 hex chars.`
         }
         if (args.amount_usdc <= 0) return 'Amount must be > 0 USDC.'
+        // Preserve the user-specified pay frequency for human employees.
+        // Default to monthly ONLY when unspecified — never silently convert.
+        const payFrequency = normalizePayFrequency(args.pay_frequency)
         const { data, error } = await supabase.from('payroll_contractors').insert({
           company_id: company.id,
           name: args.name,
           wallet_address: args.wallet_address.toLowerCase(),
           amount_usdc: args.amount_usdc,
+          pay_frequency: payFrequency,
           chain_id: 5042002,
           role: args.role || 'Contractor',
           status: 'active',
         }).select().single()
         if (error) return `Error: ${error.message}`
+        const freqLabel: Record<string, string> = { weekly: '/week', biweekly: '/2 weeks', monthly: '/month' }
         return JSON.stringify({
           status: 'Added',
           name: data.name,
           wallet: data.wallet_address,
-          amount: `$${data.amount_usdc} USDC/month`,
+          amount: `$${data.amount_usdc} USDC${freqLabel[data.pay_frequency] || '/month'}`,
+          pay_frequency: data.pay_frequency,
           role: data.role,
         })
       }
@@ -406,7 +415,8 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
         if (!data?.length) return 'No contractors on roster yet.'
         return JSON.stringify(data.map((c: any) => ({
           name: c.name, wallet: c.wallet_address,
-          amount: `$${c.amount_usdc}`, role: c.role, status: c.status,
+          amount: `$${c.amount_usdc}`, pay_frequency: c.pay_frequency || 'monthly',
+          role: c.role, status: c.status,
         })))
       }
 

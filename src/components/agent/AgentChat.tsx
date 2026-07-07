@@ -25,6 +25,18 @@ const SUGGESTIONS = [
 
 const LUMMA_LOGO = '/images/lumma.svg'
 
+// ── TEMPORARY public access flag ──
+// When VITE_PAYROLL_PUBLIC === 'true', Agent Payroll is open to ANY connected
+// wallet with NO invite code. This is intentionally temporary — flip the env
+// var back to 'false' (or remove it) to re-enable the invite-code gate.
+const PAYROLL_PUBLIC = import.meta.env.VITE_PAYROLL_PUBLIC === 'true'
+
+// Derive a stable, wallet-scoped session id for public (no-code) access.
+// The chat API already accepts any sessionId beginning with "LMA-".
+function publicSessionId(address: string): string {
+  return `LMA-PUBLIC-${address.slice(2, 10).toUpperCase()}`
+}
+
 export default function AgentChat() {
   const { address } = useAccount()
   const { authenticated, login } = usePrivy()
@@ -39,6 +51,17 @@ export default function AgentChat() {
   })
   const [codeError, setCodeError] = useState('')
   const [validating, setValidating] = useState(false)
+
+  // ── Public access: auto-create a session for any connected wallet ──
+  // Temporary bypass of the invite-code gate, controlled by VITE_PAYROLL_PUBLIC.
+  useEffect(() => {
+    if (PAYROLL_PUBLIC && authenticated && address && !sessionId) {
+      const sid = publicSessionId(address)
+      setSessionId(sid)
+      localStorage.setItem('lma_sess_v2', sid)
+    }
+  }, [authenticated, address, sessionId])
+
 
   // Chat state
   const [messages, setMessages] = useState<Message[]>([])
