@@ -16,10 +16,12 @@ interface Message {
 
 const SUGGESTIONS = [
   'Create my payroll vault',
+  'Show my vaults',
   'Add a contractor',
   'Check vault balance',
   'List my contractors',
   'Run payroll for all',
+  'Switch vault',
   'Show payment history',
 ]
 

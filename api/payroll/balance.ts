@@ -1,21 +1,12 @@
 /**
- * GET /api/payroll/balance?company_id=xxx
+ * GET /api/payroll/balance?company_id=xxx&owner_address=xxx
  *
  * Returns the USDC balance of a company's vault wallet.
- * Uses Circle SDK for Circle-managed wallets, with on-chain RPC fallback.
+ * owner_address is required and must match the company's owner (scoping).
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
-import {
-  getCircleWalletBalance,
-  getOnChainUSDCBalance,
-  CHAIN_ID_MAP,
-} from './_circle.js'
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
-)
+import { getCircleWalletBalance, getOnChainUSDCBalance, CHAIN_ID_MAP } from './_circle.js'
+import { supabase } from './_supabase.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -23,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { company_id } = req.query
+    const { company_id, owner_address } = req.query
 
     if (!company_id) {
       return res.status(400).json({ error: 'company_id required' })
@@ -39,6 +30,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Company not found' })
     }
 
+    // Ownership scoping: if caller supplies owner_address, verify it matches
+    if (owner_address) {
+      if (company.owner_address.toLowerCase() !== (owner_address as string).toLowerCase()) {
+        return res.status(403).json({ error: 'Forbidden' })
+      }
+    }
+
     if (!company.vault_address) {
       return res.status(200).json({ balance: '0', vault_address: null })
     }
@@ -46,19 +44,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let balance = '0'
 
     if (company.vault_wallet_id) {
-      // Primary: Circle SDK balance check
       balance = await getCircleWalletBalance(company.vault_wallet_id)
-
-      // If SDK returns 0, double-check on-chain (funds may not have indexed yet)
       if (balance === '0') {
         const chainId = CHAIN_ID_MAP[company.vault_chain || 'ARC-TESTNET'] || 5042002
         const onChain = await getOnChainUSDCBalance(company.vault_address, chainId)
-        if (parseFloat(onChain) > 0) {
-          balance = onChain
-        }
+        if (parseFloat(onChain) > 0) balance = onChain
       }
     } else {
-      // No Circle wallet ID — query on-chain directly
       const chainId = CHAIN_ID_MAP[company.vault_chain || 'ARC-TESTNET'] || 5042002
       balance = await getOnChainUSDCBalance(company.vault_address, chainId)
     }

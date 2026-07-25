@@ -6,53 +6,37 @@
  * GET  /api/payroll/agent/activity — Owner views all agent activity
  * POST /api/payroll/agent/approve — Owner approves + settles pending payouts
  *
- * Routing is handled via query param: ?action=create|link|report|earnings|activity|approve
+ * Routing via query param: ?action=create|link|set_wallet|report|earnings|activity|approve|sweep
+ *
+ * Owner-only actions (create, activity, approve, sweep) require x-internal-secret.
+ * Agent-facing actions (link, set_wallet, report, earnings) use Bearer token auth.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
-import { transferUSDC } from './_circle.js'
+import { transferUSDC, CHAIN_ID_MAP } from './_circle.js'
+import { requireInternalSecret } from './_auth.js'
+import { supabase } from './_supabase.js'
 import { sumBaseUnits, feeBaseUnits, formatBaseUnits } from './_usdc.js'
 
 const RECEIPT_BASE_URL = 'https://payroll.lumma.xyz'
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
-)
-
 function generateLinkCode(): string {
   return `LMA-LINK-${crypto.randomBytes(4).toString('hex')}`
 }
-
 function generateAgentToken(): string {
   return `lma_at_${crypto.randomBytes(16).toString('hex')}`
 }
-
 function generateReceiptId(): string {
   return `LMA-${crypto.randomBytes(4).toString('hex')}`
 }
-
-// Validate an EVM payout address (0x + 40 hex chars).
 function isValidEVMAddress(address: string): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(address)
 }
 
-
-// ── Settlement fee (Lumma's nanopayment revenue) ──
-// Default 0.5% (50 bps). Applied ONLY at settlement, deducted from gross.
-// It never touches the per-task rate the owner selected.
-// SETTLEMENT_FEE_BPS is sourced from _usdc.ts (env-overridable).
-//
-// All fee/gross/net math is done in integer USDC base units (BigInt) to
-// avoid floating-point rounding — see _usdc.ts.
-
-// ── Simple in-memory rate limiter: 100 req/min per token ──
-// Note: per serverless instance. For strict global limits, back this with Redis/DB.
+// ── In-memory rate limiter: 100 req/min per token (per serverless instance) ──
 const RATE_LIMIT = 100
 const RATE_WINDOW_MS = 60_000
 const rateBuckets = new Map<string, number[]>()
-
 
 function checkRateLimit(key: string): boolean {
   const now = Date.now()
@@ -63,35 +47,54 @@ function checkRateLimit(key: string): boolean {
   }
   hits.push(now)
   rateBuckets.set(key, hits)
+  // Periodically clean up idle keys to prevent unbounded Map growth
+  if (rateBuckets.size > 10_000) {
+    for (const [k, ts] of rateBuckets) {
+      if (ts.every(t => now - t >= RATE_WINDOW_MS)) rateBuckets.delete(k)
+    }
+  }
   return true
 }
 
 /**
  * Settle a group of pending/approved work logs for a single agent.
- * Sends USDC on-chain (if the agent has a wallet + the vault is funded),
- * marks logs as settled, increments total_earned, and writes a receipt.
+ *
+ * Uses an atomic DB claim (claim_work_logs RPC) to transition rows to
+ * 'settling' BEFORE transferring — preventing double-spend when concurrent
+ * approve/sweep/auto-settle calls race on the same logs.
+ *
+ * On transfer failure the rows are reverted to 'approved' for retry.
+ * All money math is done in integer USDC base units (BigInt) via _usdc.ts.
  */
 async function settleAgentWork(
   companyId: string,
   agent: any,
-  logs: any[],
-  req: VercelRequest
+  candidateLogs: any[],
 ): Promise<any> {
-  const logIds = logs.map(l => l.id)
+  const candidateIds = candidateLogs.map((l: any) => l.id)
 
-  // ── Precise money math in integer USDC base units (no floats) ──
-  // Gross = sum of the per-task payouts (each stored at the owner's
-  // selected rate). The Lumma settlement fee is applied HERE ONLY, at
-  // settlement — it is deducted from gross to yield the agent's net.
-  const grossBase = sumBaseUnits(logs.map(l => l.payout_amount))
+  // ── Atomic claim: only rows we actually claimed will be settled ──
+  const { data: claimedLogs, error: claimErr } = await supabase
+    .rpc('claim_work_logs', { log_ids: candidateIds })
+  if (claimErr) {
+    console.error('claim_work_logs RPC error:', claimErr)
+    return { agent_id: agent.id, agent_name: agent.name, tasks_settled: 0, total_settled: '0.00', error: claimErr.message }
+  }
+  if (!claimedLogs?.length) {
+    return { agent_id: agent.id, agent_name: agent.name, tasks_settled: 0, total_settled: '0.00', note: 'No logs claimed (already settling or settled by concurrent call)' }
+  }
+
+  const logIds = claimedLogs.map((l: any) => l.id)
+
+  // ── Precise integer money math ──
+  const grossBase = sumBaseUnits(claimedLogs.map((l: any) => l.payout_amount))
   const feeBase = feeBaseUnits(grossBase)
   const netBase = grossBase - feeBase
 
-  const total = Number(formatBaseUnits(grossBase))
-  const fee = Number(formatBaseUnits(feeBase))
-  const net = Number(formatBaseUnits(netBase))
+  const grossStr = formatBaseUnits(grossBase)
+  const feeStr = formatBaseUnits(feeBase)
+  const netStr = formatBaseUnits(netBase)
 
-  // Need a funded vault + an agent wallet to actually transfer.
   const { data: company } = await supabase
     .from('payroll_companies')
     .select('*')
@@ -100,37 +103,37 @@ async function settleAgentWork(
 
   let txHash: string | null = null
   let txId: string | null = null
-  let transferError: string | null = null
   let receiptUrl: string | null = null
   let receiptId: string | null = null
 
-  if (agent?.wallet_address && net > 0 && company?.vault_wallet_id) {
+  if (agent?.wallet_address && netBase > 0n && company?.vault_wallet_id) {
     try {
       const chain = company.vault_chain || 'ARC-TESTNET'
       const tx = await transferUSDC(
         company.vault_wallet_id,
         agent.wallet_address,
-        net.toString(),
+        netStr,   // precise decimal string, no float conversion
         chain
       )
 
       txId = tx.id || null
       txHash = tx.txHash || null
 
-      // Only finalize as settled when the transfer actually completed.
       if (tx.state !== 'COMPLETE') {
-        transferError = `Transfer not complete (state: ${tx.state}). Work remains pending.`
+        // Revert claimed rows so they can be retried
+        await supabase.rpc('revert_work_logs', { log_ids: logIds })
         return {
           agent_id: agent.id,
           agent_name: agent.name,
           tasks_settled: 0,
           total_settled: '0.00',
-          error: transferError,
+          error: `Transfer not complete (state: ${tx.state}). Work reverted to approved.`,
         }
       }
 
-      // Write a public receipt
+      // Write receipt
       receiptId = generateReceiptId()
+      const chainId = CHAIN_ID_MAP[chain] || 5042002
       try {
         await supabase.from('payroll_receipts').insert({
           id: receiptId,
@@ -139,9 +142,9 @@ async function settleAgentWork(
           contractor_name: agent.name,
           contractor_wallet: agent.wallet_address,
           vault_address: company.vault_address,
-          amount: total,
+          amount: grossStr,
           chain,
-          chain_id: 5042002,
+          chain_id: chainId,
           tx_hash: txHash,
           circle_tx_id: txId,
           status: 'confirmed',
@@ -152,6 +155,7 @@ async function settleAgentWork(
       }
     } catch (err: any) {
       console.error(`Agent settlement transfer failed for ${agent.id}:`, err)
+      await supabase.rpc('revert_work_logs', { log_ids: logIds })
       return {
         agent_id: agent.id,
         agent_name: agent.name,
@@ -168,28 +172,27 @@ async function settleAgentWork(
     .update({ status: 'settled', settled_at: now, receipt_id: receiptId, tx_hash: txHash })
     .in('id', logIds)
 
-  // Increment total_earned (read-modify-write to avoid overwriting)
-  const newTotal = Number(agent.total_earned || 0) + total
-  await supabase.from('payroll_agents')
-    .update({ total_earned: newTotal })
-    .eq('id', agent.id)
+  // Atomically increment agent totals (no read-modify-write race)
+  await supabase.rpc('increment_agent_totals', {
+    p_agent_id: agent.id,
+    p_earned: grossStr,
+    p_tasks: 0,  // tasks already incremented at report time
+  })
 
   return {
     agent_id: agent.id,
     agent_name: agent.name,
-    tasks_settled: logs.length,
-    gross: total.toFixed(6),
-    fee: fee.toFixed(6),
-    net_paid: net.toFixed(6),
-    total_settled: net.toFixed(2),
+    tasks_settled: claimedLogs.length,
+    gross: grossStr,
+    fee: feeStr,
+    net_paid: netStr,
+    total_settled: netStr,
     tx_hash: txHash,
     circle_tx_id: txId,
     receipt_url: receiptUrl,
     note: agent?.wallet_address ? undefined : 'Agent has no wallet address — marked settled without on-chain transfer.',
   }
 }
-
-
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS
@@ -202,10 +205,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     switch (action) {
+
       // ─────────────────────────────────────────────
-      // CREATE — Owner creates agent slot
+      // CREATE — Owner creates agent slot (internal only)
       // ─────────────────────────────────────────────
       case 'create': {
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
         const { company_id, name, agent_type, wallet_address } = req.body
 
@@ -239,18 +244,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // ─────────────────────────────────────────────
       case 'link': {
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
-        // The agent submits the code it was given AND the wallet that should
-        // receive its USDC pay. wallet_address is how Lumma knows where to settle.
         const { code, wallet_address } = req.body
 
         if (!code) return res.status(400).json({ error: 'Linking code required' })
 
-        // If the agent sends a payout wallet, it must be a valid EVM address.
         if (wallet_address && !isValidEVMAddress(wallet_address)) {
           return res.status(400).json({ error: 'Invalid wallet_address. Must be 0x + 40 hex chars.' })
         }
 
-        // Find agent by linking code
         const { data: agent, error: findErr } = await supabase
           .from('payroll_agents')
           .select('*')
@@ -262,15 +263,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(404).json({ error: 'Invalid or expired linking code' })
         }
 
-        // Generate token and activate. Record the agent's own payout wallet if it
-        // supplied one (falls back to any wallet the owner pre-set at create time).
         const token = generateAgentToken()
         const payoutWallet = wallet_address ? wallet_address.toLowerCase() : (agent.wallet_address || null)
         const { error: updateErr } = await supabase.from('payroll_agents').update({
           agent_token: token,
           status: 'active',
           wallet_address: payoutWallet,
-          linking_code: null, // consumed
+          linking_code: null,
         }).eq('id', agent.id)
 
         if (updateErr) return res.status(500).json({ error: updateErr.message })
@@ -281,8 +280,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           agent_type: agent.agent_type,
           payout_wallet: payoutWallet,
           message: payoutWallet
-            ? 'Successfully linked. Your pay will be sent to this wallet. Use the token as Bearer auth for /agent/report and /agent/earnings.'
-            : 'Linked, but no payout wallet is set yet — your earnings cannot be paid out on-chain until you set one. Call action=set_wallet with your wallet_address. Use the token as Bearer auth for /agent/report and /agent/earnings.',
+            ? 'Successfully linked. Your pay will be sent to this wallet.'
+            : 'Linked, but no payout wallet is set yet. Call action=set_wallet with your wallet_address.',
         })
       }
 
@@ -313,7 +312,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
-
       // ─────────────────────────────────────────────
       // REPORT — Agent reports completed work
       // ─────────────────────────────────────────────
@@ -323,14 +321,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const agent = await authenticateAgent(req)
         if (!agent) return res.status(401).json({ error: 'Invalid or missing agent token' })
 
-        // Rate limit: 100 req/min per agent token
         if (!checkRateLimit(agent.agent_token)) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
 
         const { task_type, description, metadata } = req.body
         if (!task_type) return res.status(400).json({ error: 'task_type required' })
-
 
         // Find matching rule
         const { data: rule } = await supabase.from('payroll_rules')
@@ -339,51 +335,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('task_type', task_type)
           .eq('status', 'active')
           .or(`agent_id.eq.${agent.id},agent_id.is.null`)
-          .order('agent_id', { ascending: false, nullsFirst: false }) // prefer agent-specific rule
+          .order('agent_id', { ascending: false, nullsFirst: false })
           .limit(1)
           .single()
 
         const payoutAmount = rule ? Number(rule.rate) : 0
 
-        // Check daily cap
+        // Check daily cap using integer math
         if (rule?.max_daily) {
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
+          const today = new Date(); today.setHours(0, 0, 0, 0)
           const { data: todayLogs } = await supabase.from('payroll_work_logs')
             .select('payout_amount')
             .eq('agent_id', agent.id)
             .gte('created_at', today.toISOString())
-          const dailyTotal = (todayLogs || []).reduce((sum: number, l: any) => sum + Number(l.payout_amount), 0)
-          if (dailyTotal + payoutAmount > Number(rule.max_daily)) {
-            return res.status(429).json({ error: 'Daily payout cap reached', daily_total: dailyTotal, cap: rule.max_daily })
+          const dailyBase = sumBaseUnits((todayLogs || []).map((l: any) => l.payout_amount))
+          const payoutBase = sumBaseUnits([payoutAmount])
+          const maxDailyBase = sumBaseUnits([rule.max_daily])
+          if (dailyBase + payoutBase > maxDailyBase) {
+            return res.status(429).json({ error: 'Daily payout cap reached', daily_total: formatBaseUnits(dailyBase), cap: rule.max_daily })
           }
         }
 
-        // Check monthly cap
+        // Check monthly cap using integer math
         if (rule?.max_monthly) {
-          const monthStart = new Date()
-          monthStart.setDate(1)
-          monthStart.setHours(0, 0, 0, 0)
+          const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
           const { data: monthLogs } = await supabase.from('payroll_work_logs')
             .select('payout_amount')
             .eq('agent_id', agent.id)
             .gte('created_at', monthStart.toISOString())
-          const monthlyTotal = (monthLogs || []).reduce((sum: number, l: any) => sum + Number(l.payout_amount), 0)
-          if (monthlyTotal + payoutAmount > Number(rule.max_monthly)) {
-            return res.status(429).json({ error: 'Monthly payout cap reached', monthly_total: monthlyTotal, cap: rule.max_monthly })
+          const monthBase = sumBaseUnits((monthLogs || []).map((l: any) => l.payout_amount))
+          const payoutBase = sumBaseUnits([payoutAmount])
+          const maxMonthlyBase = sumBaseUnits([rule.max_monthly])
+          if (monthBase + payoutBase > maxMonthlyBase) {
+            return res.status(429).json({ error: 'Monthly payout cap reached', monthly_total: formatBaseUnits(monthBase), cap: rule.max_monthly })
           }
         }
 
-        // Determine status
         let workStatus = 'pending'
         if (rule?.auto_settle && payoutAmount <= Number(rule.auto_settle_threshold || 0)) {
-          workStatus = 'approved' // will be settled later or immediately
+          workStatus = 'approved'
         }
-        if (payoutAmount === 0) {
-          workStatus = 'pending' // no rule found — needs manual config
-        }
+        if (payoutAmount === 0) workStatus = 'pending'
 
-        // Insert work log
         const { data: workLog, error: insertErr } = await supabase.from('payroll_work_logs').insert({
           agent_id: agent.id,
           company_id: agent.company_id,
@@ -396,37 +389,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (insertErr) return res.status(500).json({ error: insertErr.message })
 
-        // Get pending total
+        // Pending total using integer math
         const { data: pendingLogs } = await supabase.from('payroll_work_logs')
           .select('payout_amount')
           .eq('agent_id', agent.id)
           .in('status', ['pending', 'approved'])
-        const pendingTotal = (pendingLogs || []).reduce((sum: number, l: any) => sum + Number(l.payout_amount), 0)
+        const pendingBase = sumBaseUnits((pendingLogs || []).map((l: any) => l.payout_amount))
 
-        // Update agent stats
-        await supabase.from('payroll_agents').update({
-          total_tasks: agent.total_tasks + 1,
-        }).eq('id', agent.id)
+        // Atomically increment task count
+        await supabase.rpc('increment_agent_totals', {
+          p_agent_id: agent.id,
+          p_earned: '0',
+          p_tasks: 1,
+        })
 
-        // Auto-settle: if the rule allows and the agent has a wallet, settle immediately.
+        // Auto-settle immediately if eligible
         let autoSettle: any = null
         if (workStatus === 'approved' && rule?.auto_settle && agent.wallet_address && payoutAmount > 0) {
-          autoSettle = await settleAgentWork(agent.company_id, agent, [workLog], req)
+          autoSettle = await settleAgentWork(agent.company_id, agent, [workLog])
         }
 
         return res.status(200).json({
           logged: true,
           work_id: workLog.id,
           task_type,
-          payout_amount: payoutAmount.toFixed(6),
-          pending_total: pendingTotal.toFixed(2),
+          payout_amount: formatBaseUnits(sumBaseUnits([payoutAmount])),
+          pending_total: formatBaseUnits(pendingBase),
           status: autoSettle?.tasks_settled ? 'settled' : workStatus,
           has_rule: !!rule,
           auto_settled: !!autoSettle?.tasks_settled,
           settlement: autoSettle || undefined,
         })
       }
-
 
       // ─────────────────────────────────────────────
       // EARNINGS — Agent checks pending/total
@@ -441,42 +435,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .select('payout_amount')
           .eq('agent_id', agent.id)
           .in('status', ['pending', 'approved'])
-        const pending = (pendingLogs || []).reduce((sum: number, l: any) => sum + Number(l.payout_amount), 0)
+        const pendingBase = sumBaseUnits((pendingLogs || []).map((l: any) => l.payout_amount))
 
+        // Single source of truth: sum settled logs
         const { data: settledLogs } = await supabase.from('payroll_work_logs')
           .select('payout_amount')
           .eq('agent_id', agent.id)
           .eq('status', 'settled')
-        const totalEarned = (settledLogs || []).reduce((sum: number, l: any) => sum + Number(l.payout_amount), 0)
+        const earnedBase = sumBaseUnits((settledLogs || []).map((l: any) => l.payout_amount))
 
         return res.status(200).json({
           agent_name: agent.name,
-          pending: pending.toFixed(2),
-          total_earned: totalEarned.toFixed(2),
+          pending: formatBaseUnits(pendingBase),
+          total_earned: formatBaseUnits(earnedBase),
           total_tasks: agent.total_tasks,
           status: agent.status,
         })
       }
 
       // ─────────────────────────────────────────────
-      // ACTIVITY — Owner views all agent activity
+      // ACTIVITY — Owner views all agent activity (internal only)
       // ─────────────────────────────────────────────
       case 'activity': {
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
         if (req.method !== 'GET') return res.status(405).json({ error: 'GET required' })
         const company_id = req.query.company_id as string
         if (!company_id) return res.status(400).json({ error: 'company_id required' })
 
-        // Get all agents
         const { data: agents } = await supabase.from('payroll_agents')
           .select('*')
           .eq('company_id', company_id)
           .order('created_at', { ascending: false })
 
-        if (!agents?.length) return res.status(200).json({ agents: [], pending_total: '0.00' })
+        if (!agents?.length) return res.status(200).json({ agents: [], pending_total: '0.000000' })
 
-        // Get pending work per agent
         const agentSummaries = []
-        let totalPending = 0
+        let totalPendingBase = 0n
 
         for (const a of agents) {
           const { data: logs } = await supabase.from('payroll_work_logs')
@@ -486,8 +480,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .order('created_at', { ascending: false })
             .limit(10)
 
-          const pending = (logs || []).reduce((sum: number, l: any) => sum + Number(l.payout_amount), 0)
-          totalPending += pending
+          const pendingBase = sumBaseUnits((logs || []).map((l: any) => l.payout_amount))
+          totalPendingBase += pendingBase
 
           agentSummaries.push({
             id: a.id,
@@ -495,13 +489,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             agent_type: a.agent_type,
             status: a.status,
             total_tasks: a.total_tasks,
-            total_earned: Number(a.total_earned).toFixed(2),
-            pending_payout: pending.toFixed(2),
+            total_earned: formatBaseUnits(sumBaseUnits([a.total_earned])),
+            pending_payout: formatBaseUnits(pendingBase),
             pending_tasks: (logs || []).length,
             recent_work: (logs || []).slice(0, 3).map((l: any) => ({
               task_type: l.task_type,
               description: l.description,
-              amount: Number(l.payout_amount).toFixed(4),
+              amount: formatBaseUnits(sumBaseUnits([l.payout_amount])),
               date: l.created_at,
             })),
           })
@@ -509,20 +503,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({
           agents: agentSummaries,
-          pending_total: totalPending.toFixed(2),
+          pending_total: formatBaseUnits(totalPendingBase),
         })
       }
 
       // ─────────────────────────────────────────────
-      // APPROVE — Owner approves + settles pending
+      // APPROVE — Owner approves + settles pending (internal only)
       // ─────────────────────────────────────────────
       case 'approve': {
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
         const { company_id, agent_id } = req.body
 
         if (!company_id) return res.status(400).json({ error: 'company_id required' })
 
-        // Build query — all pending/approved for this company, optionally filtered by agent
         let query = supabase.from('payroll_work_logs')
           .select('*, payroll_agents!inner(name, wallet_address)')
           .eq('company_id', company_id)
@@ -534,27 +528,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (fetchErr) return res.status(500).json({ error: fetchErr.message })
         if (!logs?.length) return res.status(200).json({ message: 'No pending work to settle', settled: 0 })
 
-        // Group by agent for batch settlement
-        const byAgent: Record<string, { agent: any; logs: any[]; total: number }> = {}
+        const byAgent: Record<string, { agent: any; logs: any[] }> = {}
         for (const log of logs) {
           const aid = log.agent_id
           if (!byAgent[aid]) {
-            byAgent[aid] = { agent: (log as any).payroll_agents, logs: [], total: 0 }
+            byAgent[aid] = { agent: (log as any).payroll_agents, logs: [] }
           }
           byAgent[aid].logs.push(log)
-          byAgent[aid].total += Number(log.payout_amount)
         }
 
         const results: any[] = []
-
         for (const [aid, group] of Object.entries(byAgent)) {
-          // settleAgentWork sends USDC on-chain, marks logs settled,
-          // increments total_earned, and writes a receipt.
           const result = await settleAgentWork(
             company_id,
             { ...group.agent, id: aid },
             group.logs,
-            req
           )
           results.push(result)
         }
@@ -567,14 +555,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // ─────────────────────────────────────────────
-      // SWEEP — Nanopayment batch settlement (called by cron or owner)
-      // Settles each agent whose pending balance >= its batch_threshold.
+      // SWEEP — Nanopayment batch settlement (internal only)
       // ─────────────────────────────────────────────
       case 'sweep': {
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
         const { company_id } = req.body || {}
 
-        // Find active "batched" rules
         let rulesQuery = supabase.from('payroll_rules')
           .select('company_id, agent_id, batch_threshold')
           .eq('settlement_mode', 'batched')
@@ -584,7 +571,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const { data: rules } = await rulesQuery
         if (!rules?.length) return res.status(200).json({ message: 'No batched rules to sweep', swept: 0, results: [] })
 
-        // Resolve which agents are eligible, with the threshold to apply (min across their batched rules)
         const thresholds: Record<string, { companyId: string; threshold: number }> = {}
 
         for (const r of rules as any[]) {
@@ -593,7 +579,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const cur = thresholds[r.agent_id]
             thresholds[r.agent_id] = { companyId: r.company_id, threshold: cur ? Math.min(cur.threshold, thr) : thr }
           } else {
-            // company-wide batched rule → applies to all active agents in the company
             const { data: companyAgents } = await supabase.from('payroll_agents')
               .select('id').eq('company_id', r.company_id).eq('status', 'active')
             for (const a of companyAgents || []) {
@@ -613,11 +598,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .select('*')
             .eq('agent_id', agentId)
             .in('status', ['pending', 'approved'])
-          const pending = (logs || []).reduce((s: number, l: any) => s + Number(l.payout_amount), 0)
 
-          if (!logs?.length || pending < threshold || pending <= 0) continue
+          const pendingBase = sumBaseUnits((logs || []).map((l: any) => l.payout_amount))
+          const thresholdBase = sumBaseUnits([threshold])
 
-          const result = await settleAgentWork(companyId, agent, logs, req)
+          if (!logs?.length || pendingBase < thresholdBase || pendingBase <= 0n) continue
+
+          const result = await settleAgentWork(companyId, agent, logs)
           results.push({ ...result, threshold })
         }
 
@@ -628,11 +615,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
-
       default:
-
         return res.status(400).json({ error: `Unknown action: ${action}. Use create, link, set_wallet, report, earnings, activity, approve, or sweep.` })
-
     }
   } catch (err: any) {
     console.error('Agent API error:', err)

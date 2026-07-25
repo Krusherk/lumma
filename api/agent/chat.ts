@@ -2,27 +2,18 @@
  * POST /api/agent/chat
  *
  * AI Chat endpoint for Agent Payroll.
- * Built following OpenRouter's create-agent skill.
  * Uses OpenRouter API with tool calling for Circle payroll operations.
+ * Supports multiple vaults per owner via session-scoped active-vault tracking.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../payroll/_supabase.js'
 import { formatBaseUnits, buildRuleRow, normalizePayFrequency } from '../payroll/_usdc.js'
-
-// Use the same env vars as the working payroll API functions
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
-)
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || ''
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET || ''
 
-// Model selection. Default to GPT-5.5 (strong tool-calling + context retention).
-// Override anytime via the OPENROUTER_MODEL env var — no redeploy of code needed.
-// NOTE: confirm the exact slug on https://openrouter.ai/models — it must support tool/function calling.
 const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-5.5'
-
 
 // ── System prompt ──
 const SYSTEM_PROMPT = `You are Lumma Agent — an AI-powered payroll assistant built on Circle's stablecoin infrastructure.
@@ -40,6 +31,42 @@ You help users manage USDC-based payroll for hybrid teams (humans + AI agents):
 - **Set payment rules** for agents (per-task rates, daily/monthly caps)
 - **View agent activity** and pending payouts
 - **Approve and settle** agent payouts
+- **Manage multiple vaults** — list all vaults, switch the active vault, manage each independently
+
+## Multiple Vaults
+An owner can have multiple payroll vaults (companies). Each vault has its own contractors, agents, rules, and balance.
+- To see all vaults: use \`list_vaults\`
+- To switch which vault you're managing: use \`switch_vault\` with the vault name or id
+- To create a new vault: use \`create_vault\` with a company name — this always creates a fresh vault
+- All other tools (add_contractor, pay_all, list_agents, etc.) operate on the **currently active vault**
+- If the user has multiple vaults and none is selected, ask them to switch first and offer the list
+
+## Tool Disambiguation (CRITICAL)
+**create_vault** → Creates a NEW vault. Always mints a fresh Circle wallet.
+  - Needs: company_name
+  - Triggers: "create vault", "set up payroll", "make a vault called X", "create another vault"
+
+**list_vaults** → Lists all vaults owned by this wallet.
+  - Triggers: "show my vaults", "list vaults", "what vaults do I have"
+
+**switch_vault** → Switches the active vault for this session.
+  - Needs: company_name or company_id
+  - Triggers: "switch to X", "use vault X", "manage X payroll"
+
+**add_contractor** → Adds a HUMAN employee/contractor to the ACTIVE vault.
+  - Needs: name, wallet_address (0x...), amount_usdc
+  - pay_frequency: weekly/biweekly/monthly — preserve exactly what the user says
+
+**pay_all / pay_contractor** → Disburses payments from the ACTIVE vault.
+
+**link_agent** → Connects an AI agent to the ACTIVE vault.
+  - AFTER it runs, reply MUST include: (1) skill link, (2) install instructions, (3) linking code.
+
+## Conversational Context Rules
+- ALWAYS use the full prior conversation. NEVER act as if a new message has no context.
+- When you ask a follow-up question, the user's NEXT message is the ANSWER — call the tool immediately.
+- Pronouns refer to the most recently discussed person.
+- NEVER greet the user again mid-conversation.
 
 ## Default Configuration
 - **Default chain: ARC-TESTNET (Chain ID: 5042002)**. ALWAYS use ARC-TESTNET. NEVER ask which chain.
@@ -47,55 +74,13 @@ You help users manage USDC-based payroll for hybrid teams (humans + AI agents):
 - Explorer: https://testnet.arcscan.app
 - Faucet: https://faucet.circle.com
 
-## Tool Disambiguation (CRITICAL)
-You MUST understand the difference between tools. NEVER confuse them:
-
-**create_vault** → Used when user wants to create/set up a payroll vault.
-  - Needs: company_name (e.g. "Spring", "Acme Corp")
-  - Does NOT need: wallet address or amount
-  - Triggers: "create vault", "set up payroll", "make a vault called X"
-
-**add_contractor** → Used when user wants to add a HUMAN employee/contractor to be paid.
-  - Needs: name, wallet_address (0x...), amount_usdc
-  - ALL THREE fields are required. If any are missing, ASK for them.
-  - pay_frequency is OPTIONAL: weekly, biweekly, or monthly. PRESERVE whatever the user says — e.g. "$500 a week" → amount_usdc=500, pay_frequency="weekly". "$2000 biweekly" → amount_usdc=2000, pay_frequency="biweekly". Do NOT convert amounts into a monthly equivalent, and do NOT ask the user to convert. Only default to monthly when the user gives no frequency at all.
-  - amount_usdc is the pay PER PERIOD of that frequency, stored exactly as given.
-  - Triggers: "add contractor Alice 0x... at $500/week", "add Bob at 2000 biweekly"
-
-**pay_all / pay_contractor** → Used when user wants to disburse payments.
-  - Triggers: "pay them", "pay all", "run payroll", "pay my contractors"
-
-**link_agent** → Used when user wants to connect/onboard an AI agent.
-  - Triggers: "link agent", "add an AI agent", "connect a bot", "onboard my agent"
-  - AFTER it runs, your reply MUST include ALL of: (1) the Lumma Payroll Skill link (skill_url, e.g. https://lumma.xyz/skills/lumma.md), (2) clear instructions to give that skill file/link to the agent, and (3) the one-time linking code. NEVER reply with the code alone. Then suggest setting a payment rule for the agent.
-
-
-IMPORTANT: If a user says "Create my vault" and then replies with just a name like "Spring" — that name is the COMPANY NAME for the vault, NOT a contractor. Use create_vault with company_name="Spring".
-
-## Conversational Context Rules (READ THE WHOLE CONVERSATION)
-- You ARE given the full prior conversation. ALWAYS use it. NEVER act as if a new message has no context.
-- When you ask a follow-up question, the user's NEXT message is the ANSWER to that question. Parse it in that context and then CALL THE TOOL — do not reset or greet again.
-- If you asked "What company name?" and the user replies "Spring" → call create_vault with company_name="Spring".
-- If you asked "What's the contractor's wallet?" and user replies "0x..." → that's the wallet address, not a new command.
-- If you asked "Who should I pay?" and the user replies a name (e.g. "dad") → call pay_contractor with name="dad". Do NOT reply with a generic greeting.
-- Pronouns refer to the most recently discussed person: if you just listed/added "dad" and the user says "pay him" → call pay_contractor with name="dad". If still ambiguous, ask once; once they answer, immediately call the tool.
-- NEVER interpret a simple one-word reply (a name, a number, an address) as a new unrelated command, and NEVER respond with "How can I help?" when the user just answered your question.
-- NEVER greet the user again mid-conversation.
-
-
 ## Behavior Rules
-- Be concise and action-oriented. Don't ask unnecessary questions.
-- When the user says "pay them", "pay all", "pay my contractors" — immediately call pay_all.
+- Be concise and action-oriented.
 - NEVER ask which chain to use. Default is ARC-TESTNET.
-- NEVER repeat network details unless the user specifically asks.
 - Show full wallet addresses. Format amounts as $X.XX USDC.
-- After successful payments, always share the receipt link (payroll.lumma.xyz/...) and explorer link.
+- After successful payments, always share the receipt link and explorer link.
 - Only report what tools return — never fabricate data.
-- This is TESTNET — remind users if they ask about real funds.
-
-## Security
-- NEVER hardcode secrets. Validate addresses (0x + 40 hex).
-- NEVER report success before on-chain confirmation.`
+- This is TESTNET — remind users if they ask about real funds.`
 
 // ── Tool definitions ──
 const TOOLS = [
@@ -103,11 +88,34 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'create_vault',
-      description: 'Create or retrieve the payroll vault (Circle Developer-Controlled Wallet on Arc Testnet).',
+      description: 'Create a NEW payroll vault (Circle Developer-Controlled Wallet on Arc Testnet). Always creates a fresh vault — never returns an existing one.',
       parameters: {
         type: 'object',
         properties: {
-          company_name: { type: 'string', description: 'Company or organization name' },
+          company_name: { type: 'string', description: 'Company or organization name for the new vault' },
+        },
+        required: ['company_name'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'list_vaults',
+      description: 'List all payroll vaults owned by this wallet address.',
+      parameters: { type: 'object', properties: {}, required: [] },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'switch_vault',
+      description: 'Switch the active vault for this session. All subsequent tools will operate on the selected vault.',
+      parameters: {
+        type: 'object',
+        properties: {
+          company_name: { type: 'string', description: 'Name of the vault to switch to (fuzzy match)' },
+          company_id: { type: 'string', description: 'Exact UUID of the vault to switch to' },
         },
         required: [],
       },
@@ -117,7 +125,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'check_balance',
-      description: 'Check the USDC balance of the payroll vault.',
+      description: 'Check the USDC balance of the active payroll vault.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -125,7 +133,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'fund_vault',
-      description: 'Get instructions to fund the vault with testnet USDC from the faucet.',
+      description: 'Get instructions to fund the active vault with testnet USDC from the faucet.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -133,15 +141,15 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'add_contractor',
-      description: 'Add a human contractor/employee to payroll. Validates wallet address format. Supports weekly, biweekly, or monthly salaries — store the amount for whatever period the user specifies (do NOT convert to monthly).',
+      description: 'Add a human contractor/employee to the active vault payroll. Supports weekly, biweekly, or monthly salaries.',
       parameters: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'Contractor name' },
+          name: { type: 'string' },
           wallet_address: { type: 'string', description: 'EVM wallet address (0x...)' },
-          amount_usdc: { type: 'number', description: 'USDC salary PER PERIOD of pay_frequency (e.g. 500 per week if pay_frequency=weekly). Do NOT normalize to monthly.' },
-          pay_frequency: { type: 'string', enum: ['weekly', 'biweekly', 'monthly'], description: 'How often this employee is paid. Preserve exactly what the user says. Defaults to monthly only if unspecified.' },
-          role: { type: 'string', description: 'Role (e.g. Developer, Designer)' },
+          amount_usdc: { type: 'number', description: 'USDC salary PER PERIOD of pay_frequency' },
+          pay_frequency: { type: 'string', enum: ['weekly', 'biweekly', 'monthly'] },
+          role: { type: 'string' },
         },
         required: ['name', 'wallet_address', 'amount_usdc'],
       },
@@ -151,7 +159,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'list_contractors',
-      description: 'List all contractors on the payroll roster.',
+      description: 'List all contractors on the active vault payroll roster.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -159,12 +167,10 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'remove_contractor',
-      description: 'Remove a contractor by name.',
+      description: 'Remove a contractor by name from the active vault.',
       parameters: {
         type: 'object',
-        properties: {
-          name: { type: 'string', description: 'Contractor name to remove' },
-        },
+        properties: { name: { type: 'string' } },
         required: ['name'],
       },
     },
@@ -173,12 +179,10 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'pay_contractor',
-      description: 'Pay a specific contractor their USDC amount.',
+      description: 'Pay a specific contractor their USDC amount from the active vault.',
       parameters: {
         type: 'object',
-        properties: {
-          name: { type: 'string', description: 'Contractor name to pay' },
-        },
+        properties: { name: { type: 'string' } },
         required: ['name'],
       },
     },
@@ -187,7 +191,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'pay_all',
-      description: 'Run full payroll — pay all active contractors.',
+      description: 'Run full payroll — pay all active contractors from the active vault.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -195,7 +199,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'get_history',
-      description: 'Get recent payment history.',
+      description: 'Get recent payment history for the active vault.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -203,12 +207,12 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'generate_invite',
-      description: 'Generate an invite link for a new contractor.',
+      description: 'Generate an invite link for a new contractor to join the active vault.',
       parameters: {
         type: 'object',
         properties: {
-          role: { type: 'string', description: 'Role for the invite' },
-          amount_usdc: { type: 'number', description: 'Monthly USDC amount' },
+          role: { type: 'string' },
+          amount_usdc: { type: 'number' },
         },
         required: ['role', 'amount_usdc'],
       },
@@ -218,28 +222,27 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'set_schedule',
-      description: 'Set up recurring payroll schedule. Options: manual, weekly, biweekly, monthly. Specify which day payments should run.',
+      description: 'Set up recurring payroll schedule for the active vault.',
       parameters: {
         type: 'object',
         properties: {
-          frequency: { type: 'string', enum: ['manual', 'weekly', 'biweekly', 'monthly'], description: 'How often to run payroll' },
-          pay_day: { type: 'number', description: 'Day of month (1-28) for monthly, or day of week (0=Sun, 1=Mon...6=Sat) for weekly/biweekly' },
+          frequency: { type: 'string', enum: ['manual', 'weekly', 'biweekly', 'monthly'] },
+          pay_day: { type: 'number' },
         },
         required: ['frequency'],
       },
     },
   },
-  // ── Agent management tools ──
   {
     type: 'function' as const,
     function: {
       name: 'link_agent',
-      description: 'Create an AI agent slot and generate a linking code so an external agent can connect to this payroll vault.',
+      description: 'Create an AI agent slot and generate a linking code for the active vault.',
       parameters: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'Agent name (e.g. "Research Agent")' },
-          agent_type: { type: 'string', description: 'Agent type: research, content, support, or generic' },
+          name: { type: 'string' },
+          agent_type: { type: 'string', description: 'research, content, support, or generic' },
         },
         required: ['name'],
       },
@@ -249,7 +252,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'list_agents',
-      description: 'List all AI agents linked to this payroll vault, with their status and pending payouts.',
+      description: 'List all AI agents linked to the active vault.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -257,22 +260,21 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'set_agent_rule',
-      description: 'Set a payment rule for an AI agent. Defines how much USDC to pay per completed task.',
+      description: 'Set a payment rule for an AI agent in the active vault.',
       parameters: {
         type: 'object',
         properties: {
-          agent_name: { type: 'string', description: 'Name of the agent' },
-          task_type: { type: 'string', description: 'Task type (e.g. research_report, post_approved, ticket_resolved)' },
-          rate: { type: 'number', description: 'USDC per completed task (e.g. 0.05)' },
-          max_daily: { type: 'number', description: 'Optional daily USDC cap' },
-          max_monthly: { type: 'number', description: 'Optional monthly USDC cap' },
-          auto_settle: { type: 'boolean', description: 'Auto-approve payouts under threshold' },
-          auto_settle_threshold: { type: 'number', description: 'Max amount for auto-settlement' },
-          settlement_mode: { type: 'string', enum: ['manual', 'instant', 'batched'], description: 'How payouts settle: manual (owner approves), instant (pay on every task), or batched (nanopayments — accumulate then settle when batch_threshold is reached)' },
-          batch_threshold: { type: 'number', description: 'For batched mode: settle once pending reaches this USDC amount (e.g. 1.00)' },
+          agent_name: { type: 'string' },
+          task_type: { type: 'string' },
+          rate: { type: 'number', description: 'USDC per completed task' },
+          max_daily: { type: 'number' },
+          max_monthly: { type: 'number' },
+          auto_settle: { type: 'boolean' },
+          auto_settle_threshold: { type: 'number' },
+          settlement_mode: { type: 'string', enum: ['manual', 'instant', 'batched'] },
+          batch_threshold: { type: 'number' },
         },
         required: ['agent_name', 'task_type', 'rate'],
-
       },
     },
   },
@@ -280,7 +282,7 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'agent_activity',
-      description: 'Show all AI agent activity — pending work, completed tasks, and pending payouts.',
+      description: 'Show all AI agent activity for the active vault.',
       parameters: { type: 'object', properties: {}, required: [] },
     },
   },
@@ -288,11 +290,11 @@ const TOOLS = [
     type: 'function' as const,
     function: {
       name: 'approve_payouts',
-      description: 'Approve and settle all pending agent payouts. Optionally filter by agent name.',
+      description: 'Approve and settle all pending agent payouts for the active vault.',
       parameters: {
         type: 'object',
         properties: {
-          agent_name: { type: 'string', description: 'Optional: approve only this agent. Leave empty for all.' },
+          agent_name: { type: 'string', description: 'Optional: approve only this agent' },
         },
         required: [],
       },
@@ -305,14 +307,17 @@ function isValidEVMAddress(address: string): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(address)
 }
 
-// ── Internal Fetch Helper ──
+// ── Internal fetch helper — always sends the internal secret ──
 async function internalFetch(host: string, path: string, method: string, body?: any) {
   const protocol = host.includes('localhost') ? 'http' : 'https'
   const url = `${protocol}://${host}${path}`
   try {
     const res = await fetch(url, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': INTERNAL_SECRET,
+      },
       body: body ? JSON.stringify(body) : undefined,
     })
     if (!res.ok) {
@@ -325,29 +330,182 @@ async function internalFetch(host: string, path: string, method: string, body?: 
   }
 }
 
+// ── Multi-vault: resolve the active company for this session ──
+// Returns the company row, or null with a `needsSelection` flag when the
+// owner has multiple vaults and none is selected for this session.
+async function resolveActiveCompany(
+  walletAddress: string,
+  sessionId: string,
+): Promise<{ company: any | null; needsSelection: boolean }> {
+  const ownerLower = walletAddress.toLowerCase()
+
+  // Check session-scoped active vault
+  const { data: active } = await supabase
+    .from('payroll_active_vault')
+    .select('company_id')
+    .eq('session_id', sessionId)
+    .maybeSingle()
+
+  if (active?.company_id) {
+    const { data: company } = await supabase
+      .from('payroll_companies')
+      .select('*')
+      .eq('id', active.company_id)
+      .eq('owner_address', ownerLower)
+      .maybeSingle()
+    if (company) return { company, needsSelection: false }
+  }
+
+  // Fall back: fetch all companies for this owner
+  const { data: companies } = await supabase
+    .from('payroll_companies')
+    .select('*')
+    .eq('owner_address', ownerLower)
+    .order('created_at', { ascending: true })
+
+  if (!companies?.length) return { company: null, needsSelection: false }
+
+  if (companies.length === 1) {
+    // Auto-select the only vault and record it
+    await supabase.from('payroll_active_vault').upsert({
+      session_id: sessionId,
+      owner_address: ownerLower,
+      company_id: companies[0].id,
+      updated_at: new Date().toISOString(),
+    })
+    return { company: companies[0], needsSelection: false }
+  }
+
+  // Multiple vaults, none selected
+  return { company: null, needsSelection: true }
+}
+
 // ── Tool execution ──
-async function executeTool(name: string, args: any, walletAddress: string, host: string): Promise<string> {
+async function executeTool(
+  name: string,
+  args: any,
+  walletAddress: string,
+  sessionId: string,
+  host: string,
+): Promise<string> {
+  const ownerLower = walletAddress.toLowerCase()
+
+  // Helper: get active company or return an error string
+  async function requireCompany(): Promise<{ company: any } | { error: string }> {
+    const { company, needsSelection } = await resolveActiveCompany(walletAddress, sessionId)
+    if (needsSelection) {
+      const { data: vaults } = await supabase
+        .from('payroll_companies')
+        .select('id, name')
+        .eq('owner_address', ownerLower)
+      const list = (vaults || []).map((v: any) => `• ${v.name} (${v.id})`).join('\n')
+      return { error: `You have multiple vaults. Switch to one first:\n${list}` }
+    }
+    if (!company) return { error: 'No vault found. Create one first with create_vault.' }
+    return { company }
+  }
+
   try {
     switch (name) {
+
+      case 'list_vaults': {
+        const { data: vaults } = await supabase
+          .from('payroll_companies')
+          .select('id, name, vault_address, vault_chain, created_at')
+          .eq('owner_address', ownerLower)
+          .order('created_at', { ascending: true })
+
+        if (!vaults?.length) return 'No vaults found. Create one with create_vault.'
+
+        // Mark which is active for this session
+        const { data: active } = await supabase
+          .from('payroll_active_vault')
+          .select('company_id')
+          .eq('session_id', sessionId)
+          .maybeSingle()
+
+        return JSON.stringify({
+          vaults: vaults.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            vault_address: v.vault_address,
+            chain: v.vault_chain || 'ARC-TESTNET',
+            active: v.id === active?.company_id,
+          })),
+          total: vaults.length,
+        })
+      }
+
+      case 'switch_vault': {
+        const { data: vaults } = await supabase
+          .from('payroll_companies')
+          .select('*')
+          .eq('owner_address', ownerLower)
+
+        if (!vaults?.length) return 'No vaults found. Create one first.'
+
+        let target: any = null
+        if (args.company_id) {
+          target = vaults.find((v: any) => v.id === args.company_id)
+        } else if (args.company_name) {
+          const needle = args.company_name.toLowerCase()
+          target = vaults.find((v: any) => v.name.toLowerCase().includes(needle))
+        }
+
+        if (!target) {
+          const list = vaults.map((v: any) => `• ${v.name}`).join('\n')
+          return `Vault not found. Available vaults:\n${list}`
+        }
+
+        await supabase.from('payroll_active_vault').upsert({
+          session_id: sessionId,
+          owner_address: ownerLower,
+          company_id: target.id,
+          updated_at: new Date().toISOString(),
+        })
+
+        return JSON.stringify({
+          switched_to: target.name,
+          company_id: target.id,
+          vault_address: target.vault_address,
+          chain: target.vault_chain || 'ARC-TESTNET',
+          message: `Now managing "${target.name}". All payroll actions will use this vault.`,
+        })
+      }
+
       case 'create_vault': {
+        // Always create a new vault (create_new: true)
         const res = await internalFetch(host, '/api/payroll/wallet', 'POST', {
           owner_address: walletAddress,
           company_name: args.company_name || 'My Company',
+          create_new: true,
         })
         if (res.error) return `Error: ${res.error}`
+
+        // Set the new vault as active for this session
+        await supabase.from('payroll_active_vault').upsert({
+          session_id: sessionId,
+          owner_address: ownerLower,
+          company_id: res.company_id,
+          updated_at: new Date().toISOString(),
+        })
+
         return JSON.stringify({
-          status: 'Vault ready',
+          status: 'Vault created',
           vault_address: res.vault_address,
           chain: res.vault_chain || 'ARC-TESTNET',
           chain_id: 5042002,
           company: res.name,
+          company_id: res.company_id,
           faucet: 'https://faucet.circle.com',
+          note: 'This vault is now active for this session.',
         })
       }
 
       case 'fund_vault': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found. Create one first with create_vault.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
         return JSON.stringify({
           vault_address: company.vault_address,
           chain: 'ARC-TESTNET',
@@ -357,14 +515,18 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
             `3. Paste vault address: ${company.vault_address}`,
             '4. Request testnet USDC (free)',
           ],
-          note: 'Arc uses USDC for gas — no ETH needed',
         })
       }
 
       case 'check_balance': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found. Create one first with create_vault.'
-        const res = await internalFetch(host, `/api/payroll/balance?company_id=${company.id}`, 'GET')
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const res = await internalFetch(
+          host,
+          `/api/payroll/balance?company_id=${company.id}&owner_address=${ownerLower}`,
+          'GET',
+        )
         if (res.error) return `Error: ${res.error}`
         return JSON.stringify({
           balance: `${res.balance || '0'} USDC`,
@@ -374,14 +536,13 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
       }
 
       case 'add_contractor': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found. Create one first.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
         if (!args.wallet_address || !isValidEVMAddress(args.wallet_address)) {
           return `Invalid address: "${args.wallet_address || 'none'}". Must be 0x + 40 hex chars.`
         }
         if (args.amount_usdc <= 0) return 'Amount must be > 0 USDC.'
-        // Preserve the user-specified pay frequency for human employees.
-        // Default to monthly ONLY when unspecified — never silently convert.
         const payFrequency = normalizePayFrequency(args.pay_frequency)
         const { data, error } = await supabase.from('payroll_contractors').insert({
           company_id: company.id,
@@ -389,165 +550,148 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
           wallet_address: args.wallet_address.toLowerCase(),
           amount_usdc: args.amount_usdc,
           pay_frequency: payFrequency,
-          chain_id: 5042002,
           role: args.role || 'Contractor',
+          chain_id: 5042002,
           status: 'active',
         }).select().single()
         if (error) return `Error: ${error.message}`
-        const freqLabel: Record<string, string> = { weekly: '/week', biweekly: '/2 weeks', monthly: '/month' }
         return JSON.stringify({
-          status: 'Added',
+          added: true,
           name: data.name,
           wallet: data.wallet_address,
-          amount: `$${data.amount_usdc} USDC${freqLabel[data.pay_frequency] || '/month'}`,
-          pay_frequency: data.pay_frequency,
+          amount: `${data.amount_usdc} USDC/${payFrequency}`,
           role: data.role,
         })
       }
 
       case 'list_contractors': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found. Create one first.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
         const { data } = await supabase.from('payroll_contractors')
-          .select('*')
-          .eq('company_id', company.id)
-          .order('created_at', { ascending: true })
-        if (!data?.length) return 'No contractors on roster yet.'
-        return JSON.stringify(data.map((c: any) => ({
-          name: c.name, wallet: c.wallet_address,
-          amount: `$${c.amount_usdc}`, pay_frequency: c.pay_frequency || 'monthly',
-          role: c.role, status: c.status,
-        })))
+          .select('*').eq('company_id', company.id).eq('status', 'active')
+        if (!data?.length) return 'No contractors on this payroll.'
+        return JSON.stringify({
+          contractors: data.map((c: any) => ({
+            name: c.name,
+            wallet: c.wallet_address,
+            amount: `${c.amount_usdc} USDC/${c.pay_frequency || 'monthly'}`,
+            role: c.role,
+          })),
+          total: data.length,
+        })
       }
 
       case 'remove_contractor': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
         const { data: found } = await supabase.from('payroll_contractors')
-          .select('id, name').eq('company_id', company.id).ilike('name', `%${args.name}%`)
-        if (!found?.length) return `No contractor matching "${args.name}"`
-        await supabase.from('payroll_contractors').delete().eq('id', found[0].id)
-        return JSON.stringify({ status: 'Removed', name: found[0].name })
+          .select('id, name').eq('company_id', company.id)
+          .ilike('name', `%${args.name}%`).limit(1).single()
+        if (!found) return `Contractor "${args.name}" not found.`
+        await supabase.from('payroll_contractors').update({ status: 'paused' }).eq('id', found.id)
+        return JSON.stringify({ removed: true, name: found.name })
       }
 
       case 'pay_contractor': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
-        const { data: found } = await supabase.from('payroll_contractors')
-          .select('id, name').eq('company_id', company.id).ilike('name', `%${args.name}%`)
-        if (!found?.length) return `No contractor matching "${args.name}"`
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const { data: contractor } = await supabase.from('payroll_contractors')
+          .select('id, name').eq('company_id', company.id)
+          .ilike('name', `%${args.name}%`).eq('status', 'active').limit(1).single()
+        if (!contractor) return `Contractor "${args.name}" not found.`
         const res = await internalFetch(host, '/api/payroll/transfer', 'POST', {
           company_id: company.id,
-          contractor_ids: [found[0].id],
+          contractor_ids: [contractor.id],
         })
-        if (res.error) return `Payment error: ${res.error}`
-        return JSON.stringify({
-          status: 'Payment sent',
-          contractor: found[0].name,
-          results: res.results,
-          explorer: `https://testnet.arcscan.app`,
-        })
+        if (res.error) return `Error: ${res.error}`
+        return JSON.stringify(res)
       }
 
       case 'pay_all': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
-        const { data: all } = await supabase.from('payroll_contractors')
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const { data: contractors } = await supabase.from('payroll_contractors')
           .select('id').eq('company_id', company.id).eq('status', 'active')
-        if (!all?.length) return 'No active contractors to pay.'
+        if (!contractors?.length) return 'No active contractors to pay.'
         const res = await internalFetch(host, '/api/payroll/transfer', 'POST', {
           company_id: company.id,
-          contractor_ids: all.map((c: any) => c.id),
+          contractor_ids: contractors.map((c: any) => c.id),
         })
-        if (res.error) return `Payment error: ${res.error}`
-        return JSON.stringify({
-          status: 'Payroll complete',
-          results: res.results,
-          explorer: `https://testnet.arcscan.app`,
-        })
+        if (res.error) return `Error: ${res.error}`
+        return JSON.stringify(res)
       }
 
       case 'get_history': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
         const { data } = await supabase.from('payroll_payments')
-          .select('*').eq('company_id', company.id)
-          .order('created_at', { ascending: false }).limit(20)
+          .select('*, payroll_contractors(name)')
+          .eq('company_id', company.id)
+          .order('paid_at', { ascending: false })
+          .limit(10)
         if (!data?.length) return 'No payment history yet.'
-        return JSON.stringify(data.map((p: any) => ({
-          contractor: p.contractor_name, amount: `$${p.amount}`,
-          status: p.status, date: new Date(p.created_at).toLocaleDateString(),
-          tx: p.tx_hash || 'pending',
-        })))
+        return JSON.stringify({
+          payments: data.map((p: any) => ({
+            contractor: (p.payroll_contractors as any)?.name,
+            amount: `${p.amount} USDC`,
+            status: p.status,
+            tx_hash: p.tx_hash,
+            date: p.paid_at,
+          })),
+        })
       }
 
       case 'generate_invite': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
-        const token = crypto.randomUUID().slice(0, 8)
-        const { error } = await supabase.from('payroll_invites').insert({
-          company_id: company.id, token,
-          role: args.role, amount_usdc: args.amount_usdc,
-          chain_id: 5042002, status: 'pending',
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const token = `inv_${Math.random().toString(36).slice(2, 10)}`
+        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        await supabase.from('payroll_invites').insert({
+          company_id: company.id,
+          token,
+          role: args.role,
+          amount_usdc: args.amount_usdc,
+          chain_id: 5042002,
+          expires_at: expires,
         })
-        if (error) return `Error: ${error.message}`
-        return JSON.stringify({ invite_link: `https://lumma.xyz/join/${token}`, role: args.role, amount: `$${args.amount_usdc}` })
+        return JSON.stringify({
+          invite_url: `https://lumma.xyz/join/${token}`,
+          role: args.role,
+          amount: `${args.amount_usdc} USDC/month`,
+          expires: expires,
+        })
       }
 
       case 'set_schedule': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
-        const freq = args.frequency || 'manual'
-        const payDay = args.pay_day || null
-
-        // Calculate next pay date
-        let nextPayDate: string | null = null
-        if (freq !== 'manual') {
-          const now = new Date()
-          if (freq === 'monthly') {
-            const day = payDay || 1
-            const next = new Date(now.getFullYear(), now.getMonth(), day)
-            if (next <= now) next.setMonth(next.getMonth() + 1)
-            nextPayDate = next.toISOString()
-          } else if (freq === 'weekly' || freq === 'biweekly') {
-            const targetDay = payDay || 1 // default Monday
-            const daysUntil = ((targetDay - now.getDay()) + 7) % 7 || 7
-            const next = new Date(now)
-            next.setDate(now.getDate() + daysUntil)
-            nextPayDate = next.toISOString()
-          }
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const nextDate = new Date()
+        if (args.frequency === 'monthly' && args.pay_day) {
+          nextDate.setDate(args.pay_day)
+          if (nextDate <= new Date()) nextDate.setMonth(nextDate.getMonth() + 1)
+        } else if (args.frequency === 'weekly') {
+          nextDate.setDate(nextDate.getDate() + 7)
+        } else if (args.frequency === 'biweekly') {
+          nextDate.setDate(nextDate.getDate() + 14)
         }
-
-        const { error } = await supabase.from('payroll_companies').update({
-          pay_schedule: freq,
-          pay_frequency: freq,
-          pay_day: payDay,
-          next_pay_date: nextPayDate,
+        await supabase.from('payroll_companies').update({
+          pay_schedule: args.frequency,
+          next_pay_date: args.frequency !== 'manual' ? nextDate.toISOString() : null,
         }).eq('id', company.id)
-
-        if (error) return `Error: ${error.message}`
-
-        const dayLabel = freq === 'monthly'
-          ? `on day ${payDay || 1} of each month`
-          : freq === 'weekly' || freq === 'biweekly'
-          ? `on ${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][payDay || 1]}s`
-          : ''
-
-        return JSON.stringify({
-          status: 'Schedule updated',
-          frequency: freq,
-          next_pay_date: nextPayDate,
-          message: freq === 'manual'
-            ? 'Payroll set to manual. Use "pay all" to run payroll.'
-            : `Payroll set to ${freq} ${dayLabel}. Next run: ${nextPayDate ? new Date(nextPayDate).toLocaleDateString() : 'TBD'}`,
-        })
+        return JSON.stringify({ schedule_set: args.frequency, next_pay_date: nextDate.toISOString() })
       }
 
-      // ── Agent management handlers ──
-
       case 'link_agent': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found. Create one first.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
         const res = await internalFetch(host, '/api/payroll/agent?action=create', 'POST', {
           company_id: company.id,
           name: args.name,
@@ -555,128 +699,85 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
         })
         if (res.error) return `Error: ${res.error}`
         return JSON.stringify({
-          status: 'Agent slot created',
-          name: args.name,
-          linking_code: res.linking_code,
+          ...res,
           skill_url: 'https://lumma.xyz/skills/lumma.md',
-          setup_steps: [
-            `1. Give your AI agent the Lumma Payroll Skill: https://lumma.xyz/skills/lumma.md (paste the link, or save it as a skill/instructions file the agent can read).`,
-            `2. Give the agent this one-time linking code: ${res.linking_code}`,
-            `3. The agent links itself by calling POST https://lumma.xyz/api/payroll/agent?action=link with the code AND its own USDC wallet address — that wallet is where its pay is sent. It then reports completed work to earn USDC.`,
-            `4. Set a payment rule for "${args.name}" (e.g. $0.05 per task) so its work is priced.`,
+          install_instructions: [
+            '1. Copy the skill URL above into your agent runtime',
+            '2. Your agent will call POST /api/payroll/agent?action=link with the linking code',
+            '3. The agent stores the returned agent_token for all future calls',
           ],
-
-          note: 'Always present BOTH the skill file link AND the linking code to the user — the agent needs the skill instructions, not just the code.',
         })
       }
 
-
       case 'list_agents': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
-        const { data: agents } = await supabase.from('payroll_agents')
-          .select('*').eq('company_id', company.id)
-          .order('created_at', { ascending: false })
-        if (!agents?.length) return 'No agents linked yet. Use "link agent" to create one.'
-        return JSON.stringify(agents.map((a: any) => ({
-          name: a.name,
-          type: a.agent_type,
-          status: a.status,
-          total_tasks: a.total_tasks,
-          total_earned: `$${Number(a.total_earned).toFixed(2)}`,
-          linking_code: a.linking_code || null,
-        })))
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const res = await internalFetch(
+          host,
+          `/api/payroll/agent?action=activity&company_id=${company.id}`,
+          'GET',
+        )
+        if (res.error) return `Error: ${res.error}`
+        return JSON.stringify(res)
       }
 
       case 'set_agent_rule': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const { data: agent } = await supabase.from('payroll_agents')
+          .select('id').eq('company_id', company.id)
+          .ilike('name', `%${args.agent_name}%`).limit(1).single()
+        if (!agent) return `Agent "${args.agent_name}" not found.`
 
-        // ── Validate & build the rule row up front ──
-        // buildRuleRow rejects zero/negative/malformed/over-limit amounts and
-        // returns the exact offending field, so we NEVER send unsupported data
-        // to the database (and never blindly retry the same bad payload).
-        let built
+        let built: any
         try {
-          built = buildRuleRow(company.id, '', args) // agent_id filled in after lookup
+          built = buildRuleRow(company.id, agent.id, args)
         } catch (e: any) {
-          const field = e?.field || 'rate'
-          // Clear, actionable message for the owner. No retry.
-          return `Invalid ${field}: ${e.message}`
+          return `Validation error (${e.field || 'unknown'}): ${e.message}`
         }
 
-        // Find agent by name (after validation so we fail fast on bad input)
-        const { data: agents } = await supabase.from('payroll_agents')
-          .select('id, name').eq('company_id', company.id)
-          .ilike('name', `%${args.agent_name}%`)
-        if (!agents?.length) return `No agent matching "${args.agent_name}"`
-        const agentId = agents[0].id
+        const { error } = await supabase.from('payroll_rules')
+          .upsert(built.row, { onConflict: 'company_id,agent_id,task_type' })
+        if (error) return `Error: ${error.message}`
 
-        const ruleRow = { ...built.row, agent_id: agentId }
-
-        // Single, correct write. The unique index (company_id, agent_id,
-        // task_type) makes this an update-if-exists, insert-if-not. We do NOT
-        // retry with a mutated payload — a failure is surfaced honestly.
-        const { data: saved, error } = await supabase
-          .from('payroll_rules')
-          .upsert(ruleRow, {
-            onConflict: 'company_id,agent_id,task_type',
-            ignoreDuplicates: false,
-          })
-          .select()
-          .single()
-
-        if (error || !saved) {
-          // Log the raw DB/validation error safely (server-side only).
-          console.error('set_agent_rule write failed:', {
-            company_id: company.id,
-            agent_id: agentId,
-            task_type: args.task_type,
-            code: error?.code,
-            message: error?.message,
-          })
-          // Do NOT claim the rule was created. Give a clear, non-leaky message.
-          return `Error: could not save the payment rule (${error?.message || 'database write did not return a row'}). No rule was created — please check the rate and try again.`
-        }
-
-        // Only report success once the DB write actually succeeded.
         return JSON.stringify({
-          status: 'Rule saved',
-          agent: agents[0].name,
-          task_type: saved.task_type,
-          rate: `${formatBaseUnits(built.rateBase)} USDC per task`,
-          max_daily: built.maxDailyBase != null ? `${formatBaseUnits(built.maxDailyBase)} USDC/day` : 'unlimited',
-          max_monthly: built.maxMonthlyBase != null ? `${formatBaseUnits(built.maxMonthlyBase)} USDC/month` : 'unlimited',
-          settlement_mode: built.settlementMode,
-          batch_threshold: built.settlementMode === 'batched'
-            ? `${formatBaseUnits(built.batchThresholdBase)} USDC`
-            : 'n/a',
-          auto_settle: saved.auto_settle,
+          rule_set: true,
+          agent: args.agent_name,
+          task_type: built.row.task_type,
+          rate: `${formatBaseUnits(built.rateBase)} USDC/task`,
+          settlement_mode: built.row.settlement_mode,
+          max_daily: built.row.max_daily,
+          max_monthly: built.row.max_monthly,
         })
       }
 
       case 'agent_activity': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
-        const res = await internalFetch(host, `/api/payroll/agent?action=activity&company_id=${company.id}`, 'GET')
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const res = await internalFetch(
+          host,
+          `/api/payroll/agent?action=activity&company_id=${company.id}`,
+          'GET',
+        )
         if (res.error) return `Error: ${res.error}`
-        if (!res.agents?.length) return 'No agents linked yet.'
-        return JSON.stringify({
-          agents: res.agents,
-          pending_total: `$${res.pending_total} USDC`,
-        })
+        return JSON.stringify(res)
       }
 
       case 'approve_payouts': {
-        const company = await getCompany(walletAddress)
-        if (!company) return 'No vault found.'
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
 
-        let agentId = null
+        let agentId: string | undefined
         if (args.agent_name) {
-          const { data: agents } = await supabase.from('payroll_agents')
+          const { data: agent } = await supabase.from('payroll_agents')
             .select('id').eq('company_id', company.id)
-            .ilike('name', `%${args.agent_name}%`)
-          if (agents?.length) agentId = agents[0].id
+            .ilike('name', `%${args.agent_name}%`).limit(1).single()
+          if (!agent) return `Agent "${args.agent_name}" not found.`
+          agentId = agent.id
         }
 
         const res = await internalFetch(host, '/api/payroll/agent?action=approve', 'POST', {
@@ -695,34 +796,12 @@ async function executeTool(name: string, args: any, walletAddress: string, host:
   }
 }
 
-// ── Helpers ──
-async function getCompany(walletAddress: string) {
-  const { data } = await supabase
-    .from('payroll_companies')
-    .select('*')
-    .eq('owner_address', walletAddress.toLowerCase())
-    .single()
-  return data
-}
-
-// ── Call OpenRouter (following create-agent skill) ──
+// ── Call OpenRouter ──
 async function callOpenRouter(messages: any[], useTools: boolean = true) {
-  if (!OPENROUTER_API_KEY) {
-    throw new Error('OPENROUTER_API_KEY not set')
-  }
+  if (!OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY not set')
 
-  const body: any = {
-    model: MODEL,
-    messages,
-    temperature: 0.3,
-    max_tokens: 1024,
-  }
-
-  // Only include tools on the initial call, not the follow-up
-  if (useTools) {
-    body.tools = TOOLS
-    body.tool_choice = 'auto'
-  }
+  const body: any = { model: MODEL, messages, temperature: 0.3, max_tokens: 1024 }
+  if (useTools) { body.tools = TOOLS; body.tool_choice = 'auto' }
 
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
@@ -737,17 +816,11 @@ async function callOpenRouter(messages: any[], useTools: boolean = true) {
 
   if (!response.ok) {
     const errText = await response.text()
-    console.error('OpenRouter HTTP error:', response.status, errText)
     throw new Error(`OpenRouter returned ${response.status}: ${errText.slice(0, 200)}`)
   }
 
   const data = await response.json()
-
-  if (data.error) {
-    console.error('OpenRouter API error:', data.error)
-    throw new Error(data.error.message || 'OpenRouter API error')
-  }
-
+  if (data.error) throw new Error(data.error.message || 'OpenRouter API error')
   return data
 }
 
@@ -759,7 +832,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!sessionId || !message || !walletAddress) {
     return res.status(400).json({ error: 'sessionId, message, walletAddress required' })
   }
-
 
   const host = req.headers.host || 'localhost:3000'
 
@@ -773,8 +845,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!sessionValid && sessionId.startsWith('LMA-')) sessionValid = true
   if (!sessionValid) return res.status(403).json({ error: 'Invalid session' })
 
-  // Conversation history. Prefer what the client sends (reliable, in-session memory);
-  // fall back to the persisted agent_messages table if the client didn't supply any.
+  // Conversation history
   let history: any[] = []
   if (Array.isArray(clientHistory) && clientHistory.length) {
     history = clientHistory
@@ -791,64 +862,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch {}
   }
 
-  // Save user message (best effort, for audit/persistence)
   try {
-    await supabase.from('agent_messages').insert({
-      session_id: sessionId, role: 'user', content: message,
-    })
+    await supabase.from('agent_messages').insert({ session_id: sessionId, role: 'user', content: message })
   } catch {}
 
-  // Build messages — always include system + history + current user message
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     ...history.map((m: any) => ({ role: m.role, content: m.content })),
     { role: 'user', content: message },
   ]
 
-
   try {
-    // Step 1: Call OpenRouter with tools
     const orData = await callOpenRouter(messages)
-
     let assistantMessage = orData.choices?.[0]?.message
-    if (!assistantMessage) {
-      return res.status(502).json({ error: 'No response from AI' })
-    }
+    if (!assistantMessage) return res.status(502).json({ error: 'No response from AI' })
 
-    // Step 2: Handle tool calls (agentic loop)
     if (assistantMessage.tool_calls?.length) {
       const toolResults = []
       for (const tc of assistantMessage.tool_calls) {
         const fnName = tc.function.name
         let fnArgs = {}
         try { fnArgs = JSON.parse(tc.function.arguments || '{}') } catch {}
-
-        const result = await executeTool(fnName, fnArgs, walletAddress, host)
-        toolResults.push({
-          role: 'tool',
-          tool_call_id: tc.id,
-          content: result,
-        })
+        const result = await executeTool(fnName, fnArgs, walletAddress, sessionId, host)
+        toolResults.push({ role: 'tool', tool_call_id: tc.id, content: result })
       }
 
-      // Step 3: Send tool results back for final response (no tools on follow-up)
       const followUpData = await callOpenRouter([
-        ...messages,
-        assistantMessage,
-        ...toolResults,
+        ...messages, assistantMessage, ...toolResults,
       ], false)
-
-      assistantMessage = followUpData.choices?.[0]?.message
-        || { role: 'assistant', content: 'Action completed.' }
+      assistantMessage = followUpData.choices?.[0]?.message || { role: 'assistant', content: 'Action completed.' }
     }
 
     const reply = assistantMessage.content || 'Done.'
 
-    // Save assistant response (best effort)
     try {
-      await supabase.from('agent_messages').insert({
-        session_id: sessionId, role: 'assistant', content: reply,
-      })
+      await supabase.from('agent_messages').insert({ session_id: sessionId, role: 'assistant', content: reply })
     } catch {}
 
     return res.status(200).json({ reply })
