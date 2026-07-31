@@ -31,6 +31,7 @@ You help users manage USDC-based payroll for hybrid teams (humans + AI agents):
 - **Set payment rules** for agents (per-task rates, daily/monthly caps)
 - **View agent activity** and pending payouts
 - **Approve and settle** agent payouts
+- **Grant agent-to-agent (A2A) budgets** — let agents hire and pay other agents, bounded by a hard cap
 - **Manage multiple vaults** — list all vaults, switch the active vault, manage each independently
 
 ## Multiple Vaults
@@ -52,6 +53,11 @@ An owner can have multiple payroll vaults (companies). Each vault has its own co
 **switch_vault** → Switches the active vault for this session.
   - Needs: company_name or company_id
   - Triggers: "switch to X", "use vault X", "manage X payroll"
+
+**grant_agent_budget** → Grants an agent an A2A spend budget so it can hire and pay other agents.
+  - Needs: agent_name, spend_limit (USDC amount)
+  - Triggers: "give agent X a budget", "grant budget", "let agent X hire", "set spend limit"
+  - The agent can then use hire_invite to create linking codes for sub-agents and pay_agent to pay them, all bounded by this cap.
 
 **add_contractor** → Adds a HUMAN employee/contractor to the ACTIVE vault.
   - Needs: name, wallet_address (0x...), amount_usdc
@@ -297,6 +303,21 @@ const TOOLS = [
           agent_name: { type: 'string', description: 'Optional: approve only this agent' },
         },
         required: [],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'grant_agent_budget',
+      description: 'Grant an agent an A2A (agent-to-agent) spend budget so it can hire and pay other agents. The budget is a hard cap in USDC.',
+      parameters: {
+        type: 'object',
+        properties: {
+          agent_name: { type: 'string', description: 'Name of the agent to grant a budget to' },
+          spend_limit: { type: 'number', description: 'Maximum USDC this agent may disburse to other agents' },
+        },
+        required: ['agent_name', 'spend_limit'],
       },
     },
   },
@@ -786,6 +807,27 @@ async function executeTool(
         })
         if (res.error) return `Error: ${res.error}`
         return JSON.stringify(res)
+      }
+
+      case 'grant_agent_budget': {
+        const r = await requireCompany()
+        if ('error' in r) return r.error
+        const { company } = r
+        const { data: agent } = await supabase.from('payroll_agents')
+          .select('id').eq('company_id', company.id)
+          .ilike('name', `%${args.agent_name}%`).limit(1).single()
+        if (!agent) return `Agent "${args.agent_name}" not found.`
+
+        const res = await internalFetch(host, '/api/payroll/agent?action=grant_budget', 'POST', {
+          company_id: company.id,
+          agent_id: agent.id,
+          spend_limit: args.spend_limit,
+        })
+        if (res.error) return `Error: ${res.error}`
+        return JSON.stringify({
+          ...res,
+          message: `Budget granted. ${res.agent_name} can now hire and pay other agents (up to ${res.spend_limit} USDC). Agents it hires will link via the normal linking flow.`,
+        })
       }
 
       default:

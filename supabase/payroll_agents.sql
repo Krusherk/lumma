@@ -25,6 +25,39 @@ CREATE INDEX IF NOT EXISTS idx_payroll_agents_token
 CREATE INDEX IF NOT EXISTS idx_payroll_agents_linking
   ON payroll_agents (linking_code);
 
+-- ── Migration: agent-to-agent (A2A) nanopayment network ──
+-- Lets an agent hire and pay OTHER agents from the same vault, bounded by an
+-- owner-granted hard cap. All columns nullable/additive — existing rows and the
+-- human-payroll + owner-settlement paths are unaffected.
+--   spend_limit → owner-set ceiling (USDC) this agent may disburse to hires.
+--                 NULL = no A2A budget granted (agent cannot pay others).
+--   spend_used  → running total this agent has disbursed; guarded < spend_limit.
+--   hired_by    → the agent that created this agent's linking slot (nullable;
+--                 top-level agents added by the owner have no hirer).
+ALTER TABLE payroll_agents
+  ADD COLUMN IF NOT EXISTS spend_limit NUMERIC(20,6);
+ALTER TABLE payroll_agents
+  ADD COLUMN IF NOT EXISTS spend_used NUMERIC(20,6) NOT NULL DEFAULT 0;
+ALTER TABLE payroll_agents
+  ADD COLUMN IF NOT EXISTS hired_by UUID REFERENCES payroll_agents(id) ON DELETE SET NULL;
+
+-- Guard: budget values must be sane. spend_limit (if granted) strictly positive;
+-- spend_used never negative. Applied idempotently.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payroll_agents_spend_limit_positive') THEN
+    ALTER TABLE payroll_agents
+      ADD CONSTRAINT payroll_agents_spend_limit_positive CHECK (spend_limit IS NULL OR spend_limit > 0);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'payroll_agents_spend_used_nonneg') THEN
+    ALTER TABLE payroll_agents
+      ADD CONSTRAINT payroll_agents_spend_used_nonneg CHECK (spend_used >= 0);
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_payroll_agents_hired_by
+  ON payroll_agents (hired_by) WHERE hired_by IS NOT NULL;
+
 -- Work reported by linked agents
 CREATE TABLE IF NOT EXISTS payroll_work_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

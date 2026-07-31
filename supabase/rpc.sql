@@ -60,3 +60,51 @@ AS $$
     total_tasks  = total_tasks  + p_tasks
   WHERE id = p_agent_id;
 $$;
+
+-- ── reserve_agent_budget ──────────────────────────────────────────────
+-- Agent-to-agent (A2A) spend guard. Atomically reserves p_amount against a
+-- paying agent's owner-granted hard cap (spend_limit) by incrementing
+-- spend_used ONLY IF the reservation stays within the cap. The predicate and
+-- the write happen in one UPDATE, so concurrent pay_agent calls can never
+-- push spend_used past spend_limit (same double-spend-safe pattern as
+-- claim_work_logs).
+--
+-- Returns the updated row when the reservation succeeds; returns no rows when
+-- the agent has no budget (spend_limit IS NULL), is not active, or the
+-- reservation would exceed the cap. The caller MUST treat "no row" as a hard
+-- rejection and NOT transfer any funds.
+--
+-- On transfer failure the caller releases the reservation via
+-- release_agent_budget (below) so the budget is not permanently consumed.
+CREATE OR REPLACE FUNCTION reserve_agent_budget(
+  p_agent_id  uuid,
+  p_amount    numeric
+)
+RETURNS SETOF payroll_agents
+LANGUAGE sql
+AS $$
+  UPDATE payroll_agents
+  SET spend_used = spend_used + p_amount
+  WHERE id = p_agent_id
+    AND status = 'active'
+    AND spend_limit IS NOT NULL
+    AND p_amount > 0
+    AND spend_used + p_amount <= spend_limit
+  RETURNING *;
+$$;
+
+-- ── release_agent_budget ──────────────────────────────────────────────
+-- Called when an A2A transfer fails after its budget was reserved: rolls back
+-- the reservation by decrementing spend_used (floored at 0 so it can never go
+-- negative even under concurrent releases).
+CREATE OR REPLACE FUNCTION release_agent_budget(
+  p_agent_id  uuid,
+  p_amount    numeric
+)
+RETURNS void
+LANGUAGE sql
+AS $$
+  UPDATE payroll_agents
+  SET spend_used = GREATEST(spend_used - p_amount, 0)
+  WHERE id = p_agent_id;
+$$;

@@ -5,18 +5,28 @@
  * GET  /api/payroll/agent/earnings — Agent checks pending/total earnings
  * GET  /api/payroll/agent/activity — Owner views all agent activity
  * POST /api/payroll/agent/approve — Owner approves + settles pending payouts
+ * POST /api/payroll/agent/grant_budget — Owner grants an agent an A2A spend cap
+ * POST /api/payroll/agent/hire_invite  — Agent mints a linking code to hire another agent
+ * POST /api/payroll/agent/pay_agent    — Agent pays another agent (agent-to-agent nanopayments)
  *
- * Routing via query param: ?action=create|link|set_wallet|report|earnings|activity|approve|sweep
+ * Routing via query param:
+ *   ?action=create|link|set_wallet|report|earnings|activity|approve|sweep|grant_budget|hire_invite|pay_agent
  *
- * Owner-only actions (create, activity, approve, sweep) require x-internal-secret.
- * Agent-facing actions (link, set_wallet, report, earnings) use Bearer token auth.
+ * Owner-only actions (create, activity, approve, sweep, grant_budget) require x-internal-secret.
+ * Agent-facing actions (link, set_wallet, report, earnings, hire_invite, pay_agent) use Bearer token auth.
+ *
+ * Agent-to-agent (A2A) nanopayment network: the owner grants a paying agent a
+ * hard spend_limit (grant_budget); that agent can hire other agents into the
+ * same vault (hire_invite → the hire links via the normal `link` flow) and pay
+ * them (pay_agent), bounded by the cap. A leaked agent token can lose at most
+ * the remaining budget, never the whole vault.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
 import { transferUSDC, CHAIN_ID_MAP } from './_circle.js'
 import { requireInternalSecret } from './_auth.js'
 import { supabase } from './_supabase.js'
-import { sumBaseUnits, feeBaseUnits, formatBaseUnits } from './_usdc.js'
+import { sumBaseUnits, feeBaseUnits, formatBaseUnits, parseUsdcToBaseUnits } from './_usdc.js'
 
 const RECEIPT_BASE_URL = 'https://payroll.lumma.xyz'
 
@@ -444,12 +454,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('status', 'settled')
         const earnedBase = sumBaseUnits((settledLogs || []).map((l: any) => l.payout_amount))
 
+        // A2A budget info (only present when agent has a spend_limit)
+        const hasBudget = agent.spend_limit != null
+        const spendLimitBase = hasBudget ? sumBaseUnits([agent.spend_limit]) : 0n
+        const spendUsedBase = sumBaseUnits([agent.spend_used ?? 0])
+
         return res.status(200).json({
           agent_name: agent.name,
           pending: formatBaseUnits(pendingBase),
           total_earned: formatBaseUnits(earnedBase),
           total_tasks: agent.total_tasks,
           status: agent.status,
+          // A2A budget — omitted entirely when the agent has no budget
+          ...(hasBudget ? {
+            spend_limit: formatBaseUnits(spendLimitBase),
+            spend_used: formatBaseUnits(spendUsedBase),
+            spend_available: formatBaseUnits(spendLimitBase - spendUsedBase),
+          } : {}),
         })
       }
 
@@ -483,6 +504,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const pendingBase = sumBaseUnits((logs || []).map((l: any) => l.payout_amount))
           totalPendingBase += pendingBase
 
+          const hasBudget = a.spend_limit != null
+          const spendLimitBase = hasBudget ? sumBaseUnits([a.spend_limit]) : 0n
+          const spendUsedBase = sumBaseUnits([a.spend_used ?? 0])
+
           agentSummaries.push({
             id: a.id,
             name: a.name,
@@ -492,6 +517,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             total_earned: formatBaseUnits(sumBaseUnits([a.total_earned])),
             pending_payout: formatBaseUnits(pendingBase),
             pending_tasks: (logs || []).length,
+            hired_by: a.hired_by || null,
+            // A2A budget — omitted when the agent has no budget
+            ...(hasBudget ? {
+              spend_limit: formatBaseUnits(spendLimitBase),
+              spend_used: formatBaseUnits(spendUsedBase),
+              spend_available: formatBaseUnits(spendLimitBase - spendUsedBase),
+            } : {}),
             recent_work: (logs || []).slice(0, 3).map((l: any) => ({
               task_type: l.task_type,
               description: l.description,
@@ -615,8 +647,202 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
+      // ─────────────────────────────────────────────
+      // GRANT_BUDGET — Owner sets/raises an agent's A2A spend cap (internal only)
+      // ─────────────────────────────────────────────
+      case 'grant_budget': {
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
+        if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
+        const { company_id, agent_id, spend_limit } = req.body
+
+        if (!company_id || !agent_id) {
+          return res.status(400).json({ error: 'company_id and agent_id required' })
+        }
+
+        // Validate the cap as a positive USDC amount (throws UsdcValidationError on bad input)
+        let limitStr: string
+        try {
+          const limitBase = parseUsdcToBaseUnits(spend_limit, { requirePositive: true })
+          limitStr = formatBaseUnits(limitBase)
+        } catch (e: any) {
+          return res.status(400).json({ error: e.message || 'Invalid spend_limit' })
+        }
+
+        // Scope the update to the owner's company so one owner can't grant budget
+        // to another company's agent.
+        const { data: updated, error: updateErr } = await supabase.from('payroll_agents')
+          .update({ spend_limit: limitStr })
+          .eq('id', agent_id)
+          .eq('company_id', company_id)
+          .select('id, name, spend_limit, spend_used, status')
+          .single()
+
+        if (updateErr || !updated) {
+          return res.status(404).json({ error: 'Agent not found for this company' })
+        }
+
+        return res.status(200).json({
+          agent_id: updated.id,
+          agent_name: updated.name,
+          spend_limit: formatBaseUnits(sumBaseUnits([updated.spend_limit])),
+          spend_used: formatBaseUnits(sumBaseUnits([updated.spend_used])),
+          spend_available: formatBaseUnits(sumBaseUnits([updated.spend_limit]) - sumBaseUnits([updated.spend_used])),
+          message: `Budget granted. This agent may disburse up to ${limitStr} USDC to hired agents.`,
+        })
+      }
+
+      // ─────────────────────────────────────────────
+      // HIRE_INVITE — Paying agent mints a linking code for a NEW worker agent
+      // (agent-to-agent). The new slot lives in the SAME company and is tagged
+      // hired_by = <paying agent>. The worker links via the existing `link` action.
+      // ─────────────────────────────────────────────
+      case 'hire_invite': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
+
+        const agent = await authenticateAgent(req)
+        if (!agent) return res.status(401).json({ error: 'Invalid or missing agent token' })
+
+        if (!checkRateLimit(agent.agent_token)) {
+          return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
+        }
+
+        // Only agents that have been granted an A2A budget may hire others.
+        if (agent.spend_limit === null || agent.spend_limit === undefined) {
+          return res.status(403).json({ error: 'This agent has no hiring budget. Ask the owner to grant a spend_limit first.' })
+        }
+
+        const { name, agent_type } = req.body
+        if (!name) return res.status(400).json({ error: 'name required (the agent you want to hire)' })
+
+        const linkCode = generateLinkCode()
+
+        const { data, error } = await supabase.from('payroll_agents').insert({
+          company_id: agent.company_id,
+          name,
+          agent_type: agent_type || 'generic',
+          linking_code: linkCode,
+          status: 'pending',
+          hired_by: agent.id,
+        }).select('id, name').single()
+
+        if (error) return res.status(400).json({ error: error.message })
+
+        return res.status(200).json({
+          agent_id: data.id,
+          name: data.name,
+          hired_by: agent.id,
+          linking_code: linkCode,
+          instructions: `Give this to the agent you're hiring: install the Lumma Payroll Skill, then call POST /api/payroll/agent?action=link with { "code": "${linkCode}", "wallet_address": "0x..." }`,
+        })
+      }
+
+      // ─────────────────────────────────────────────
+      // PAY_AGENT — Paying agent pays another agent from its owner-granted budget.
+      // Atomically reserves against the hard cap BEFORE transferring; releases the
+      // reservation if the on-chain settlement fails. (agent-to-agent nanopayment)
+      // ─────────────────────────────────────────────
+      case 'pay_agent': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
+
+        const payer = await authenticateAgent(req)
+        if (!payer) return res.status(401).json({ error: 'Invalid or missing agent token' })
+
+        if (!checkRateLimit(payer.agent_token)) {
+          return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
+        }
+
+        const { to_agent_id, amount, task_type, description } = req.body
+        if (!to_agent_id) return res.status(400).json({ error: 'to_agent_id required' })
+        if (to_agent_id === payer.id) return res.status(400).json({ error: 'An agent cannot pay itself' })
+
+        // Validate the amount as a positive USDC value.
+        let amountStr: string
+        let amountBase: bigint
+        try {
+          amountBase = parseUsdcToBaseUnits(amount, { requirePositive: true })
+          amountStr = formatBaseUnits(amountBase)
+        } catch (e: any) {
+          return res.status(400).json({ error: e.message || 'Invalid amount' })
+        }
+
+        // Resolve the payee — must be an active agent in the SAME company.
+        const { data: payee, error: payeeErr } = await supabase.from('payroll_agents')
+          .select('*')
+          .eq('id', to_agent_id)
+          .eq('company_id', payer.company_id)
+          .single()
+
+        if (payeeErr || !payee) {
+          return res.status(404).json({ error: 'Payee agent not found in your company' })
+        }
+        if (payee.status !== 'active') {
+          return res.status(400).json({ error: `Payee agent is not active (status: ${payee.status})` })
+        }
+        if (!payee.wallet_address) {
+          return res.status(400).json({ error: 'Payee agent has no payout wallet set' })
+        }
+
+        // ── Atomic budget reservation (owner-granted hard cap) ──
+        // reserve_agent_budget returns the row ONLY if the reservation stays
+        // within spend_limit; an empty result is a hard rejection — transfer nothing.
+        const { data: reserved, error: reserveErr } = await supabase
+          .rpc('reserve_agent_budget', { p_agent_id: payer.id, p_amount: amountStr })
+
+        if (reserveErr) {
+          console.error('reserve_agent_budget RPC error:', reserveErr)
+          return res.status(500).json({ error: 'Budget reservation failed' })
+        }
+        if (!reserved?.length) {
+          return res.status(402).json({
+            error: 'Payment rejected: over budget or no budget granted. Ask the owner to raise your spend_limit.',
+          })
+        }
+
+        // Budget is now reserved. Create an approved work log for the payee and
+        // settle it. If settlement fails, release the reservation so the budget
+        // is not permanently consumed.
+        const { data: workLog, error: insertErr } = await supabase.from('payroll_work_logs').insert({
+          agent_id: payee.id,
+          company_id: payer.company_id,
+          task_type: task_type || 'a2a_payment',
+          description: description || `Paid by agent ${payer.name}`,
+          metadata: { paid_by_agent_id: payer.id, paid_by_agent_name: payer.name },
+          payout_amount: amountStr,
+          status: 'approved',
+        }).select().single()
+
+        if (insertErr || !workLog) {
+          await supabase.rpc('release_agent_budget', { p_agent_id: payer.id, p_amount: amountStr })
+          return res.status(500).json({ error: insertErr?.message || 'Failed to record payment' })
+        }
+
+        const settlement = await settleAgentWork(payer.company_id, payee, [workLog])
+
+        // settleAgentWork returns tasks_settled === 0 on any failure (and has
+        // already reverted the work log to 'approved'). Release the reservation.
+        if (!settlement?.tasks_settled) {
+          await supabase.rpc('release_agent_budget', { p_agent_id: payer.id, p_amount: amountStr })
+          return res.status(502).json({
+            error: settlement?.error || 'Settlement failed — payment reversed, budget released.',
+            settlement,
+          })
+        }
+
+        return res.status(200).json({
+          paid: true,
+          from_agent: payer.name,
+          to_agent: payee.name,
+          to_agent_id: payee.id,
+          amount: amountStr,
+          spend_used: formatBaseUnits(sumBaseUnits([reserved[0].spend_used])),
+          spend_limit: formatBaseUnits(sumBaseUnits([reserved[0].spend_limit])),
+          spend_available: formatBaseUnits(sumBaseUnits([reserved[0].spend_limit]) - sumBaseUnits([reserved[0].spend_used])),
+          settlement,
+        })
+      }
+
       default:
-        return res.status(400).json({ error: `Unknown action: ${action}. Use create, link, set_wallet, report, earnings, activity, approve, or sweep.` })
+        return res.status(400).json({ error: `Unknown action: ${action}. Use create, link, set_wallet, report, earnings, activity, approve, sweep, grant_budget, hire_invite, or pay_agent.` })
     }
   } catch (err: any) {
     console.error('Agent API error:', err)

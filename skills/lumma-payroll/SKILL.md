@@ -1,6 +1,6 @@
 ---
 name: lumma-payroll
-description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing — report tasks as they complete and accumulate payouts for settlement. Use when an agent needs to log completed work, check pending earnings, or interact with Lumma's payroll infrastructure. Triggers: report work, log task, submit completion, claim payout, check earnings, lumma payroll, USDC payout, work report, task complete, job done, log completion."
+description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing — report tasks as they complete and accumulate payouts for settlement. Also supports agent-to-agent (A2A) nanopayments — hire sub-agents and pay them from a granted budget. Use when an agent needs to log completed work, check pending earnings, hire another agent, pay another agent, or interact with Lumma's payroll infrastructure. Triggers: report work, log task, submit completion, claim payout, check earnings, lumma payroll, USDC payout, work report, task complete, job done, log completion, hire agent, pay agent, a2a payment."
 ---
 
 ## Overview
@@ -11,6 +11,7 @@ The Lumma Payroll Skill connects your agent to a Lumma payroll vault on Arc (Cir
 - Accumulate USDC payouts based on rules set by the vault owner
 - Check pending and total earnings
 - Receive USDC settlements to a configured wallet address
+- **Hire sub-agents** and pay them from a granted A2A budget (agent-to-agent nanopayments)
 
 All payments are in **USDC** on **Arc Testnet** (Chain ID: 5042002).
 
@@ -109,9 +110,99 @@ Authorization: Bearer <agent_token>
   "pending": "0.50",
   "total_earned": "12.35",
   "total_tasks": 247,
-  "status": "active"
+  "status": "active",
+  "spend_limit": "50.000000",
+  "spend_used": "3.500000",
+  "spend_available": "46.500000"
 }
 ```
+
+> **Note:** `spend_limit`, `spend_used`, and `spend_available` only appear if the vault owner has granted you an A2A budget. If they're absent, you don't have hiring/paying permissions.
+
+## Agent-to-Agent (A2A) Nanopayments
+
+If the vault owner grants your agent an A2A budget, you can **hire other agents** and **pay them directly** from that budget. The budget is a hard cap — you can never spend more than the owner allowed.
+
+Check your `earnings` response for `spend_limit` / `spend_available` to see if you have a budget.
+
+### Hire a Sub-Agent
+
+Create a linking code for a new agent you want to hire into the same vault.
+
+```
+POST https://lumma.xyz/api/payroll/agent?action=hire_invite
+Authorization: Bearer <agent_token>
+Content-Type: application/json
+
+{
+  "name": "Data Fetcher",
+  "agent_type": "data"
+}
+```
+
+**Response:**
+```json
+{
+  "agent_id": "uuid",
+  "name": "Data Fetcher",
+  "hired_by": "your-agent-uuid",
+  "linking_code": "LMA-LINK-abc12345",
+  "instructions": "Give this to the agent you're hiring: install the Lumma Payroll Skill, then call POST /api/payroll/agent?action=link with { \"code\": \"LMA-LINK-abc12345\", \"wallet_address\": \"0x...\" }"
+}
+```
+
+The hired agent links via the same `link` action documented above. Once linked, you can pay it.
+
+**Requires:** An A2A budget (check `spend_limit` in earnings). Returns `403` if no budget is granted.
+
+### Pay Another Agent
+
+Pay an agent in the same vault from your budget. The payment is settled immediately via the vault.
+
+```
+POST https://lumma.xyz/api/payroll/agent?action=pay_agent
+Authorization: Bearer <agent_token>
+Content-Type: application/json
+
+{
+  "to_agent_id": "target-agent-uuid",
+  "amount": 0.5,
+  "task_type": "data_fetch",
+  "description": "Fetched 500 records from CoinGecko API"
+}
+```
+
+**Parameters:**
+
+| Field | Required | Description |
+|---|---|---|
+| `to_agent_id` | Yes | UUID of the agent to pay (from `hire_invite` response) |
+| `amount` | Yes | USDC amount to pay (must be within your remaining budget) |
+| `task_type` | No | Label for the payment (defaults to `a2a_payment`) |
+| `description` | No | What the payment is for |
+
+**Response:**
+```json
+{
+  "paid": true,
+  "from_agent": "Orchestrator",
+  "to_agent": "Data Fetcher",
+  "amount": "0.500000",
+  "spend_used": "3.500000",
+  "spend_limit": "50.000000",
+  "spend_available": "46.500000",
+  "settlement": { ... }
+}
+```
+
+**Error codes for A2A:**
+
+| Status | Meaning | Action |
+|---|---|---|
+| `402` | Over budget or no budget granted | Ask the vault owner to raise your `spend_limit` |
+| `403` | No A2A budget (for `hire_invite`) | Ask the owner to grant you a budget first |
+| `404` | Payee agent not found in your vault | Check the `to_agent_id` is correct |
+| `400` | Self-payment or payee not active | Cannot pay yourself; payee must be active with a wallet |
 
 ## Rate Limits
 
