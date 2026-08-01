@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
+import ShaderBackground from '../components/ShaderBackground'
 import './DocsPage.css'
 
-type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap'
+type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk'
 
 const NAV_GROUPS = [
   {
@@ -30,6 +31,12 @@ const NAV_GROUPS = [
       { id: 'roadmap' as Section, label: 'Roadmap' },
     ],
   },
+  {
+    label: 'Developers',
+    items: [
+      { id: 'sdk' as Section, label: 'Payroll SDK' },
+    ],
+  },
 ]
 
 const CATEGORY_CARDS = [
@@ -40,6 +47,7 @@ const CATEGORY_CARDS = [
   { title: 'Agent Payroll', desc: 'USDC payroll for hybrid teams — people, contractors, and AI agents.', section: 'agents' as Section },
 
   { title: 'Yield Radar', desc: 'Discover stablecoin yield opportunities across protocols.', section: 'yield' as Section },
+  { title: 'Payroll SDK', desc: 'Embed programmable USDC payroll into your platform with a few lines of code.', section: 'sdk' as Section },
 ]
 
 const ArrowIcon = () => (
@@ -98,101 +106,147 @@ export default function DocsPage() {
 
 
   return (
-    <div className="docs">
-      {/* Header */}
-      <header className={`docs-header${scrolled ? ' scrolled' : ''}`}>
-        <div className="docs-header-l">
-          {section !== 'home' && (
+    <div className={`docs${section === 'home' ? ' docs--home' : ''}`}>
+      {/* Header — only shown on section pages (home has its own floating nav) */}
+      {section !== 'home' && (
+        <header className={`docs-header${scrolled ? ' scrolled' : ''}`}>
+          <div className="docs-header-l">
             <button className="docs-hamburger" onClick={() => setMenuOpen(v => !v)} aria-label="Menu">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
             </button>
-          )}
-          <a href="#" className="docs-logo" onClick={e => { e.preventDefault(); navigate('home'); }}>
-            <img src="/images/lumma.svg" alt="Lumma" />
-            Lumma <span className="docs-logo-tag">Docs</span>
-          </a>
-        </div>
-        <div className="docs-header-r">
-          <button className="docs-header-search" onClick={() => setSearchOpen(true)} aria-label="Search">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-          </button>
-          <a href="https://testnet.lumma.xyz" className="docs-header-cta">Use Lumma</a>
-        </div>
-      </header>
-
+            <a href="#" className="docs-logo" onClick={e => { e.preventDefault(); navigate('home'); }}>
+              <img src="/images/lumma.svg" alt="Lumma" />
+              Lumma <span className="docs-logo-tag">Docs</span>
+            </a>
+          </div>
+          <div className="docs-header-r">
+            <button className="docs-header-search" onClick={() => setSearchOpen(true)} aria-label="Search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+            </button>
+            <a href="https://testnet.lumma.xyz" className="docs-header-cta">Use Lumma</a>
+          </div>
+        </header>
+      )}
 
       {menuOpen && <div className="docs-overlay" onClick={() => setMenuOpen(false)} />}
 
-      {/* ── HOME ── */}
+      {/* ── HOME — Cinematic Hero ── */}
       {section === 'home' && (
-        <div className="docs-page">
-          {/* Intro banner with image */}
-          <div style={{ paddingTop: 32 }}>
-            <div className="docs-intro-banner">
-              <img src="/images/introlumma.jpg" alt="Lumma Platform" />
-              <div className="docs-intro-overlay">
-                <h3>Introducing Lumma</h3>
-                <p>Stablecoin finance across chains, all in one place.</p>
+        <>
+          <section className="docs-hero" id="docs-hero">
+            {/* Floating glassmorphism navbar */}
+            <nav className="docs-hero-nav">
+              <div className="docs-hero-nav-left">
+                <button className="docs-hero-nav-logo" onClick={() => navigate('home')}>
+                  <img src="/images/lumma.svg" alt="Lumma" />
+                  <span>Lumma</span>
+                  <span className="docs-hero-nav-tag">Docs</span>
+                </button>
+              </div>
+              <div className="docs-hero-nav-links">
+                <button className="docs-hero-nav-link" onClick={() => navigate('intro')}>Overview</button>
+                <button className="docs-hero-nav-link" onClick={() => navigate('bridge')}>Products</button>
+                <button className="docs-hero-nav-link" onClick={() => navigate('agents')}>Agent Payroll</button>
+                <button className="docs-hero-nav-link" onClick={() => navigate('arch')}>Architecture</button>
+              </div>
+              <div className="docs-hero-nav-right">
+                <button className="docs-hero-nav-search" onClick={() => setSearchOpen(true)} aria-label="Search">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                </button>
+                <a href="https://testnet.lumma.xyz" className="docs-hero-nav-cta">Use Lumma</a>
+              </div>
+            </nav>
+
+            {/* WebGL shader background */}
+            <div className="docs-hero-bg">
+              <ShaderBackground />
+            </div>
+
+            {/* Gradient overlay layers */}
+            <div className="docs-hero-overlay" />
+
+            {/* Hero content — bottom-left */}
+            <div className="docs-hero-content">
+              <h1 className="docs-hero-headline">
+                Stablecoin finance,<br />
+                <span className="accent">documented.</span>
+              </h1>
+              <p className="docs-hero-desc">
+                Everything you need to bridge, swap, pay teams, and build on Lumma — 
+                the stablecoin infrastructure layer for Arc Network.
+              </p>
+              <div className="docs-hero-actions">
+                <button className="docs-hero-btn-primary" onClick={() => navigate('intro')}>
+                  Get Started
+                </button>
+                <button className="docs-hero-btn-secondary" onClick={() => setSearchOpen(true)}>
+                  Search Docs ⌘K
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Search Feature */}
-          <div className="docs-search-card">
-            <h2>Find the answers<br />you need.</h2>
-            <button type="button" className="docs-search-field" onClick={() => setSearchOpen(true)}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
-              <span>Search documentation</span>
-              <kbd>⌘K</kbd>
-            </button>
+          </section>
 
-          </div>
+          {/* Below-hero content — dark theme */}
+          <div className="docs-home-body">
+            <div className="docs-home-inner">
+              {/* Search Feature */}
+              <div className="docs-search-card">
+                <h2>Find the answers<br />you need.</h2>
+                <button type="button" className="docs-search-field" onClick={() => setSearchOpen(true)}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                  <span>Search documentation</span>
+                  <kbd>⌘K</kbd>
+                </button>
+              </div>
 
-          {/* Category Cards */}
-          <div className="docs-cards-section">
-            <div className="docs-cards-heading">Explore Documentation</div>
-            <div className="docs-cards-grid">
-              {CATEGORY_CARDS.map(card => (
-                <div key={card.title} className="docs-card" onClick={() => navigate(card.section)}>
-                  <div className="docs-card-arrow"><ArrowIcon /></div>
-                  <h3>{card.title}</h3>
-                  <p>{card.desc}</p>
+              {/* Category Cards */}
+              <div className="docs-cards-section">
+                <div className="docs-cards-heading">Explore Documentation</div>
+                <div className="docs-cards-grid">
+                  {CATEGORY_CARDS.map(card => (
+                    <div key={card.title} className="docs-card" onClick={() => navigate(card.section)}>
+                      <div className="docs-card-arrow"><ArrowIcon /></div>
+                      <h3>{card.title}</h3>
+                      <p>{card.desc}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              {/* Footer */}
+              <footer className="docs-footer">
+                <div className="docs-footer-grid">
+                  <div>
+                    <div className="docs-footer-heading">Product</div>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('bridge'); }}>Bridge &amp; Swap</a>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('balance'); }}>Unified Balance</a>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('send'); }}>FX Send</a>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('agents'); }}>Agent Payroll</a>
+                  </div>
+                  <div>
+                    <div className="docs-footer-heading">Developers</div>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('arch'); }}>Architecture</a>
+                    <a href="https://github.com/Krusherk/lumma" target="_blank" rel="noopener noreferrer" className="docs-footer-link">GitHub</a>
+                  </div>
+                  <div>
+                    <div className="docs-footer-heading">Community</div>
+                    <a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer" className="docs-footer-link">X (Twitter)</a>
+                  </div>
+                  <div>
+                    <div className="docs-footer-heading">Legal</div>
+                    <a href="#" className="docs-footer-link">Privacy Policy</a>
+                    <a href="#" className="docs-footer-link">Terms of Service</a>
+                  </div>
+                </div>
+                <div className="docs-footer-bottom">
+                  <a href="/" className="docs-footer-logo"><img src="/images/lumma.svg" alt="Lumma" /> Lumma</a>
+                </div>
+                <p className="docs-footer-legal">Lumma is a stablecoin finance platform built on Arc Network. All transactions are on-chain. Lumma does not custody funds or hold private keys.</p>
+              </footer>
             </div>
           </div>
-
-          {/* Footer */}
-          <footer className="docs-footer">
-            <div className="docs-footer-grid">
-              <div>
-                <div className="docs-footer-heading">Product</div>
-                <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('bridge'); }}>Bridge & Swap</a>
-                <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('balance'); }}>Unified Balance</a>
-                <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('send'); }}>FX Send</a>
-                <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('agents'); }}>Agent Payroll</a>
-              </div>
-              <div>
-                <div className="docs-footer-heading">Developers</div>
-                <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('arch'); }}>Architecture</a>
-                <a href="https://github.com/Krusherk/lumma" target="_blank" rel="noopener noreferrer" className="docs-footer-link">GitHub</a>
-              </div>
-              <div>
-                <div className="docs-footer-heading">Community</div>
-                <a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer" className="docs-footer-link">X (Twitter)</a>
-              </div>
-              <div>
-                <div className="docs-footer-heading">Legal</div>
-                <a href="#" className="docs-footer-link">Privacy Policy</a>
-                <a href="#" className="docs-footer-link">Terms of Service</a>
-              </div>
-            </div>
-            <div className="docs-footer-bottom">
-              <a href="/" className="docs-footer-logo"><img src="/images/lumma.svg" alt="Lumma" /> Lumma</a>
-            </div>
-            <p className="docs-footer-legal">Lumma is a stablecoin finance platform built on Arc Network. All transactions are on-chain. Lumma does not custody funds or hold private keys.</p>
-          </footer>
-        </div>
+        </>
       )}
 
       {/* ── SECTION PAGES ── */}
@@ -225,6 +279,7 @@ export default function DocsPage() {
               {section === 'arch' && <SectionArch />}
               {section === 'security' && <SectionSecurity />}
               {section === 'roadmap' && <SectionRoadmap />}
+              {section === 'sdk' && <SectionSdk />}
             </main>
           </div>
         </div>
@@ -483,13 +538,233 @@ function SectionRoadmap() {
       <div className="docs-timeline">
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>May 2026 — Platform Launch</h3><p>Landing page, docs, testnet. Bridge & Swap + Unified Balance live.</p></div></div>
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>June 2026 — Agent Payroll</h3><p>USDC payroll for hybrid teams — people, contractors, and AI agents from one vault.</p></div></div>
+        <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>July 2026 — A2A Nanopayments</h3><p>Agent-to-agent nanopayment network. Autonomous hiring, budget caps, atomic settlement.</p></div></div>
+        <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>August 2026 — Embedded Payroll SDK</h3><p>"Stripe for Agents" — external platforms can embed Lumma payroll with a few API calls.</p></div></div>
         <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Q3 2026 — Points + FX Send</h3><p>Points reward system. FX Send with real-time stablecoin conversion.</p></div></div>
-
         <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Q4 2026 — Yield Radar + Mainnet</h3><p>Cross-chain yield aggregator. Production mainnet launch.</p></div></div>
       </div>
       <div className="docs-callout">
         <div className="docs-callout-title">A note on timelines</div>
         <p>These dates reflect our plan, not a promise. We'd rather ship solid than ship fast.</p>
+      </div>
+    </section>
+  )
+}
+
+function SectionSdk() {
+  return (
+    <section>
+      <h1>Embedded Payroll SDK</h1>
+      <span className="docs-status live">Live on Testnet</span>
+      <p className="docs-lead">
+        The Lumma SDK lets AI agent platforms, developer frameworks, marketplaces, and autonomous organizations integrate 
+        <strong> programmable USDC payroll infrastructure</strong> directly into their applications — with just a few API calls.
+      </p>
+
+      <div className="docs-callout">
+        <div className="docs-callout-title">Stripe for Agents</div>
+        <p>
+          Platforms where users hire, build, or deploy AI agents can integrate the Lumma SDK without handling money or regulatory risk.
+          Lumma handles compliant execution, spending limits, and streaming micropayments natively via Arc.
+        </p>
+      </div>
+
+      <h2>Overview</h2>
+      <p>Lumma abstracts away the complexity of:</p>
+      <ul>
+        <li><strong>Account abstraction</strong> — no wallet management required by the integrating platform.</li>
+        <li><strong>Multi-chain routing</strong> — USDC settlements across supported networks.</li>
+        <li><strong>Manual transaction signing</strong> — vault operations are authorized via API key.</li>
+        <li><strong>Gas management</strong> — all fees are absorbed; agents never need native tokens.</li>
+      </ul>
+      <p>Your applications can securely control payroll funds, enforce spending rules, and execute instant USDC settlements on <strong>Arc Testnet</strong>, with gas abstracted from the underlying infrastructure.</p>
+
+      <h2>Quickstart</h2>
+
+      <h3>1. Install the SDK</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">Terminal</div>
+        <pre>{`npm install @lumma-xyz/payroll-sdk`}</pre>
+      </div>
+
+      <h3>2. Initialize the Client</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">JavaScript</div>
+        <pre>{`import { LummaClient } from "@lumma-xyz/payroll-sdk";
+
+const lumma = new LummaClient({
+  apiKey: process.env.LUMMA_API_KEY,
+  network: "arc-testnet",
+  defaultGasToken: "USDC"
+});`}</pre>
+      </div>
+
+      <h2>Core API</h2>
+
+      <h3>Create a Payroll Vault</h3>
+      <p>Deploy a dedicated USDC payroll vault for your organization or AI agent ecosystem.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">JavaScript</div>
+        <pre>{`const newVault = await lumma.vaults.create({
+  companyName: "Autonomous Code Corp",
+  ownerWallet: "0xOrchestratorAdmin...abc",
+  fundingSource: "USDC_ARC_TESTNET",
+  currency: "USDC"
+});
+
+console.log(newVault.vaultAddress);`}</pre>
+      </div>
+
+      <h3>Response</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">JSON</div>
+        <pre>{`{
+  "status": "success",
+  "vaultAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "network": "arc-testnet",
+  "balances": { "USDC": "0.00" },
+  "features": [
+    "multi_vault_switching",
+    "agent_nanopayments",
+    "gas_abstraction",
+    "spending_guardrails",
+    "duplicate_prevention"
+  ]
+}`}</pre>
+      </div>
+
+      <h3>Register a Worker</h3>
+      <p>Register an AI agent or contractor and configure spending controls.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">JavaScript</div>
+        <pre>{`const worker = await lumma.agents.registerWorker({
+  vaultAddress: "0x5FbDB...aa3",
+  agentId: "agent_subcontractor_code_auditor_99",
+  payoutWallet: "0xWorkerAgentB...xyz",
+  spendingLimits: {
+    maxPerTransaction: "50.00",
+    dailyCap: "500.00",
+    rollingIntervalDays: 1
+  },
+  allowAutonomousHiring: true
+});`}</pre>
+      </div>
+
+      <h3>Settle a Task</h3>
+      <p>Execute an instant USDC payment after successful task completion.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">JavaScript</div>
+        <pre>{`const settlement = await lumma.payments.settleTask({
+  vaultAddress: "0x5FbDB...aa3",
+  payerAgentId: "agent_orchestrator_main",
+  recipientAgentId: "agent_subcontractor_code_auditor_99",
+  amount: "12.500250",
+  proofOfTaskHash: "0xsha256_compiled_artifact_hash_proof...",
+  metadata: {
+    taskType: "smart_contract_audit",
+    linesAudited: 450
+  }
+});
+
+console.log(settlement.receipt.txHash);`}</pre>
+      </div>
+
+      <h3>Settlement Response</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">JSON</div>
+        <pre>{`{
+  "settlementStatus": "CONFIRMED",
+  "timestamp": 1785680100,
+  "receipt": {
+    "txHash": "0x9c83b8a1c...f32",
+    "amountPaid": "12.500250",
+    "asset": "USDC",
+    "arcGasFeesPaid": "0.00",
+    "verificationLink": "https://explorer.testnet.arc.xyz/tx/..."
+  },
+  "accounting": {
+    "remainingVaultBalance": "14250.749750",
+    "agentRemainingDailyCap": "487.499750"
+  }
+}`}</pre>
+      </div>
+
+      <h2>Architecture</h2>
+
+      <h3>Smart Settlement Protection</h3>
+      <p>Every settlement request is validated against a cryptographic nonce database to prevent duplicate payments. If an agent retries the same transaction because of network latency or temporary failures, Lumma recognizes the duplicate <strong>proofOfTaskHash</strong> and safely ignores subsequent requests.</p>
+
+      <h3>Native Gas Abstraction</h3>
+      <p>Applications built with Lumma do not need to fund worker wallets with separate gas tokens. All transaction fees are automatically abstracted and paid from the vault's USDC balance, allowing agents to operate without managing native network tokens.</p>
+
+      <h3>Spending Guardrails</h3>
+      <p>Configure programmable spending policies for every worker:</p>
+      <ul>
+        <li><strong>Maximum payment per transaction</strong></li>
+        <li><strong>Daily spending limits</strong></li>
+        <li><strong>Rolling spending windows</strong></li>
+        <li><strong>Autonomous hiring permissions</strong></li>
+        <li><strong>Vault-level access control</strong></li>
+      </ul>
+
+      <h3>Multi-Vault Management</h3>
+      <p>Organizations can create multiple isolated payroll vaults for different teams, projects, departments, or autonomous agent swarms. Each vault maintains independent balances, permissions, and accounting.</p>
+
+      <h3>Pay-per-Token Streaming</h3>
+      <p>Configure real-time streaming payments where agents pay for exact resource consumption:</p>
+      <div className="docs-code">
+        <div className="docs-code-header">JavaScript</div>
+        <pre>{`// Configure streaming: pay 0.001 USDC per API call
+await lumma.streams.configure({
+  vaultAddress: "0x5FbDB...aa3",
+  agentId: "agent_data_scraper_01",
+  ratePerUnit: "0.001000",
+  unitType: "api_call",
+  maxBudget: "100.00",
+  clampOnBudgetHit: true
+});`}</pre>
+      </div>
+
+      <div className="docs-grid">
+        <div className="docs-grid-item"><div className="docs-grid-num">6</div><div className="docs-grid-label">API Actions</div></div>
+        <div className="docs-grid-item"><div className="docs-grid-num">$0.00</div><div className="docs-grid-label">Gas Fees</div></div>
+        <div className="docs-grid-item"><div className="docs-grid-num">&lt;1s</div><div className="docs-grid-label">Settlement Time</div></div>
+        <div className="docs-grid-item"><div className="docs-grid-num">∞</div><div className="docs-grid-label">Agents per Vault</div></div>
+      </div>
+
+      <h2>Supported Network</h2>
+      <div className="docs-grid">
+        <div className="docs-grid-item"><div className="docs-grid-num">Arc Testnet</div><div className="docs-grid-label">✅ Supported</div></div>
+        <div className="docs-grid-item"><div className="docs-grid-num">Mainnet</div><div className="docs-grid-label">Coming Soon</div></div>
+      </div>
+
+      <h2>Example Workflow</h2>
+      <ol>
+        <li><strong>Create a payroll vault</strong> — provision via SDK.</li>
+        <li><strong>Fund the vault</strong> — send USDC to the vault address.</li>
+        <li><strong>Register AI agents or contractors</strong> — assign identifiers and wallets.</li>
+        <li><strong>Configure spending policies</strong> — set per-transaction and daily caps.</li>
+        <li><strong>Trigger settlements</strong> — settle as tasks complete, with proof hashes.</li>
+        <li><strong>Monitor</strong> — check balances and transaction history via API.</li>
+      </ol>
+
+      <h2>Security</h2>
+      <p>Lumma provides infrastructure-level safeguards:</p>
+      <ul>
+        <li><strong>Duplicate payment prevention</strong> — cryptographic proof hashes ensure idempotency.</li>
+        <li><strong>Programmable spending limits</strong> — per-transaction, daily, and monthly caps.</li>
+        <li><strong>Vault isolation</strong> — each vault is an independent financial boundary.</li>
+        <li><strong>API key scoping</strong> — granular permissions per key.</li>
+        <li><strong>USDC-native settlement</strong> — no wrapped tokens, no bridge risk.</li>
+        <li><strong>Gas abstraction</strong> — zero native token exposure for agents.</li>
+      </ul>
+
+      <div className="docs-callout">
+        <div className="docs-callout-title">Arc Alignment</div>
+        <p>
+          The SDK mirrors Arc's thesis of infrastructure abstraction. Lumma becomes the frictionless financial layer under the hood of developer tools — 
+          maximizing the utility of USDC as a native gas/payment token and showcasing high-throughput, hyper-efficient stablecoin architecture.
+        </p>
       </div>
     </section>
   )
