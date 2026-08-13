@@ -272,8 +272,9 @@ export default function LandingPage() {
             <li><a href="#about">About</a></li>
             <li><a href="https://docs.lumma.xyz">Docs</a></li>
             <li><a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer">X</a></li>
+            <li><a href="mailto:support@lumma.xyz">Support</a></li>
           </ul>
-          <div className="fc">2025 Lumma</div>
+          <div className="fc">2026 Lumma</div>
         </footer>
       </div>
     </div>

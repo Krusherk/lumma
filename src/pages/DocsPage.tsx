@@ -232,6 +232,7 @@ export default function DocsPage() {
                   <div>
                     <div className="docs-footer-heading">Community</div>
                     <a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer" className="docs-footer-link">X (Twitter)</a>
+                    <a href="mailto:support@lumma.xyz" className="docs-footer-link">support@lumma.xyz</a>
                   </div>
                   <div>
                     <div className="docs-footer-heading">Legal</div>
@@ -242,7 +243,7 @@ export default function DocsPage() {
                 <div className="docs-footer-bottom">
                   <a href="/" className="docs-footer-logo"><img src="/images/lumma.svg" alt="Lumma" /> Lumma</a>
                 </div>
-                <p className="docs-footer-legal">Lumma is a stablecoin finance platform built on Arc Network. All transactions are on-chain. Lumma does not custody funds or hold private keys.</p>
+                <p className="docs-footer-legal">Lumma is a stablecoin finance platform built on Arc Network. All transactions are on-chain. Lumma does not custody funds or hold private keys. For support, reach us at <a href="mailto:support@lumma.xyz" style={{color: 'rgba(168,85,247,.55)'}}>support@lumma.xyz</a>.</p>
               </footer>
             </div>
           </div>
@@ -526,6 +527,11 @@ function SectionSecurity() {
         <li>Run a centralized backend that handles your personal funds.</li>
         <li>Auto-invest without explicit consent.</li>
       </ul>
+
+      <div className="docs-callout">
+        <div className="docs-callout-title">Report a vulnerability</div>
+        <p>If you discover a security issue, please report it responsibly to <a href="mailto:support@lumma.xyz">support@lumma.xyz</a>. We take every report seriously and will respond promptly.</p>
+      </div>
     </section>
   )
 }
