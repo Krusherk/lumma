@@ -2,42 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import ParticleCanvas from '../components/ParticleCanvas'
 import './LandingPage.css'
 
-const MARQUEE_ITEMS = [
-  { icon: 'zap', label: 'Sub-second finality' },
-  { icon: 'lock', label: 'Non-custodial' },
-  { icon: 'globe', label: 'Cross-chain liquidity' },
-  { icon: 'layers', label: 'CCTP v2 native' },
-  { icon: 'target', label: 'USDC as gas' },
-]
-
-const FEATURES = [
-  { wide: true, icon: 'layers', title: 'Five modules, one interface', desc: 'Bridge, swap, check balances, send cross-border, and discover yield. All from a single dashboard built for stablecoins.', bars: true },
-  { icon: 'target', title: 'USDC as gas', desc: 'No ETH needed. Pay for everything in USDC on Arc Network.', glow: true },
-  { icon: 'globe', title: '20+ chains connected', desc: 'Native bridges to Ethereum, Base, Arbitrum, Polygon, Solana and more via CCTP v2.' },
-  { icon: 'zap', title: 'Sub-second finality', desc: 'Transactions settle in under a second on Arc Network. No waiting.' },
-  { icon: 'lock', title: 'Non-custodial', desc: 'Your keys, your stablecoins. We never hold or control your funds.' },
-  { icon: 'code', title: 'No wrapped tokens', desc: 'CCTP v2 burns and mints native USDC. No synthetics, no bridge risk.' },
-]
-
-const STEPS = [
-  { n: '01', title: 'Connect your wallet', desc: 'MetaMask, WalletConnect, Coinbase and 40+ others.' },
-  { n: '02', title: 'Pick source and destination', desc: 'Choose your chains and the amount you want to move.' },
-  { n: '03', title: 'One click, done', desc: 'Bridge, swap, or send. One transaction, zero complexity.' },
-]
-
-const TERM_LINES: { pr?: boolean; dim?: boolean; ok?: boolean; blank?: boolean; cursor?: boolean; text?: string; dim2?: string }[] = [
-  { pr: true, text: 'lumma init --chain ethereum' },
-  { dim: true, text: '  Connecting to RPC...' },
-  { ok: true, text: 'Chain connected ', dim2: '(< 1s)' },
-  { blank: true },
-  { pr: true, text: 'lumma bridge --from eth --to arc --amount 100' },
-  { dim: true, text: '  Routing via CCTP v2...' },
-  { dim: true, text: '  Submitting transaction...' },
-  { ok: true, text: 'Bridged 100 USDC to Arc ', dim2: '[0x4f2a...c91b]' },
-  { blank: true },
-  { pr: true, cursor: true },
-]
-
 function SvgIcon({ name }: { name: string }) {
   switch (name) {
     case 'layers': return <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
@@ -46,20 +10,24 @@ function SvgIcon({ name }: { name: string }) {
     case 'zap': return <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
     case 'code': return <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
     case 'target': return <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M12 1v4M12 19v4M1 12h4M19 12h4" /></svg>
+    case 'arrow': return <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+    case 'wallet': return <svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" /><path d="M18 12a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" /></svg>
+    case 'users': return <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>
     default: return <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
   }
 }
 
+const PRODUCT_CARDS = [
+  { icon: 'globe', label: 'Move', title: 'Bridge & Swap', desc: 'Bridge and swap USDC across supported networks using native stablecoin infrastructure.' },
+  { icon: 'layers', label: 'Manage', title: 'Unified Balance', desc: 'See stablecoin balances across networks from one place.' },
+  { icon: 'arrow', label: 'Send', title: 'FX Send', desc: 'Move value across currencies and networks without manually coordinating the underlying bridge and swap steps.' },
+  { icon: 'zap', label: 'Earn', title: 'Yield Radar', desc: 'Discover stablecoin yield opportunities across supported protocols.' },
+]
+
 export default function LandingPage() {
   const [phase, setPhase] = useState(0)
   const [dotOpen, setDotOpen] = useState(false)
-  const [termVisible, setTermVisible] = useState(false)
-  const [termLines, setTermLines] = useState<boolean[]>(new Array(TERM_LINES.length).fill(false))
-  const termRef = useRef<HTMLDivElement>(null)
   const revealRefs = useRef<(HTMLDivElement | null)[]>([])
-  const mcRefs = useRef<(HTMLDivElement | null)[]>([])
-
-
 
   const handlePhaseChange = useCallback((p: number) => setPhase(p), [])
 
@@ -69,29 +37,8 @@ export default function LandingPage() {
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis') })
     }, { threshold: 0.1 })
     revealRefs.current.forEach(el => { if (el) obs.observe(el) })
-    mcRefs.current.forEach(el => { if (el) obs.observe(el) })
     return () => obs.disconnect()
   }, [])
-
-  // Terminal type effect
-  useEffect(() => {
-    if (!termVisible) return
-    TERM_LINES.forEach((_, i) => {
-      setTimeout(() => setTermLines(prev => { const n = [...prev]; n[i] = true; return n }), i * 210)
-    })
-  }, [termVisible])
-
-  useEffect(() => {
-    const el = termRef.current
-    if (!el) return
-    const obs = new IntersectionObserver(entries => {
-      if (entries[0]?.isIntersecting) { setTermVisible(true); obs.disconnect() }
-    }, { threshold: 0.3 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-
-  const marqueeItems = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
 
   return (
     <div className="lp">
@@ -104,8 +51,9 @@ export default function LandingPage() {
           <span className="nav-logo-text">LUMMA</span>
         </div>
         <div className="nav-tabs">
-          <a href="#features" className="nav-tab">Features</a>
-          <a href="#how" className="nav-tab">How It Works</a>
+          <a href="#about" className="nav-tab">Products</a>
+          <a href="#payroll" className="nav-tab">Agent Payroll</a>
+          <a href="#arc" className="nav-tab">Arc</a>
         </div>
         <div className="nav-btns">
             <a href="https://testnet.lumma.xyz" className="bn p nav-launch">Launch App</a>
@@ -149,15 +97,14 @@ export default function LandingPage() {
       {/* HERO OVERLAY */}
       <div className={`hero-overlay${phase >= 1 ? ' show' : ''}${phase >= 2 ? ' dim' : ''}`}>
         <div className="hero-top">
-          <h1>The Home of<br /><em>Stablecoins.</em></h1>
-          <p>Lumma is the stablecoin hub on Arc — bridge and swap USDC across chains, run USDC payroll for your team and AI agents, and settle in seconds. USDC is the gas.</p>
-
+          <h1>Stablecoin infrastructure<br />on <em>Arc.</em></h1>
+          <p>Move, manage, and pay with USDC. Cross-chain transfers, unified balances, cross-border payments, yield discovery, and programmable payroll — in one application.</p>
         </div>
         <div className="hero-bottom">
           <div className="hero-stats">
-            <div className="hs"><div className="hs-v">20+</div><div className="hs-l">Chains</div></div>
-            <div className="hs"><div className="hs-v">{'<'}1s</div><div className="hs-l">Finality</div></div>
-            <div className="hs"><div className="hs-v">USDC</div><div className="hs-l">Gas Token</div></div>
+            <div className="hs"><div className="hs-v">USDC</div><div className="hs-l">Native Asset</div></div>
+            <div className="hs"><div className="hs-v">Arc</div><div className="hs-l">Network</div></div>
+            <div className="hs"><div className="hs-v">Testnet</div><div className="hs-l">Status</div></div>
           </div>
         </div>
       </div>
@@ -167,97 +114,113 @@ export default function LandingPage() {
 
       {/* CONTENT - normal document flow, black background covers canvas */}
       <div className="lp-content">
-        <div className="mbar">
-          {[
-            { v: '20+', l: 'Chains Supported' },
-            { v: '<1s', l: 'Average Finality' },
-            { v: '$0', l: 'ETH for Gas' },
-            { v: 'CCTP v2', l: 'Bridge Protocol' },
-          ].map((s, i) => (
-            <div className="mc" key={i} ref={el => { mcRefs.current[i] = el }} style={{ transitionDelay: `${i * 80}ms` }}>
-              <div className="mv">{s.v}</div>
-              <div className="ml">{s.l}</div>
-            </div>
-          ))}
-        </div>
 
-        <div className="mq-w">
-          <div className="mq">
-            {marqueeItems.map((item, i) => (
-              <div className="mqi" key={i}><SvgIcon name={item.icon} />{item.label}</div>
-            ))}
-          </div>
-        </div>
-
+        {/* ── Section 1: Products ── */}
         <div className="sec" id="about">
           <div className="rev" ref={el => { revealRefs.current[0] = el }}>
-            <span className="stag">What Lumma does</span>
-            <h2 className="stit">Everything you need for<br />stablecoin operations.</h2>
-            <p className="ssub">Five purpose-built modules for bridging, swapping, balances, cross-border payments, and yield. All on Arc Network.</p>
+            <span className="stag">Products</span>
+            <h2 className="stit">Stablecoin tools for<br />real workflows.</h2>
+            <p className="ssub">Lumma brings cross-chain transfers, swaps, unified balances, cross-border payments, yield discovery, and programmable payroll into one application built on Arc.</p>
           </div>
           <div className="bento rev" ref={el => { revealRefs.current[1] = el }}>
-            {FEATURES.map((f, i) => (
-              <div className={`bc${f.wide ? ' w' : ''}`} key={i}>
+            {PRODUCT_CARDS.map((f, i) => (
+              <div className="bc" key={i}>
                 <div className="ci"><SvgIcon name={f.icon} /></div>
+                <div style={{ fontSize: '.55rem', fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: '#a855f7', marginBottom: 8 }}>{f.label}</div>
                 <div className="ct">{f.title}</div>
                 <p className="cb">{f.desc}</p>
-                {f.bars && (
-                  <div className="mc2">
-                    {[30, 48, 38, 78, 95, 84, 68, 58, 100, 74, 62, 90].map((h, j) => (
-                      <div className={`br${[3, 4, 5, 8, 11].includes(j) ? ' h' : ''}`} key={j} style={{ height: `${h}%` }} />
-                    ))}
-                  </div>
-                )}
-                {f.glow && <div className="cgl" />}
               </div>
             ))}
-          </div>
-        </div>
-
-        <div className="sec" id="how">
-          <div className="rev" ref={el => { revealRefs.current[2] = el }}>
-            <span className="stag">How it works</span>
-            <h2 className="stit">Three steps. That is it.</h2>
-          </div>
-          <div className="hg rev" ref={el => { revealRefs.current[3] = el }}>
-            <div className="steps">
-              {STEPS.map((s, i) => (
-                <div className="sr" key={i}>
-                  <div className="sn">{s.n}</div>
-                  <div className="sb"><h3>{s.title}</h3><p>{s.desc}</p></div>
-                </div>
-              ))}
-            </div>
-            <div className="term" ref={termRef}>
-              <div className="tbar"><div className="td r" /><div className="td y" /><div className="td g" /></div>
-              <div className="tbody">
-                {TERM_LINES.map((line, i) => (
-                  <div className={`tl${termLines[i] ? ' show' : ''}`} key={i}>
-                    {line.blank ? '\u00A0' : <>
-                      {line.pr && <span className="pr">$ </span>}
-                      {line.ok && <span className="ok">{line.text?.split(' ')[0]} </span>}
-                      {line.dim ? (
-                        <span style={{ color: 'rgba(240,236,255,.18)' }}>{line.text}</span>
-                      ) : (
-                        line.ok ? line.text?.slice((line.text?.indexOf(' ') ?? 0) + 1) : line.text
-                      )}
-                      {line.dim2 && <span style={{ color: 'rgba(240,236,255,.18)' }}> {line.dim2}</span>}
-                      {line.cursor && <span className="tcur" />}
-                    </>}
-                  </div>
+            {/* Pay card — wider, visually emphasized */}
+            <div className="bc w" style={{ borderLeft: '2px solid rgba(168,85,247,.2)' }}>
+              <div className="ci"><SvgIcon name="users" /></div>
+              <div style={{ fontSize: '.55rem', fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: '#a855f7', marginBottom: 8 }}>Pay</div>
+              <div className="ct">Agent Payroll</div>
+              <p className="cb">Run recurring payroll and usage-based compensation for employees, contractors, and AI agents through programmable USDC vaults.</p>
+              <div className="mc2">
+                {[30, 48, 38, 78, 95, 84, 68, 58, 100, 74, 62, 90].map((h, j) => (
+                  <div className={`br${[3, 4, 5, 8, 11].includes(j) ? ' h' : ''}`} key={j} style={{ height: `${h}%` }} />
                 ))}
               </div>
             </div>
           </div>
         </div>
 
+        {/* ── Section 2: Agent Payroll ── */}
+        <div className="sec" id="payroll">
+          <div className="rev" ref={el => { revealRefs.current[2] = el }}>
+            <span className="stag">Agent Payroll</span>
+            <h2 className="stit">Payroll for humans and<br />autonomous agents.</h2>
+            <p className="ssub">A programmable USDC payroll vault on Arc for recurring human payroll and usage-based compensation for AI agents.</p>
+          </div>
+
+          <div className="hg rev" ref={el => { revealRefs.current[3] = el }}>
+            <div className="steps">
+              {[
+                { n: '01', title: 'Create a vault', desc: 'Deploy a dedicated USDC payroll account on Arc.' },
+                { n: '02', title: 'Add workers', desc: 'Register employees, contractors, and AI agents with payout wallets.' },
+                { n: '03', title: 'Define compensation', desc: 'Set recurring schedules for people. Set per-task rates and spending caps for agents.' },
+                { n: '04', title: 'Work is recorded', desc: 'Agents report completed tasks. Earnings accumulate until settlement.' },
+                { n: '05', title: 'USDC is settled', desc: 'Payouts execute on-chain with verifiable receipts.' },
+              ].map((s, i) => (
+                <div className="sr" key={i}>
+                  <div className="sn">{s.n}</div>
+                  <div className="sb"><h3>{s.title}</h3><p>{s.desc}</p></div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'rgba(255,255,255,.05)', borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,.05)' }}>
+              {[
+                { label: 'Recurring payroll', desc: 'Weekly, bi-weekly, or monthly USDC payments for employees and contractors.' },
+                { label: 'Per-task agent pay', desc: 'AI agents earn per task completed, priced by rules you configure.' },
+                { label: 'Spending limits', desc: 'Per-transaction caps, daily limits, and rolling spending windows.' },
+                { label: 'Micropayment batching', desc: 'Small agent earnings accumulate and settle together efficiently.' },
+                { label: 'On-chain settlement', desc: 'Every payout settles on Arc with a transaction hash.' },
+                { label: 'Payment receipts', desc: 'Shareable, verifiable receipts for each settlement.' },
+              ].map((item, i) => (
+                <div key={i} style={{ background: '#06060a', padding: '20px 24px' }}>
+                  <div style={{ fontSize: '.82rem', fontWeight: 600, marginBottom: 4 }}>{item.label}</div>
+                  <div style={{ fontSize: '.75rem', color: 'rgba(240,236,255,.35)', lineHeight: 1.7 }}>{item.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Section 3: Why Arc ── */}
+        <div className="sec" id="arc">
+          <div className="rev" ref={el => { revealRefs.current[4] = el }}>
+            <span className="stag">Infrastructure</span>
+            <h2 className="stit">Why Arc.</h2>
+          </div>
+          <div className="bento rev" ref={el => { revealRefs.current[5] = el }}>
+            <div className="bc">
+              <div className="ci"><SvgIcon name="target" /></div>
+              <div className="ct">USDC as gas</div>
+              <p className="cb">Users and payroll systems operate without managing a separate gas token. All transaction fees are paid in USDC.</p>
+              <div className="cgl" />
+            </div>
+            <div className="bc">
+              <div className="ci"><SvgIcon name="code" /></div>
+              <div className="ct">Native USDC</div>
+              <p className="cb">CCTP-based movement keeps USDC native across supported networks rather than relying on wrapped representations.</p>
+            </div>
+            <div className="bc">
+              <div className="ci"><SvgIcon name="zap" /></div>
+              <div className="ct">Fast settlement</div>
+              <p className="cb">Sub-second finality makes Arc suitable for payment and payroll workflows where speed matters.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Section 4: Developer ── */}
         <div className="ctaw">
-          <div className="ctab rev" ref={el => { revealRefs.current[4] = el }}>
-            <h2>Built for stablecoins.</h2>
-            <p>Cross-chain swaps, unified balances, and programmable payments — all on Arc.</p>
+          <div className="ctab rev" ref={el => { revealRefs.current[6] = el }}>
+            <h2>Build on Lumma.</h2>
+            <p>Integrate programmable USDC payroll into applications, agent workflows, and financial products through Lumma's developer infrastructure.</p>
             <div className="ctaf">
-              <a href="https://testnet.lumma.xyz" className="bl s">Try Testnet</a>
-              <a href="https://docs.lumma.xyz" className="bl o">Read the docs</a>
+              <a href="https://docs.lumma.xyz" className="bl s">Read the docs</a>
+              <a href="https://testnet.lumma.xyz" className="bl o">Try Testnet</a>
               <a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer" className="bl o">Follow on X</a>
             </div>
           </div>
@@ -269,7 +232,7 @@ export default function LandingPage() {
             Lumma
           </div>
           <ul className="fli">
-            <li><a href="#about">About</a></li>
+            <li><a href="#about">Products</a></li>
             <li><a href="https://docs.lumma.xyz">Docs</a></li>
             <li><a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer">X</a></li>
             <li><a href="mailto:support@lumma.xyz">Support</a></li>
