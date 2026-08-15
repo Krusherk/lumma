@@ -8,9 +8,12 @@
  * POST /api/payroll/agent/grant_budget — Owner grants an agent an A2A spend cap
  * POST /api/payroll/agent/hire_invite  — Agent mints a linking code to hire another agent
  * POST /api/payroll/agent/pay_agent    — Agent pays another agent (agent-to-agent nanopayments)
+ * POST /api/payroll/agent/nano_setup   — Owner provisions an x402 nanopayment EOA for an agent
+ * POST /api/payroll/agent/nano_deposit — Owner deposits USDC into agent's Gateway wallet
+ * GET  /api/payroll/agent/nano_balance — Agent checks x402 Gateway balance
  *
  * Routing via query param:
- *   ?action=create|link|set_wallet|report|earnings|activity|approve|sweep|grant_budget|hire_invite|pay_agent
+ *   ?action=create|link|set_wallet|report|earnings|activity|approve|sweep|grant_budget|hire_invite|pay_agent|nano_setup|nano_deposit|nano_balance
  *
  * Owner-only actions (create, activity, approve, sweep, grant_budget) require x-internal-secret.
  * Agent-facing actions (link, set_wallet, report, earnings, hire_invite, pay_agent) use Bearer token auth.
@@ -27,6 +30,15 @@ import { transferUSDC, CHAIN_ID_MAP } from './_circle.js'
 import { requireInternalSecret } from './_auth.js'
 import { supabase } from './_supabase.js'
 import { sumBaseUnits, feeBaseUnits, formatBaseUnits, parseUsdcToBaseUnits } from './_usdc.js'
+import {
+  requireNanopayment,
+  ENDPOINT_PRICES,
+  AgentNanopaymentClient,
+  deriveAgentKey,
+  deriveAgentAddress,
+} from './nanopayments.js'
+
+const MASTER_SEED = process.env.NANOPAYMENT_MASTER_SEED || ''
 
 const RECEIPT_BASE_URL = 'https://payroll.lumma.xyz'
 
@@ -334,6 +346,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!checkRateLimit(agent.agent_token)) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
+
+        // ── x402 nanopayment gate (optional — skipped if not configured) ──
+        const reportPayment = await requireNanopayment(req, res, ENDPOINT_PRICES.report, '/api/payroll/agent?action=report')
+        if (!reportPayment) return // 402 already sent
 
         const { task_type, description, metadata } = req.body
         if (!task_type) return res.status(400).json({ error: 'task_type required' })
@@ -706,6 +722,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
 
+        // ── x402 nanopayment gate ──
+        const hirePayment = await requireNanopayment(req, res, ENDPOINT_PRICES.hire_invite, '/api/payroll/agent?action=hire_invite')
+        if (!hirePayment) return
+
         // Only agents that have been granted an A2A budget may hire others.
         if (agent.spend_limit === null || agent.spend_limit === undefined) {
           return res.status(403).json({ error: 'This agent has no hiring budget. Ask the owner to grant a spend_limit first.' })
@@ -750,6 +770,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!checkRateLimit(payer.agent_token)) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
+
+        // ── x402 nanopayment gate ──
+        const payPayment = await requireNanopayment(req, res, ENDPOINT_PRICES.pay_agent, '/api/payroll/agent?action=pay_agent')
+        if (!payPayment) return
 
         const { to_agent_id, amount, task_type, description } = req.body
         if (!to_agent_id) return res.status(400).json({ error: 'to_agent_id required' })
@@ -841,8 +865,171 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
+      // ─────────────────────────────────────────────
+      // NANO_SETUP — Owner provisions an x402 EOA for an agent
+      // ─────────────────────────────────────────────
+      case 'nano_setup': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
+
+        const { agent_id: setupAgentId, company_id: setupCompanyId } = req.body
+        if (!setupAgentId || !setupCompanyId) {
+          return res.status(400).json({ error: 'agent_id and company_id required' })
+        }
+
+        if (!MASTER_SEED) {
+          return res.status(500).json({ error: 'NANOPAYMENT_MASTER_SEED not configured' })
+        }
+
+        // Verify agent exists
+        const { data: setupAgent, error: setupAgentErr } = await supabase
+          .from('payroll_agents')
+          .select('id, name, company_id')
+          .eq('id', setupAgentId)
+          .eq('company_id', setupCompanyId)
+          .single()
+        if (setupAgentErr || !setupAgent) {
+          return res.status(404).json({ error: 'Agent not found in company' })
+        }
+
+        // Check if already set up
+        const { data: existingWallet } = await supabase
+          .from('nanopayment_wallets')
+          .select('id, eoa_address')
+          .eq('company_id', setupCompanyId)
+          .eq('agent_id', setupAgentId)
+          .single()
+        if (existingWallet) {
+          return res.status(200).json({
+            already_setup: true,
+            agent_id: setupAgentId,
+            eoa_address: existingWallet.eoa_address,
+          })
+        }
+
+        // Derive EOA
+        const agentKey = deriveAgentKey(MASTER_SEED, setupAgentId)
+        const eoaAddress = deriveAgentAddress(agentKey)
+
+        // Count existing wallets for derivation index
+        const { count: walletCount } = await supabase
+          .from('nanopayment_wallets')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', setupCompanyId)
+
+        const { error: insertErr } = await supabase.from('nanopayment_wallets').insert({
+          agent_db_id: setupAgentId,
+          agent_id: setupAgentId,
+          company_id: setupCompanyId,
+          eoa_address: eoaAddress,
+          derivation_index: (walletCount || 0),
+        })
+        if (insertErr) return res.status(500).json({ error: insertErr.message })
+
+        return res.status(200).json({
+          setup: true,
+          agent_id: setupAgentId,
+          agent_name: setupAgent.name,
+          eoa_address: eoaAddress,
+          chain: 'arcTestnet',
+          instructions: 'EOA provisioned. Next: deposit USDC via ?action=nano_deposit.',
+        })
+      }
+
+      // ─────────────────────────────────────────────
+      // NANO_DEPOSIT — Owner deposits USDC into agent's Gateway wallet
+      // ─────────────────────────────────────────────
+      case 'nano_deposit': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
+        if (!requireInternalSecret(req)) return res.status(401).json({ error: 'Unauthorized' })
+
+        const { agent_id: depositAgentId, amount: depositAmount } = req.body
+        if (!depositAgentId || !depositAmount) {
+          return res.status(400).json({ error: 'agent_id and amount required' })
+        }
+
+        if (!MASTER_SEED) {
+          return res.status(500).json({ error: 'NANOPAYMENT_MASTER_SEED not configured' })
+        }
+
+        // Verify nano wallet exists
+        const { data: nanoWallet, error: nanoWalletErr } = await supabase
+          .from('nanopayment_wallets')
+          .select('*')
+          .eq('agent_id', depositAgentId)
+          .single()
+        if (nanoWalletErr || !nanoWallet) {
+          return res.status(404).json({ error: 'Nanopayment wallet not found. Run nano_setup first.' })
+        }
+
+        try {
+          const client = AgentNanopaymentClient.fromAgentId(depositAgentId)
+          const result = await client.deposit(String(depositAmount))
+
+          // Update DB
+          await supabase.from('nanopayment_wallets')
+            .update({
+              gateway_deposited: true,
+              gateway_deposit_amount: Number(nanoWallet.gateway_deposit_amount || 0) + Number(depositAmount),
+            })
+            .eq('id', nanoWallet.id)
+
+          return res.status(200).json({
+            deposited: true,
+            agent_id: depositAgentId,
+            amount: result.formattedAmount,
+            approval_tx: result.approvalTxHash || null,
+            deposit_tx: result.depositTxHash,
+            instructions: 'USDC deposited into Gateway. Agent can now make gas-free x402 payments.',
+          })
+        } catch (err: any) {
+          return res.status(500).json({ error: `Deposit failed: ${err.message}` })
+        }
+      }
+
+      // ─────────────────────────────────────────────
+      // NANO_BALANCE — Agent checks x402 Gateway balance
+      // ─────────────────────────────────────────────
+      case 'nano_balance': {
+        if (req.method !== 'GET') return res.status(405).json({ error: 'GET required' })
+
+        const nanoAgent = await authenticateAgent(req)
+        if (!nanoAgent) return res.status(401).json({ error: 'Invalid or missing agent token' })
+
+        if (!MASTER_SEED) {
+          return res.status(500).json({ error: 'NANOPAYMENT_MASTER_SEED not configured' })
+        }
+
+        // Check if agent has a nano wallet
+        const { data: agentNanoWallet } = await supabase
+          .from('nanopayment_wallets')
+          .select('*')
+          .eq('agent_id', nanoAgent.id)
+          .single()
+        if (!agentNanoWallet) {
+          return res.status(404).json({ error: 'No nanopayment wallet found for this agent. Ask the vault owner to run nano_setup.' })
+        }
+
+        try {
+          const client = AgentNanopaymentClient.fromAgentId(nanoAgent.id)
+          const balances = await client.getBalances()
+
+          return res.status(200).json({
+            agent_id: nanoAgent.id,
+            agent_name: nanoAgent.name,
+            eoa_address: agentNanoWallet.eoa_address,
+            wallet_usdc: balances.wallet.formatted,
+            gateway_available: balances.gateway.formattedAvailable,
+            gateway_total: balances.gateway.formattedTotal,
+            gateway_deposited: agentNanoWallet.gateway_deposited,
+          })
+        } catch (err: any) {
+          return res.status(500).json({ error: `Balance check failed: ${err.message}` })
+        }
+      }
+
       default:
-        return res.status(400).json({ error: `Unknown action: ${action}. Use create, link, set_wallet, report, earnings, activity, approve, sweep, grant_budget, hire_invite, or pay_agent.` })
+        return res.status(400).json({ error: `Unknown action: ${action}. Use create, link, set_wallet, report, earnings, activity, approve, sweep, grant_budget, hire_invite, pay_agent, nano_setup, nano_deposit, or nano_balance.` })
     }
   } catch (err: any) {
     console.error('Agent API error:', err)

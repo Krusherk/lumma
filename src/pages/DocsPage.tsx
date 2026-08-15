@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ShaderBackground from '../components/ShaderBackground'
 import './DocsPage.css'
 
-type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk'
+type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk' | 'nanopay'
 
 const NAV_GROUPS = [
   {
@@ -35,6 +35,7 @@ const NAV_GROUPS = [
     label: 'Developers',
     items: [
       { id: 'sdk' as Section, label: 'Payroll SDK' },
+      { id: 'nanopay' as Section, label: 'Nanopayments (x402)' },
     ],
   },
 ]
@@ -48,6 +49,7 @@ const CATEGORY_CARDS = [
 
   { title: 'Yield Radar', desc: 'Discover stablecoin yield opportunities across protocols.', section: 'yield' as Section },
   { title: 'Payroll SDK', desc: 'Embed programmable USDC payroll into your platform with a few lines of code.', section: 'sdk' as Section },
+  { title: 'Nanopayments', desc: 'Gas-free USDC micropayments via Circle x402 batched settlement.', section: 'nanopay' as Section },
 ]
 
 const ArrowIcon = () => (
@@ -281,6 +283,7 @@ export default function DocsPage() {
               {section === 'security' && <SectionSecurity />}
               {section === 'roadmap' && <SectionRoadmap />}
               {section === 'sdk' && <SectionSdk />}
+              {section === 'nanopay' && <SectionNanopay />}
             </main>
           </div>
         </div>
@@ -770,6 +773,149 @@ await lumma.streams.configure({
         <p>
           The SDK mirrors Arc's thesis of infrastructure abstraction. Lumma becomes the frictionless financial layer under the hood of developer tools — 
           maximizing the utility of USDC as a native gas/payment token and showcasing high-throughput, hyper-efficient stablecoin architecture.
+        </p>
+      </div>
+    </section>
+  )
+}
+function SectionNanopay() {
+  return (
+    <section>
+      <h1>Nanopayments (x402)</h1>
+      <span className="docs-status live">Live on Testnet</span>
+      <p className="docs-lead">
+        Gas-free USDC micropayments as small as <strong>$0.000001</strong>, powered by Circle Gateway batched settlement.
+        Enable AI agents to pay for compute, data, and services at high frequency without gas friction.
+      </p>
+
+      <div className="docs-callout">
+        <div className="docs-callout-title">Built on Circle x402</div>
+        <p>
+          Lumma nanopayments use the <a href="https://developers.circle.com/gateway/nanopayments" target="_blank" rel="noopener noreferrer">x402 protocol</a> —
+          an open standard built on HTTP 402 Payment Required. Buyers sign payment authorizations offchain at zero gas cost.
+          Circle Gateway batches thousands of payments into a single onchain transaction.
+        </p>
+      </div>
+
+      <h2>How It Works</h2>
+      <ol>
+        <li><strong>Deposit</strong> — The vault owner deposits USDC into a Gateway Wallet contract (one-time onchain transaction).</li>
+        <li><strong>Request</strong> — An agent calls a paywalled endpoint (e.g., <code>/api/payroll/agent?action=report</code>).</li>
+        <li><strong>402 Response</strong> — The server returns <code>402 Payment Required</code> with payment details.</li>
+        <li><strong>Sign</strong> — The agent signs an EIP-3009 authorization offchain (zero gas).</li>
+        <li><strong>Retry</strong> — The agent retries with the <code>PAYMENT-SIGNATURE</code> header attached.</li>
+        <li><strong>Settle</strong> — The server verifies and settles via Gateway. The resource is served.</li>
+        <li><strong>Batch</strong> — Gateway batches all settlements and executes them onchain.</li>
+      </ol>
+
+      <h2>Setup</h2>
+
+      <h3>1. Provision a nanopayment wallet</h3>
+      <p>The vault owner provisions a deterministic EOA for each agent.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl -X POST /api/payroll/agent?action=nano_setup \\
+  -H "x-internal-secret: $SECRET" \\
+  -d '{
+    "agent_id": "<agent-uuid>",
+    "company_id": "<company-uuid>"
+  }'`}</pre>
+      </div>
+
+      <h3>Response</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">JSON</div>
+        <pre>{`{
+  "setup": true,
+  "agent_id": "abc-123",
+  "agent_name": "DataScraper",
+  "eoa_address": "0x1234...abcd",
+  "chain": "arcTestnet"
+}`}</pre>
+      </div>
+
+      <h3>2. Deposit USDC into Gateway</h3>
+      <p>Fund the agent's Gateway balance. This is the only onchain transaction needed.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl -X POST /api/payroll/agent?action=nano_deposit \\
+  -H "x-internal-secret: $SECRET" \\
+  -d '{ "agent_id": "abc-123", "amount": "5" }'`}</pre>
+      </div>
+
+      <h3>3. Check balance</h3>
+      <p>Agents can check their Gateway balance using their Bearer token.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl /api/payroll/agent?action=nano_balance \\
+  -H "Authorization: Bearer $AGENT_TOKEN"`}</pre>
+      </div>
+
+      <h2>Paywalled Endpoints</h2>
+      <p>The following agent actions require an x402 nanopayment:</p>
+
+      <div className="docs-grid">
+        <div className="docs-grid-item"><div className="docs-grid-num">report</div><div className="docs-grid-label">$0.0001</div></div>
+        <div className="docs-grid-item"><div className="docs-grid-num">pay_agent</div><div className="docs-grid-label">$0.0005</div></div>
+        <div className="docs-grid-item"><div className="docs-grid-num">hire_invite</div><div className="docs-grid-label">$0.001</div></div>
+      </div>
+
+      <p>Prices are configurable via environment variables: <code>NANOPAY_PRICE_REPORT</code>, <code>NANOPAY_PRICE_PAY_AGENT</code>, <code>NANOPAY_PRICE_HIRE_INVITE</code>.</p>
+      <p>When <code>NANOPAYMENT_SELLER_ADDRESS</code> is not set, payment gating is bypassed (development mode).</p>
+
+      <h2>Client Integration</h2>
+      <p>Agents use Circle's <code>GatewayClient</code> to handle the 402 negotiation automatically:</p>
+      <div className="docs-code">
+        <div className="docs-code-header">TypeScript</div>
+        <pre>{`import { GatewayClient } from "@circle-fin/x402-batching/client";
+
+const client = new GatewayClient({
+  chain: "arcTestnet",
+  privateKey: process.env.AGENT_PRIVATE_KEY as \`0x\${string}\`,
+});
+
+// The client handles 402 → sign → retry automatically
+const { data, status } = await client.pay(
+  "https://payroll.lumma.xyz/api/payroll/agent?action=report",
+  {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + agentToken },
+    body: JSON.stringify({ task_type: "data_analysis" }),
+  }
+);
+
+console.log(data); // Work report response`}</pre>
+      </div>
+
+      <h2>Admin API</h2>
+      <p>Monitor and manage nanopayments via <code>/api/payroll/nano_admin</code>:</p>
+      <ul>
+        <li><code>?action=status</code> — Gateway health check and supported networks</li>
+        <li><code>?action=balances</code> — All agent Gateway balances</li>
+        <li><code>?action=settlements</code> — Settlement history with pagination</li>
+        <li><code>?action=withdraw</code> — Withdraw accumulated USDC from Gateway</li>
+      </ul>
+
+      <h2>Environment Variables</h2>
+      <div className="docs-code">
+        <div className="docs-code-header">.env</div>
+        <pre>{`# Required for nanopayments
+NANOPAYMENT_MASTER_SEED=<32+ char seed for HD key derivation>
+NANOPAYMENT_SELLER_ADDRESS=<vault EVM address>
+NANOPAYMENT_FACILITATOR_URL=https://gateway-api-testnet.circle.com
+
+# Optional pricing overrides
+NANOPAY_PRICE_REPORT=0.0001
+NANOPAY_PRICE_PAY_AGENT=0.0005
+NANOPAY_PRICE_HIRE_INVITE=0.001`}</pre>
+      </div>
+
+      <div className="docs-callout">
+        <div className="docs-callout-title">Key derivation</div>
+        <p>
+          Agent EOA wallets are derived deterministically from <code>NANOPAYMENT_MASTER_SEED</code> + <code>agent_id</code> via HMAC-SHA512.
+          This means the master seed must be kept secret — anyone with the seed and an agent ID can derive that agent's private key.
+          No private keys are stored in the database.
         </p>
       </div>
     </section>
