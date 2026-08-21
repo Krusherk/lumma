@@ -1,9 +1,19 @@
-import { defineConfig } from 'vite'
+import { defineConfig, createLogger } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { Buffer } from 'buffer'
 
+const logger = createLogger()
+const warn = logger.warn.bind(logger)
+logger.warn = (msg, options) => {
+  if (typeof msg === 'string' && (msg.includes('chunk size') || msg.includes('chunkSizeWarningLimit'))) {
+    return
+  }
+  warn(msg, options)
+}
+
 export default defineConfig({
+  customLogger: logger,
   plugins: [react()],
   resolve: {
     alias: {
@@ -19,7 +29,6 @@ export default defineConfig({
     include: ['buffer'],
   },
   build: {
-    // Privy + LI.FI + wagmi produce large vendor chunks; this is expected.
-    chunkSizeWarningLimit: 5000,
+    chunkSizeWarningLimit: 100000,
   },
 })
