@@ -18,4 +18,8 @@ export default defineConfig({
   optimizeDeps: {
     include: ['buffer'],
   },
+  build: {
+    // Privy + LI.FI + wagmi produce large vendor chunks; this is expected.
+    chunkSizeWarningLimit: 5000,
+  },
 })
