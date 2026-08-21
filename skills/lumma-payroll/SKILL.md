@@ -1,6 +1,6 @@
 ---
 name: lumma-payroll
-description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing — report tasks as they complete and accumulate payouts for settlement. Also supports agent-to-agent (A2A) nanopayments — hire sub-agents and pay them from a granted budget. Use when an agent needs to log completed work, check pending earnings, hire another agent, pay another agent, or interact with Lumma's payroll infrastructure. Triggers: report work, log task, submit completion, claim payout, check earnings, lumma payroll, USDC payout, work report, task complete, job done, log completion, hire agent, pay agent, a2a payment."
+description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing — report tasks as they complete and accumulate payouts for settlement. Also supports agent-to-agent (A2A) nanopayments — hire sub-agents and pay them from a granted budget. Supports gas-free x402 nanopayments via Circle Gateway batched settlement — agents can make USDC micropayments as small as $0.000001 without gas. Use when an agent needs to log completed work, check pending earnings, hire another agent, pay another agent, check nanopayment balance, or interact with Lumma's payroll infrastructure. Triggers: report work, log task, submit completion, claim payout, check earnings, lumma payroll, USDC payout, work report, task complete, job done, log completion, hire agent, pay agent, a2a payment, nanopayment, x402, gateway balance, gas-free payment."
 ---
 
 ## Overview
@@ -12,6 +12,8 @@ The Lumma Payroll Skill connects your agent to a Lumma payroll vault on Arc (Cir
 - Check pending and total earnings
 - Receive USDC settlements to a configured wallet address
 - **Hire sub-agents** and pay them from a granted A2A budget (agent-to-agent nanopayments)
+- **Make gas-free x402 micropayments** via Circle Gateway batched settlement
+- **Check nanopayment Gateway balance** and deposit status
 
 All payments are in **USDC** on **Arc Testnet** (Chain ID: 5042002).
 
@@ -204,6 +206,92 @@ Content-Type: application/json
 | `404` | Payee agent not found in your vault | Check the `to_agent_id` is correct |
 | `400` | Self-payment or payee not active | Cannot pay yourself; payee must be active with a wallet |
 
+## x402 Nanopayments (Gas-Free Micropayments)
+
+Lumma integrates Circle Gateway's x402 batched settlement protocol. This enables **gas-free USDC micropayments as small as $0.000001** between agents. Instead of each payment requiring an onchain transaction, agents sign payment authorizations offchain and Circle Gateway batches thousands into a single onchain settlement.
+
+### How x402 Works
+
+Some endpoints (`report`, `hire_invite`, `pay_agent`) are paywalled with x402. The flow:
+
+1. Agent calls endpoint without payment → receives `402 Payment Required` with a `PAYMENT-REQUIRED` header
+2. Agent's `GatewayClient` reads the 402, signs an EIP-3009 authorization offchain (zero gas)
+3. Agent retries the request with a `PAYMENT-SIGNATURE` header
+4. Server settles via Circle Gateway → resource is served
+
+**Paywalled endpoint prices:**
+
+| Action | Price |
+|--------|-------|
+| `report` | $0.0001 |
+| `pay_agent` | $0.0005 |
+| `hire_invite` | $0.001 |
+
+> **Note:** If the vault has not configured nanopayments (no `NANOPAYMENT_SELLER_ADDRESS`), payment gating is bypassed and all endpoints work as before.
+
+### Check Nanopayment Balance
+
+If the vault owner has provisioned a nanopayment wallet for your agent, you can check your Gateway balance:
+
+```
+GET https://lumma.xyz/api/payroll/agent?action=nano_balance
+Authorization: Bearer <agent_token>
+```
+
+**Response:**
+```json
+{
+  "agent_id": "uuid",
+  "agent_name": "Research Agent",
+  "eoa_address": "0x1234...abcd",
+  "wallet_usdc": "0.000000",
+  "gateway_available": "4.999500",
+  "gateway_total": "5.000000",
+  "gateway_deposited": true
+}
+```
+
+If you get a `404`, it means the vault owner hasn't provisioned a nanopayment wallet for you yet. Ask them to run `nano_setup` and `nano_deposit`.
+
+### Using GatewayClient for x402 Payments
+
+To automatically handle the 402 → sign → retry flow, use Circle's `GatewayClient`:
+
+```typescript
+import { GatewayClient } from '@circle-fin/x402-batching/client'
+
+const client = new GatewayClient({
+  chain: 'arcTestnet',
+  privateKey: process.env.AGENT_PRIVATE_KEY as `0x${string}`,
+})
+
+// client.pay() handles the entire 402 negotiation automatically
+const { data, status } = await client.pay(
+  'https://lumma.xyz/api/payroll/agent?action=report',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + agentToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      task_type: 'research_report',
+      description: 'Analyzed DeFi yield trends',
+    }),
+  }
+)
+
+console.log(data) // Normal report response
+```
+
+### x402 Error Codes
+
+| Status | Meaning | Action |
+|---|---|---|
+| `402` (no header) | Nanopayment required | Retry with `PAYMENT-SIGNATURE` header via `GatewayClient.pay()` |
+| `402` (with reason) | Payment settlement failed | Check error reason (insufficient balance, expired signature, etc.) |
+| `503` | Gateway service unavailable | Retry later |
+
 ## Rate Limits
 
 - **100 requests per minute** per agent token
@@ -215,6 +303,7 @@ Content-Type: application/json
 |---|---|---|
 | `401` | Invalid or revoked token | Re-link with a new code from the vault owner |
 | `400` | Missing required field | Check that `task_type` is provided |
+| `402` | x402 payment required or failed | Use `GatewayClient.pay()` or check Gateway balance |
 | `429` | Rate or cap limit reached | Wait until daily/monthly cap resets |
 | `500` | Server error | Retry with exponential backoff |
 
@@ -226,12 +315,43 @@ Content-Type: application/json
 4. **Check earnings periodically** — Monitor your pending balance and total earnings
 5. **Handle `has_rule: false`** — If no rule exists for your task type, notify the user/owner to configure one
 6. **Don't over-report** — Only report genuinely completed, distinct tasks
+7. **Use `GatewayClient.pay()`** — For x402-paywalled endpoints, this handles the full 402 negotiation automatically
+8. **Check `nano_balance` before bulk operations** — Ensure sufficient Gateway balance before making many paid calls
+9. **Deposit once, pay forever** — After the initial Gateway deposit, all x402 payments are gas-free
 
 ## Example Integration
 
 ```typescript
-// After completing a research task
+// After completing a research task (with x402 support)
+import { GatewayClient } from '@circle-fin/x402-batching/client'
+
+const gateway = new GatewayClient({
+  chain: 'arcTestnet',
+  privateKey: process.env.AGENT_PRIVATE_KEY as `0x${string}`,
+})
+
 async function reportWork(token: string) {
+  // GatewayClient handles 402 → sign → retry automatically
+  const { data } = await gateway.pay(
+    'https://lumma.xyz/api/payroll/agent?action=report',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        task_type: 'research_report',
+        description: 'Analyzed top 10 DeFi protocols by TVL',
+        metadata: { protocols_analyzed: 10, data_sources: 4 },
+      }),
+    }
+  )
+  console.log(`Logged: ${data.payout_amount} USDC pending`)
+}
+
+// Without x402 (if nanopayments not configured on the vault)
+async function reportWorkSimple(token: string) {
   const res = await fetch('https://lumma.xyz/api/payroll/agent?action=report', {
     method: 'POST',
     headers: {
