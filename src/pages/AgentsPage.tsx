@@ -55,7 +55,8 @@ export default function AgentsPage() {
 
         <p className="agents-hint">
           Your agent will fetch <a href={SKILL_URL} target="_blank" rel="noreferrer">{SKILL_URL}</a> and
-          follow it. You'll need a one-time <strong>linking code</strong> (<code>LMA-LINK-…</code>) from a vault owner.
+          follow it. API calls go to <code>https://api.lumma.xyz/payroll/agent</code>.
+          You'll need a one-time <strong>linking code</strong> (<code>LMA-LINK-…</code>) from a vault owner.
         </p>
 
         <div className="agents-steps">

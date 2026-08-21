@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ShaderBackground from '../components/ShaderBackground'
 import './DocsPage.css'
 
-type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk' | 'nanopay'
+type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk' | 'skill' | 'api' | 'nanopay'
 
 const NAV_GROUPS = [
   {
@@ -34,6 +34,8 @@ const NAV_GROUPS = [
   {
     label: 'Developers',
     items: [
+      { id: 'skill' as Section, label: 'Agent Skill' },
+      { id: 'api' as Section, label: 'API Reference' },
       { id: 'sdk' as Section, label: 'Payroll SDK' },
       { id: 'nanopay' as Section, label: 'Nanopayments (x402)' },
     ],
@@ -48,6 +50,8 @@ const CATEGORY_CARDS = [
   { title: 'Agent Payroll', desc: 'USDC payroll for hybrid teams — people, contractors, and AI agents.', section: 'agents' as Section },
 
   { title: 'Yield Radar', desc: 'Discover stablecoin yield opportunities across protocols.', section: 'yield' as Section },
+  { title: 'Agent Skill', desc: 'How any coding agent reads lumma.md, links to a vault, and reports work.', section: 'skill' as Section },
+  { title: 'API Reference', desc: 'Every public payroll endpoint, auth header, and error code.', section: 'api' as Section },
   { title: 'Payroll SDK', desc: 'Embed programmable USDC payroll into your platform with a few lines of code.', section: 'sdk' as Section },
   { title: 'Nanopayments', desc: 'Gas-free USDC micropayments via Circle x402 batched settlement.', section: 'nanopay' as Section },
 ]
@@ -59,12 +63,20 @@ const ArrowIcon = () => (
 )
 
 // Flat, searchable index of every doc section.
+const SEARCH_EXTRA: Partial<Record<Section, string>> = {
+  skill: 'skill lumma.md linking code agent token paste gatewayclient',
+  api: 'endpoint rest curl payroll openapi bearer 402 report hire pay_agent',
+  nanopay: 'x402 gateway payment-signature nanopayment circle',
+  sdk: 'sdk embed vault worker settle',
+  agents: 'payroll vault linking code a2a hire',
+}
+
 const SEARCH_INDEX: { id: Section; label: string; group: string; keywords: string }[] =
   NAV_GROUPS.flatMap(g => g.items.map(it => ({
     id: it.id,
     label: it.label,
     group: g.label,
-    keywords: `${it.label} ${g.label}`.toLowerCase(),
+    keywords: `${it.label} ${g.label} ${SEARCH_EXTRA[it.id] || ''}`.toLowerCase(),
   })))
 
 export default function DocsPage() {
@@ -228,6 +240,8 @@ export default function DocsPage() {
                   </div>
                   <div>
                     <div className="docs-footer-heading">Developers</div>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('skill'); }}>Agent Skill</a>
+                    <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('api'); }}>API Reference</a>
                     <a href="#" className="docs-footer-link" onClick={e => { e.preventDefault(); navigate('arch'); }}>Architecture</a>
                     <a href="https://github.com/Krusherk/lumma" target="_blank" rel="noopener noreferrer" className="docs-footer-link">GitHub</a>
                   </div>
@@ -282,6 +296,8 @@ export default function DocsPage() {
               {section === 'arch' && <SectionArch />}
               {section === 'security' && <SectionSecurity />}
               {section === 'roadmap' && <SectionRoadmap />}
+              {section === 'skill' && <SectionSkill />}
+              {section === 'api' && <SectionApi />}
               {section === 'sdk' && <SectionSdk />}
               {section === 'nanopay' && <SectionNanopay />}
             </main>
@@ -457,7 +473,27 @@ function SectionAgents() {
       </ol>
 
       <h3>Connecting an AI agent</h3>
-      <p>Generate a linking code, then install the Lumma Payroll Skill into your agent. Once linked, the agent reports completed work to Lumma, Lumma prices each task using the rules you set, and the agent's pending balance grows until settlement — for example, "Research Agent completed 10 reports — pending payout 0.50 USDC."</p>
+      <p>
+        Generate a linking code (<code>LMA-LINK-xxxxxxxx</code>), then paste this into any coding agent:
+      </p>
+      <div className="docs-code">
+        <div className="docs-code-header">Paste into your agent</div>
+        <pre>{`read https://lumma.xyz/skills/lumma.md and follow the instructions to connect to a Lumma payroll vault and report completed work`}</pre>
+      </div>
+      <p>
+        The agent fetches the skill, exchanges the linking code for a bearer token, and reports completed work.
+        Lumma prices each task from your vault rules. Pending balance grows until you approve it or auto-settle fires —
+        for example, "Research Agent completed 10 reports — pending payout 0.50 USDC."
+      </p>
+      <p>
+        Full skill walkthrough is in <strong>Agent Skill</strong>. Every HTTP route is in <strong>API Reference</strong>.
+      </p>
+
+      <h3>Agent-to-agent</h3>
+      <p>
+        Grant an agent an A2A spend cap and it can hire sub-agents (<code>hire_invite</code>) and pay them
+        (<code>pay_agent</code>) from that budget. A leaked token can lose at most the remaining cap, never the vault.
+      </p>
 
       <h3>Settlement options</h3>
       <ul>
@@ -508,6 +544,14 @@ function SectionArch() {
       <h3>Non-custodial by default</h3>
       <p>Lumma never holds, controls, or accesses your personal funds. Transactions are authorized by you and settle on-chain. Payroll vaults are dedicated USDC accounts kept separate from your personal wallet.</p>
 
+      <h3>Public surfaces</h3>
+      <ul>
+        <li><strong>Website</strong> — <code>https://lumma.xyz</code></li>
+        <li><strong>Agent API</strong> — <code>https://api.lumma.xyz</code> (no <code>/api</code> prefix)</li>
+        <li><strong>Skill</strong> — <code>https://lumma.xyz/skills/lumma.md</code></li>
+        <li><strong>Receipts</strong> — <code>https://payroll.lumma.xyz/&lt;receipt_id&gt;</code></li>
+      </ul>
+
     </section>
   )
 }
@@ -549,6 +593,7 @@ function SectionRoadmap() {
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>June 2026 — Agent Payroll</h3><p>USDC payroll for hybrid teams — people, contractors, and AI agents from one vault.</p></div></div>
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>July 2026 — A2A Nanopayments</h3><p>Agent-to-agent nanopayment network. Autonomous hiring, budget caps, atomic settlement.</p></div></div>
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>August 2026 — Embedded Payroll SDK</h3><p>"Stripe for Agents" — external platforms can embed Lumma payroll with a few API calls.</p></div></div>
+        <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>August 2026 — x402 + api.lumma.xyz</h3><p>Circle Gateway nanopayments, public skill, OpenAPI, and the agent API subdomain.</p></div></div>
         <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Q3 2026 — Points + FX Send</h3><p>Points reward system. FX Send with real-time stablecoin conversion.</p></div></div>
         <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Q4 2026 — Yield Radar + Mainnet</h3><p>Cross-chain yield aggregator. Production mainnet launch.</p></div></div>
       </div>
@@ -586,7 +631,12 @@ function SectionSdk() {
         <li><strong>Manual transaction signing</strong> — vault operations are authorized via API key.</li>
         <li><strong>Gas management</strong> — all fees are absorbed; agents never need native tokens.</li>
       </ul>
-      <p>Your applications can securely control payroll funds, enforce spending rules, and execute instant USDC settlements on <strong>Arc Testnet</strong>, with gas abstracted from the underlying infrastructure.</p>
+      <p>Your applications can securely control payroll funds, enforce spending rules, and execute instant USDC settlements on <strong>Arc Testnet</strong>, with gas abstracted from the underlying infrastructure. REST routes for these actions are documented in API Reference.</p>
+
+      <p>
+        HTTP base for the embedded SDK is <code>https://api.lumma.xyz/payroll/sdk</code>.
+        Authenticate with <code>Authorization: Bearer lma_sdk_...</code>.
+      </p>
 
       <h2>Quickstart</h2>
 
@@ -778,6 +828,394 @@ await lumma.streams.configure({
     </section>
   )
 }
+function SectionSkill() {
+  return (
+    <section>
+      <h1>Agent Skill</h1>
+      <span className="docs-status live">Live on Testnet</span>
+      <p className="docs-lead">
+        The Lumma Payroll Skill is a markdown file any coding or AI agent can read and follow.
+        No SDK install required. The agent fetches the skill, links to a vault, and reports work for USDC.
+      </p>
+
+      <h2>Where it lives</h2>
+      <ul>
+        <li>Public skill: <a href="https://lumma.xyz/skills/lumma.md" target="_blank" rel="noreferrer">https://lumma.xyz/skills/lumma.md</a></li>
+        <li>Local copy for agent runtimes: <code>skills/lumma-payroll/SKILL.md</code></li>
+        <li>OpenAPI: <a href="https://api.lumma.xyz/openapi.json" target="_blank" rel="noreferrer">https://api.lumma.xyz/openapi.json</a></li>
+        <li>Discovery catalog: <a href="https://api.lumma.xyz/x402/discovery/resources" target="_blank" rel="noreferrer">https://api.lumma.xyz/x402/discovery/resources</a></li>
+      </ul>
+
+      <h2>Install</h2>
+      <p>Paste this into Claude Code, Cursor, Codex, or any agent that can fetch a URL:</p>
+      <div className="docs-code">
+        <div className="docs-code-header">Prompt</div>
+        <pre>{`read https://lumma.xyz/skills/lumma.md and follow the instructions to connect to a Lumma payroll vault and report completed work`}</pre>
+      </div>
+      <p>You still need a one-time linking code from a vault owner (<code>LMA-LINK-xxxxxxxx</code>).</p>
+
+      <h2>What the skill tells the agent to do</h2>
+      <ol>
+        <li><strong>Link</strong> — <code>POST https://api.lumma.xyz/payroll/agent?action=link</code> with the code and a payout wallet. Store <code>agent_token</code>.</li>
+        <li><strong>Report</strong> — after each real task, <code>POST ...?action=report</code> with <code>task_type</code>. This call is x402-paywalled at $0.0001.</li>
+        <li><strong>Check earnings</strong> — <code>GET ...?action=earnings</code>.</li>
+        <li><strong>Hire / pay</strong> — if <code>spend_limit</code> is present, the agent may <code>hire_invite</code> and <code>pay_agent</code>.</li>
+        <li><strong>Pay x402</strong> — on HTTP 402, retry with Circle <code>GatewayClient.pay()</code> so the <code>PAYMENT-SIGNATURE</code> header is attached.</li>
+      </ol>
+
+      <h2>Tools the skill defines</h2>
+      <div className="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Method</th>
+              <th>Auth</th>
+              <th>x402</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>link</code></td>
+              <td>POST</td>
+              <td>none</td>
+              <td>free</td>
+              <td>Exchange <code>LMA-LINK-…</code> for <code>agent_token</code></td>
+            </tr>
+            <tr>
+              <td><code>set_wallet</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>free</td>
+              <td>Update USDC payout wallet</td>
+            </tr>
+            <tr>
+              <td><code>report</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>$0.0001</td>
+              <td>Log completed work</td>
+            </tr>
+            <tr>
+              <td><code>earnings</code></td>
+              <td>GET</td>
+              <td>Bearer</td>
+              <td>free</td>
+              <td>Pending + lifetime USDC</td>
+            </tr>
+            <tr>
+              <td><code>hire_invite</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>$0.001</td>
+              <td>Mint a linking code for a sub-agent</td>
+            </tr>
+            <tr>
+              <td><code>pay_agent</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>$0.0005</td>
+              <td>Pay another agent from A2A budget</td>
+            </tr>
+            <tr>
+              <td><code>nano_balance</code></td>
+              <td>GET</td>
+              <td>Bearer</td>
+              <td>free</td>
+              <td>Circle Gateway balance</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Authentication</h2>
+      <p>
+        Linking codes are single-use. The returned <code>agent_token</code> (<code>lma_at_…</code>) is permanent until revoked.
+        Send it as <code>Authorization: Bearer &lt;agent_token&gt;</code> on every later call.
+        Paid tools also require a valid x402 <code>PAYMENT-SIGNATURE</code>.
+      </p>
+
+      <div className="docs-callout">
+        <div className="docs-callout-title">YAML frontmatter</div>
+        <p>
+          The skill file starts with machine-readable frontmatter (<code>name</code>, <code>description</code>, OpenAPI URL,
+          network <code>eip155:5042002</code>, Gateway batching). Humans read the markdown; agents can parse both.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function SectionApi() {
+  return (
+    <section>
+      <h1>API Reference</h1>
+      <span className="docs-status live">Live on Testnet</span>
+      <p className="docs-lead">
+        Agent-facing payroll lives on <code>https://api.lumma.xyz</code>. Paths do <strong>not</strong> include <code>/api</code>.
+        Chain: Arc Testnet (<code>eip155:5042002</code>). Amounts are USDC, 6 decimals.
+      </p>
+
+      <h2>Base URL</h2>
+      <div className="docs-code">
+        <div className="docs-code-header">Production</div>
+        <pre>{`https://api.lumma.xyz`}</pre>
+      </div>
+      <ul>
+        <li>Agent payroll: <code>/payroll/agent?action=…</code></li>
+        <li>Embedded SDK: <code>/payroll/sdk?action=…</code></li>
+        <li>Nanopay admin: <code>/payroll/nano_admin?action=…</code></li>
+        <li>OpenAPI: <code>/openapi.json</code></li>
+      </ul>
+
+      <h2>Authentication</h2>
+      <div className="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Audience</th>
+              <th>Header</th>
+              <th>How you get it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Agent</td>
+              <td><code>Authorization: Bearer lma_at_…</code></td>
+              <td><code>action=link</code></td>
+            </tr>
+            <tr>
+              <td>Platform SDK</td>
+              <td><code>Authorization: Bearer lma_sdk_…</code></td>
+              <td>Issued to integrating platforms</td>
+            </tr>
+            <tr>
+              <td>Vault owner / admin</td>
+              <td><code>x-internal-secret</code></td>
+              <td>Server env <code>INTERNAL_API_SECRET</code></td>
+            </tr>
+            <tr>
+              <td>x402 buyer</td>
+              <td><code>PAYMENT-SIGNATURE</code></td>
+              <td>Signed by <code>GatewayClient.pay()</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>CORS allows <code>Content-Type</code>, <code>Authorization</code>, and <code>PAYMENT-SIGNATURE</code>. Responses expose <code>PAYMENT-REQUIRED</code> and <code>PAYMENT-RESPONSE</code>.</p>
+
+      <h2>Agent endpoints</h2>
+      <p>All of these are <code>https://api.lumma.xyz/payroll/agent?action=&lt;name&gt;</code>.</p>
+      <div className="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Method</th>
+              <th>Auth</th>
+              <th>x402</th>
+              <th>Body</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>link</code></td>
+              <td>POST</td>
+              <td>—</td>
+              <td>—</td>
+              <td><code>code</code>, <code>wallet_address</code></td>
+            </tr>
+            <tr>
+              <td><code>set_wallet</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>—</td>
+              <td><code>wallet_address</code></td>
+            </tr>
+            <tr>
+              <td><code>report</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>$0.0001</td>
+              <td><code>task_type</code>, <code>description?</code>, <code>metadata?</code></td>
+            </tr>
+            <tr>
+              <td><code>earnings</code></td>
+              <td>GET</td>
+              <td>Bearer</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><code>hire_invite</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>$0.001</td>
+              <td><code>name</code>, <code>agent_type?</code></td>
+            </tr>
+            <tr>
+              <td><code>pay_agent</code></td>
+              <td>POST</td>
+              <td>Bearer</td>
+              <td>$0.0005</td>
+              <td><code>to_agent_id</code>, <code>amount</code>, <code>task_type?</code>, <code>description?</code></td>
+            </tr>
+            <tr>
+              <td><code>nano_balance</code></td>
+              <td>GET</td>
+              <td>Bearer</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>link</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl -X POST "https://api.lumma.xyz/payroll/agent?action=link" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "code": "LMA-LINK-xxxxxxxx",
+    "wallet_address": "0xYourAgentWalletOnArc"
+  }'`}</pre>
+      </div>
+      <div className="docs-code">
+        <div className="docs-code-header">JSON</div>
+        <pre>{`{
+  "agent_token": "lma_at_...",
+  "agent_name": "Research Agent",
+  "agent_type": "research",
+  "payout_wallet": "0x..."
+}`}</pre>
+      </div>
+
+      <h3>report</h3>
+      <p><code>task_type</code> must match a vault rule. If <code>has_rule</code> is false, the work is logged at $0.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl -X POST "https://api.lumma.xyz/payroll/agent?action=report" \\
+  -H "Authorization: Bearer $AGENT_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "task_type": "research_report",
+    "description": "Analyzed DeFi yield trends",
+    "metadata": { "word_count": 1500, "sources": 8 }
+  }'`}</pre>
+      </div>
+      <p>Without <code>PAYMENT-SIGNATURE</code> this returns <code>402</code> and a base64 <code>PAYMENT-REQUIRED</code> header. Use <code>GatewayClient.pay()</code> in production.</p>
+
+      <h3>earnings</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl "https://api.lumma.xyz/payroll/agent?action=earnings" \\
+  -H "Authorization: Bearer $AGENT_TOKEN"`}</pre>
+      </div>
+      <p><code>spend_limit</code> / <code>spend_used</code> / <code>spend_available</code> appear only if the owner granted an A2A budget.</p>
+
+      <h3>hire_invite</h3>
+      <p>Requires an A2A budget (otherwise 403). Returns a linking code for the hired agent.</p>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl -X POST "https://api.lumma.xyz/payroll/agent?action=hire_invite" \\
+  -H "Authorization: Bearer $AGENT_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "name": "Data Fetcher", "agent_type": "data" }'`}</pre>
+      </div>
+
+      <h3>pay_agent</h3>
+      <div className="docs-code">
+        <div className="docs-code-header">cURL</div>
+        <pre>{`curl -X POST "https://api.lumma.xyz/payroll/agent?action=pay_agent" \\
+  -H "Authorization: Bearer $AGENT_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "to_agent_id": "target-agent-uuid",
+    "amount": 0.5,
+    "task_type": "data_fetch",
+    "description": "Fetched 500 records"
+  }'`}</pre>
+      </div>
+
+      <h2>Owner endpoints</h2>
+      <p>These require <code>x-internal-secret</code>. They are used by the Lumma chat agent and cron — not by third-party agents.</p>
+      <div className="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Method</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>create</code></td><td>POST</td><td>Create an agent slot + linking code</td></tr>
+            <tr><td><code>activity</code></td><td>GET</td><td>Vault-wide agent activity</td></tr>
+            <tr><td><code>approve</code></td><td>POST</td><td>Approve and settle pending work</td></tr>
+            <tr><td><code>sweep</code></td><td>POST</td><td>Settle all pending work</td></tr>
+            <tr><td><code>grant_budget</code></td><td>POST</td><td>Set an A2A spend cap</td></tr>
+            <tr><td><code>nano_setup</code></td><td>POST</td><td>Provision a Gateway EOA for an agent</td></tr>
+            <tr><td><code>nano_deposit</code></td><td>POST</td><td>Deposit USDC into that Gateway wallet</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Embedded SDK endpoints</h2>
+      <p><code>POST/GET https://api.lumma.xyz/payroll/sdk?action=…</code> with an SDK API key.</p>
+      <div className="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>create_vault</code></td><td>Provision a USDC payroll vault</td></tr>
+            <tr><td><code>register_worker</code></td><td>Register an agent or contractor with spending limits</td></tr>
+            <tr><td><code>settle_task</code></td><td>Instant USDC settlement after a task</td></tr>
+            <tr><td><code>get_balance</code></td><td>Vault balances and caps</td></tr>
+            <tr><td><code>list_workers</code></td><td>List workers in a vault</td></tr>
+            <tr><td><code>stream_config</code></td><td>Pay-per-unit streaming</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Errors</h2>
+      <div className="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Meaning</th>
+              <th>What to do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>400</td><td>Missing or invalid field</td><td>Check <code>task_type</code>, <code>code</code>, or <code>wallet_address</code></td></tr>
+            <tr><td>401</td><td>Bad or revoked token</td><td>Re-link with a fresh code</td></tr>
+            <tr><td>402</td><td>x402 payment required or failed</td><td>Use <code>GatewayClient.pay()</code>; check Gateway balance</td></tr>
+            <tr><td>403</td><td>No A2A budget / missing permission</td><td>Ask the owner to grant <code>spend_limit</code></td></tr>
+            <tr><td>404</td><td>Agent, code, or wallet not found</td><td>Check IDs; owner may need <code>nano_setup</code></td></tr>
+            <tr><td>429</td><td>100 req/min or a daily/monthly cap</td><td>Back off until reset</td></tr>
+            <tr><td>500</td><td>Server error</td><td>Retry with backoff</td></tr>
+            <tr><td>503</td><td>Gateway unavailable</td><td>Retry later</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>Limits</h2>
+      <ul>
+        <li>100 requests per minute per agent token.</li>
+        <li>Daily and monthly USDC caps from vault rules also return 429.</li>
+        <li>x402 signatures need <code>validBefore</code> at least 7 days in the future.</li>
+      </ul>
+    </section>
+  )
+}
+
 function SectionNanopay() {
   return (
     <section>
