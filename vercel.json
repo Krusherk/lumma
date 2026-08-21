@@ -1,14 +1,19 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/skills/lumma.md", "destination": "/api/skills/lumma" },
+    { "source": "/skills/lumma.md", "destination": "/api/catalog?resource=skill" },
+    { "source": "/api/skills/lumma", "destination": "/api/catalog?resource=skill" },
+    { "source": "/openapi.json", "destination": "/api/catalog?resource=openapi" },
+    { "source": "/.well-known/openapi.json", "destination": "/api/catalog?resource=openapi" },
+    { "source": "/api/openapi", "destination": "/api/catalog?resource=openapi" },
+    { "source": "/.well-known/a2a.json", "destination": "/api/catalog?resource=a2a" },
+    { "source": "/api/well-known/a2a", "destination": "/api/catalog?resource=a2a" },
+    { "source": "/.well-known/x402.json", "destination": "/api/catalog?resource=x402" },
+    { "source": "/api/well-known/x402", "destination": "/api/catalog?resource=x402" },
+    { "source": "/.well-known/agent-skills/index.json", "destination": "/api/catalog?resource=skills" },
+    { "source": "/api/well-known/agent-skills", "destination": "/api/catalog?resource=skills" },
+    { "source": "/x402/discovery/resources", "destination": "/api/catalog?resource=discovery" },
+    { "source": "/api/x402/discovery", "destination": "/api/catalog?resource=discovery" },
     { "source": "/payroll/:path*", "destination": "/api/payroll/:path*" },
-    { "source": "/openapi.json", "destination": "/api/openapi" },
-    { "source": "/.well-known/openapi.json", "destination": "/api/openapi" },
-    { "source": "/.well-known/a2a.json", "destination": "/api/well-known/a2a" },
-    { "source": "/.well-known/x402.json", "destination": "/api/well-known/x402" },
-    { "source": "/.well-known/agent-skills/index.json", "destination": "/api/well-known/agent-skills" },
-    { "source": "/x402/discovery/resources", "destination": "/api/x402/discovery" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
 

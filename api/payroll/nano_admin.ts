@@ -16,7 +16,7 @@ import {
   checkGatewayStatus,
   AgentNanopaymentClient,
   deriveAgentKey,
-} from './nanopayments.js'
+} from './_nanopayments.js'
 
 const MASTER_SEED = process.env.NANOPAYMENT_MASTER_SEED || ''
 

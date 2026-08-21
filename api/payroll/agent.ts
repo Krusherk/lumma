@@ -37,7 +37,7 @@ import {
   deriveAgentKey,
   deriveAgentAddress,
   applyX402Cors,
-} from './nanopayments.js'
+} from './_nanopayments.js'
 import { RECEIPT_BASE_URL, agentActionUrl } from '../_urls.js'
 
 const MASTER_SEED = process.env.NANOPAYMENT_MASTER_SEED || ''

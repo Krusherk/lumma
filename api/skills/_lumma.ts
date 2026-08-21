@@ -11,7 +11,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { API_BASE_URL, OPENAPI_URL, SITE_URL, SKILL_URL } from '../_urls.js'
 
-const SKILL_MARKDOWN = `---
+export const SKILL_MARKDOWN = `---
 name: lumma-payroll
 description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing, agent-to-agent hiring/payments, and gas-free x402 nanopayments via Circle Gateway batched settlement. Use when an agent needs to log completed work, check earnings, hire or pay another agent, or interact with Lumma payroll."
 metadata:
@@ -250,7 +250,7 @@ If you get a 404, the vault owner hasn't provisioned a nanopayment wallet for yo
 - x402 well-known: \`${API_BASE_URL}/.well-known/x402.json\`
 `
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export function sendSkillMarkdown(_req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8')
   res.setHeader('Cache-Control', 'public, max-age=300')
