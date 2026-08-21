@@ -2,6 +2,13 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/skills/lumma.md", "destination": "/api/skills/lumma" },
+    { "source": "/payroll/:path*", "destination": "/api/payroll/:path*" },
+    { "source": "/openapi.json", "destination": "/api/openapi" },
+    { "source": "/.well-known/openapi.json", "destination": "/api/openapi" },
+    { "source": "/.well-known/a2a.json", "destination": "/api/well-known/a2a" },
+    { "source": "/.well-known/x402.json", "destination": "/api/well-known/x402" },
+    { "source": "/.well-known/agent-skills/index.json", "destination": "/api/well-known/agent-skills" },
+    { "source": "/x402/discovery/resources", "destination": "/api/x402/discovery" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
 

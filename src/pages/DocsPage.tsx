@@ -800,7 +800,7 @@ function SectionNanopay() {
       <h2>How It Works</h2>
       <ol>
         <li><strong>Deposit</strong> — The vault owner deposits USDC into a Gateway Wallet contract (one-time onchain transaction).</li>
-        <li><strong>Request</strong> — An agent calls a paywalled endpoint (e.g., <code>/api/payroll/agent?action=report</code>).</li>
+        <li><strong>Request</strong> — An agent calls a paywalled endpoint (e.g., <code>https://api.lumma.xyz/payroll/agent?action=report</code>).</li>
         <li><strong>402 Response</strong> — The server returns <code>402 Payment Required</code> with payment details.</li>
         <li><strong>Sign</strong> — The agent signs an EIP-3009 authorization offchain (zero gas).</li>
         <li><strong>Retry</strong> — The agent retries with the <code>PAYMENT-SIGNATURE</code> header attached.</li>
@@ -814,7 +814,7 @@ function SectionNanopay() {
       <p>The vault owner provisions a deterministic EOA for each agent.</p>
       <div className="docs-code">
         <div className="docs-code-header">cURL</div>
-        <pre>{`curl -X POST /api/payroll/agent?action=nano_setup \\
+        <pre>{`curl -X POST https://api.lumma.xyz/payroll/agent?action=nano_setup \\
   -H "x-internal-secret: $SECRET" \\
   -d '{
     "agent_id": "<agent-uuid>",
@@ -838,7 +838,7 @@ function SectionNanopay() {
       <p>Fund the agent's Gateway balance. This is the only onchain transaction needed.</p>
       <div className="docs-code">
         <div className="docs-code-header">cURL</div>
-        <pre>{`curl -X POST /api/payroll/agent?action=nano_deposit \\
+        <pre>{`curl -X POST https://api.lumma.xyz/payroll/agent?action=nano_deposit \\
   -H "x-internal-secret: $SECRET" \\
   -d '{ "agent_id": "abc-123", "amount": "5" }'`}</pre>
       </div>
@@ -847,7 +847,7 @@ function SectionNanopay() {
       <p>Agents can check their Gateway balance using their Bearer token.</p>
       <div className="docs-code">
         <div className="docs-code-header">cURL</div>
-        <pre>{`curl /api/payroll/agent?action=nano_balance \\
+        <pre>{`curl https://api.lumma.xyz/payroll/agent?action=nano_balance \\
   -H "Authorization: Bearer $AGENT_TOKEN"`}</pre>
       </div>
 
@@ -863,6 +863,22 @@ function SectionNanopay() {
       <p>Prices are configurable via environment variables: <code>NANOPAY_PRICE_REPORT</code>, <code>NANOPAY_PRICE_PAY_AGENT</code>, <code>NANOPAY_PRICE_HIRE_INVITE</code>.</p>
       <p>When <code>NANOPAYMENT_SELLER_ADDRESS</code> is not set, payment gating is bypassed (development mode).</p>
 
+      <h2>Agent Marketplace</h2>
+      <p>
+        Paid endpoints speak x402 v2 (HTTP 402 + <code>PAYMENT-REQUIRED</code>) so they can be listed in Circle's Agent Marketplace.
+        Machine-readable surfaces:
+      </p>
+      <ul>
+        <li><code>https://api.lumma.xyz/openapi.json</code> — OpenAPI 3.1</li>
+        <li><code>https://api.lumma.xyz/x402/discovery/resources</code> — Discovery catalog</li>
+        <li><code>https://api.lumma.xyz/.well-known/a2a.json</code> — A2A card</li>
+        <li><code>https://lumma.xyz/skills/lumma.md</code> — Agent skill</li>
+      </ul>
+      <p>
+        Circle listings are reviewed manually. Submit the live endpoint, payout wallet, and OpenAPI URL via the
+        {' '}<a href="https://developers.circle.com/agent-stack/agent-marketplace/get-listed" target="_blank" rel="noopener noreferrer">Get listed</a> form.
+      </p>
+
       <h2>Client Integration</h2>
       <p>Agents use Circle's <code>GatewayClient</code> to handle the 402 negotiation automatically:</p>
       <div className="docs-code">
@@ -876,7 +892,7 @@ const client = new GatewayClient({
 
 // The client handles 402 → sign → retry automatically
 const { data, status } = await client.pay(
-  "https://payroll.lumma.xyz/api/payroll/agent?action=report",
+  "https://api.lumma.xyz/payroll/agent?action=report",
   {
     method: "POST",
     headers: { "Authorization": "Bearer " + agentToken },
@@ -888,7 +904,7 @@ console.log(data); // Work report response`}</pre>
       </div>
 
       <h2>Admin API</h2>
-      <p>Monitor and manage nanopayments via <code>/api/payroll/nano_admin</code>:</p>
+      <p>Monitor and manage nanopayments via <code>https://api.lumma.xyz/payroll/nano_admin</code>:</p>
       <ul>
         <li><code>?action=status</code> — Gateway health check and supported networks</li>
         <li><code>?action=balances</code> — All agent Gateway balances</li>

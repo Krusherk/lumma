@@ -15,8 +15,7 @@ import crypto from 'crypto'
 import { transferUSDC, CHAIN_MAP } from './_circle.js'
 import { requireInternalSecret } from './_auth.js'
 import { supabase } from './_supabase.js'
-
-const RECEIPT_BASE_URL = 'https://payroll.lumma.xyz'
+import { RECEIPT_BASE_URL } from '../_urls.js'
 
 function generateReceiptId(): string {
   return `LMA-${crypto.randomBytes(4).toString('hex')}`

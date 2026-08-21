@@ -9,6 +9,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import crypto from 'crypto'
+import { gatewayPaymentOption, parseDollarToBaseUnits as parsePrice } from '../api/_x402'
 
 // We test the module's pure functions directly
 // Avoid importing GatewayClient in test env without proper polyfills
@@ -108,8 +109,8 @@ describe('x402 Nanopayments — Payment Requirements Structure', () => {
     const mockRequirements = {
       x402Version: 2,
       resource: {
-        url: '/api/payroll/agent?action=report',
-        description: 'Lumma Payroll — /api/payroll/agent?action=report',
+        url: 'https://api.lumma.xyz/payroll/agent?action=report',
+        description: 'Lumma Payroll — https://api.lumma.xyz/payroll/agent?action=report',
         mimeType: 'application/json',
       },
       accepts: [{
@@ -194,5 +195,31 @@ describe('x402 Nanopayments — PAYMENT-REQUIRED Header', () => {
     expect(decoded.x402Version).toBe(2)
     expect(decoded.accepts[0].network).toBe('eip155:5042002')
     expect(decoded.accepts[0].amount).toBe('100')
+  })
+
+  it('should produce valid base64 PAYMENT-RESPONSE after settlement', () => {
+    const paymentResponse = {
+      success: true,
+      transaction: '0xabc',
+      network: 'eip155:5042002',
+      payer: '0x0000000000000000000000000000000000000001',
+    }
+    const encoded = Buffer.from(JSON.stringify(paymentResponse)).toString('base64')
+    const decoded = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'))
+    expect(decoded.success).toBe(true)
+    expect(decoded.network).toBe('eip155:5042002')
+    expect(decoded.transaction).toBe('0xabc')
+  })
+
+  it('should emit GatewayWalletBatched accepts matching Circle seller spec', () => {
+    const option = gatewayPaymentOption('0.0001', '0x98EdA6F43DB227E0bE0B8B3108598898A93834BB')
+    expect(option.scheme).toBe('exact')
+    expect(option.network).toBe('eip155:5042002')
+    expect(option.amount).toBe('100')
+    expect(option.maxTimeoutSeconds).toBe(604900)
+    expect(option.extra.name).toBe('GatewayWalletBatched')
+    expect(option.extra.version).toBe('1')
+    expect(option.asset).toMatch(/^0x[0-9a-fA-F]{40}$/)
+    expect(parsePrice('0.0001')).toBe('100')
   })
 })

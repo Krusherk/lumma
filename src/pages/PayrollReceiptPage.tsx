@@ -45,9 +45,12 @@ export default function PayrollReceiptPage() {
 
     const apiBase = window.location.hostname.includes('localhost')
       ? ''
-      : 'https://lumma.xyz'
+      : 'https://api.lumma.xyz'
+    const receiptPath = apiBase
+      ? `${apiBase}/payroll/receipt?id=${receiptId}`
+      : `/api/payroll/receipt?id=${receiptId}`
 
-    fetch(`${apiBase}/api/payroll/receipt?id=${receiptId}`)
+    fetch(receiptPath)
       .then(r => r.json())
       .then(data => {
         if (data.receipt) setReceipt(data.receipt)

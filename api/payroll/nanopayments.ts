@@ -15,38 +15,28 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import crypto from 'crypto'
-
-// ── SDK imports ──────────────────────────────────────────────────────
-// Buyer
+import {
+  ARC_GATEWAY_WALLET,
+  ARC_TESTNET_NETWORK,
+  ARC_USDC,
+} from '../_urls.js'
+import {
+  ENDPOINT_PRICES,
+  SELLER_ADDRESS,
+  parseDollarToBaseUnits,
+} from '../_x402.js'
 import { GatewayClient } from '@circle-fin/x402-batching/client'
-// Seller
 import { BatchFacilitatorClient } from '@circle-fin/x402-batching/server'
+
+export { ENDPOINT_PRICES, SELLER_ADDRESS, parseDollarToBaseUnits }
 
 // ── Configuration ────────────────────────────────────────────────────
 
 const FACILITATOR_URL =
   process.env.NANOPAYMENT_FACILITATOR_URL || 'https://gateway-api-testnet.circle.com'
 
-const SELLER_ADDRESS =
-  process.env.NANOPAYMENT_SELLER_ADDRESS || ''
-
 const MASTER_SEED =
   process.env.NANOPAYMENT_MASTER_SEED || ''
-
-/** Arc Testnet CAIP-2 identifier (chain ID 5042002) */
-const ARC_TESTNET_NETWORK = 'eip155:5042002'
-
-/**
- * Default endpoint pricing (USD). Override via env vars:
- *   NANOPAY_PRICE_REPORT=0.0001
- *   NANOPAY_PRICE_PAY_AGENT=0.0005
- *   NANOPAY_PRICE_HIRE_INVITE=0.001
- */
-export const ENDPOINT_PRICES: Record<string, string> = {
-  report: process.env.NANOPAY_PRICE_REPORT || '0.0001',
-  pay_agent: process.env.NANOPAY_PRICE_PAY_AGENT || '0.0005',
-  hire_invite: process.env.NANOPAY_PRICE_HIRE_INVITE || '0.001',
-}
 
 // ═══════════════════════════════════════════════════════════════════
 //  HD Key Derivation
@@ -102,14 +92,21 @@ function getFacilitator(): BatchFacilitatorClient {
 }
 
 /**
- * Parse a dollar amount string like "$0.01" or "0.01" to USDC base units.
- * 1 USDC = 1_000_000 base units (6 decimals).
+ * CORS headers required for x402 v2 clients (browser + Circle CLI inspect).
+ * PAYMENT-SIGNATURE must be allowed; PAYMENT-REQUIRED / PAYMENT-RESPONSE
+ * must be exposed so clients can read them from 402 / 200 responses.
  */
-function parseDollarToBaseUnits(price: string): string {
-  const cleaned = price.replace(/^\$/, '')
-  const num = parseFloat(cleaned)
-  if (!Number.isFinite(num) || num <= 0) throw new Error(`Invalid price: ${price}`)
-  return String(Math.round(num * 1_000_000))
+export function applyX402Cors(res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, PAYMENT-SIGNATURE',
+  )
+  res.setHeader(
+    'Access-Control-Expose-Headers',
+    'PAYMENT-REQUIRED, PAYMENT-RESPONSE',
+  )
 }
 
 /**
@@ -134,15 +131,14 @@ async function createPaymentRequirements(price: string, endpoint: string) {
   const requirements = {
     scheme: 'exact' as const,
     network: ARC_TESTNET_NETWORK,
-    asset: (arcKind as any).asset || '0x3600000000000000000000000000000000000000',
+    asset: (arcKind as any).asset || ARC_USDC,
     amount: parseDollarToBaseUnits(price),
     maxTimeoutSeconds: 604900, // 7 days + buffer, required by Gateway
     payTo: SELLER_ADDRESS as `0x${string}`,
     extra: {
       name: 'GatewayWalletBatched',
       version: '1',
-      verifyingContract: (arcKind as any).extra?.verifyingContract ||
-        '0x0077777d7EBA4688BDeF3E311b846F25870A19B9',
+      verifyingContract: (arcKind as any).extra?.verifyingContract || ARC_GATEWAY_WALLET,
     },
   }
 
@@ -182,7 +178,7 @@ export interface PaymentInfo {
  * Require x402 payment for a Vercel serverless endpoint.
  *
  * Usage in a handler:
- *   const payment = await requireNanopayment(req, res, '0.001', '/api/payroll/agent?action=report')
+ *   const payment = await requireNanopayment(req, res, '0.001', 'https://api.lumma.xyz/payroll/agent?action=report')
  *   if (!payment) return  // 402 already sent
  *   // payment.payer, payment.amount, etc. are available
  *
@@ -195,6 +191,8 @@ export async function requireNanopayment(
   price: string,
   endpoint: string,
 ): Promise<PaymentInfo | null> {
+  applyX402Cors(res)
+
   if (!SELLER_ADDRESS) {
     // Nanopayments not configured — skip gating (dev mode)
     console.warn('[nanopay] NANOPAYMENT_SELLER_ADDRESS not set — skipping payment gate')
@@ -204,7 +202,7 @@ export async function requireNanopayment(
   const paymentSignature = parsePaymentHeader(req)
 
   if (!paymentSignature) {
-    // No payment attached → return 402 Payment Required
+    // No payment attached → return 402 Payment Required (x402 v2)
     try {
       const paymentRequired = await createPaymentRequirements(price, endpoint)
       const encoded = Buffer.from(JSON.stringify(paymentRequired)).toString('base64')
@@ -222,7 +220,7 @@ export async function requireNanopayment(
     return null
   }
 
-  // Payment signature present → verify and settle
+  // Payment signature present → settle (Gateway settle() verifies + settles)
   try {
     const facilitator = getFacilitator()
 
@@ -244,9 +242,18 @@ export async function requireNanopayment(
       return null
     }
 
+    const payer = settlement.payer || 'unknown'
+    const paymentResponse = Buffer.from(JSON.stringify({
+      success: true,
+      transaction: settlement.transaction,
+      network: requirements.network,
+      payer,
+    })).toString('base64')
+    res.setHeader('PAYMENT-RESPONSE', paymentResponse)
+
     return {
       verified: true,
-      payer: settlement.payer || 'unknown',
+      payer,
       amount: requirements.amount,
       network: requirements.network,
       transaction: settlement.transaction,

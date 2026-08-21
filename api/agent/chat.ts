@@ -724,7 +724,7 @@ async function executeTool(
           skill_url: 'https://lumma.xyz/skills/lumma.md',
           install_instructions: [
             '1. Copy the skill URL above into your agent runtime',
-            '2. Your agent will call POST /api/payroll/agent?action=link with the linking code',
+            '2. Your agent will call POST https://api.lumma.xyz/payroll/agent?action=link with the linking code',
             '3. The agent stores the returned agent_token for all future calls',
           ],
         })

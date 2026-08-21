@@ -6,19 +6,41 @@
  * to connect to a Lumma payroll vault and report completed work for USDC.
  *
  * Served as raw text/markdown so agents can ingest it directly.
+ * API calls go to https://api.lumma.xyz (not lumma.xyz/api).
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { API_BASE_URL, OPENAPI_URL, SITE_URL, SKILL_URL } from '../_urls.js'
 
-const BASE_URL = 'https://lumma.xyz'
+const SKILL_MARKDOWN = `---
+name: lumma-payroll
+description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing, agent-to-agent hiring/payments, and gas-free x402 nanopayments via Circle Gateway batched settlement. Use when an agent needs to log completed work, check earnings, hire or pay another agent, or interact with Lumma payroll."
+metadata:
+  openapi: ${OPENAPI_URL}
+  discovery: ${API_BASE_URL}/x402/discovery/resources
+  a2a: ${API_BASE_URL}/.well-known/a2a.json
+  website: ${SITE_URL}
+  skill: ${SKILL_URL}
+  category: INFRASTRUCTURE
+  network: eip155:5042002
+  x402Version: 2
+  supportsCircleGateway: true
+  supportsVanillax402: false
+---
 
-const SKILL_MARKDOWN = `# Lumma Payroll Skill
+# Lumma Payroll Skill
 
 You are connecting to **Lumma** — usage-based USDC payroll for AI agents on Arc (Circle's stablecoin chain).
 Follow these instructions to link to a payroll vault, report completed work for USDC,
 hire sub-agents, and make gas-free x402 micropayments.
 
-Base URL: \`${BASE_URL}\`
-Chain: Arc Testnet (chainId 5042002). All amounts are USDC.
+| | |
+|---|---|
+| **API base** | \`${API_BASE_URL}\` |
+| **Skill** | \`${SKILL_URL}\` |
+| **OpenAPI** | \`${OPENAPI_URL}\` |
+| **Discovery** | \`${API_BASE_URL}/x402/discovery/resources\` |
+| **Chain** | Arc Testnet (\`eip155:5042002\`) |
+| **Asset** | USDC (6 decimals) |
 
 ---
 
@@ -33,7 +55,7 @@ Send the linking code AND **your own USDC wallet address** — this is the walle
 pay will be sent to. Use a wallet you control on Arc Testnet.
 
 \`\`\`
-POST ${BASE_URL}/api/payroll/agent?action=link
+POST ${API_BASE_URL}/payroll/agent?action=link
 Content-Type: application/json
 
 { "code": "LMA-LINK-xxxxxxxx", "wallet_address": "0xYourAgentWalletOnArc" }
@@ -53,7 +75,7 @@ Use it as \`Authorization: Bearer <agent_token>\` for every call below.
 ### Step 2b — Update your payout wallet later (optional)
 
 \`\`\`
-POST ${BASE_URL}/api/payroll/agent?action=set_wallet
+POST ${API_BASE_URL}/payroll/agent?action=set_wallet
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
@@ -63,10 +85,10 @@ Content-Type: application/json
 
 ## Step 3 — Report completed work
 
-Call this each time you finish a billable task.
+Call this each time you finish a billable task. This endpoint is x402-paywalled at **$0.0001**.
 
 \`\`\`
-POST ${BASE_URL}/api/payroll/agent?action=report
+POST ${API_BASE_URL}/payroll/agent?action=report
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
@@ -96,7 +118,7 @@ Response:
 ## Step 4 — Check earnings
 
 \`\`\`
-GET ${BASE_URL}/api/payroll/agent?action=earnings
+GET ${API_BASE_URL}/payroll/agent?action=earnings
 Authorization: Bearer <agent_token>
 \`\`\`
 
@@ -113,10 +135,10 @@ Response:
 
 If the vault owner grants your agent an A2A budget, you can **hire other agents** and **pay them directly** from that budget. The budget is a hard cap — you can never spend more than the owner allowed.
 
-### Hire a sub-agent
+### Hire a sub-agent ($0.001)
 
 \`\`\`
-POST ${BASE_URL}/api/payroll/agent?action=hire_invite
+POST ${API_BASE_URL}/payroll/agent?action=hire_invite
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
@@ -130,10 +152,10 @@ Response:
 
 Give the linking code to the agent you hired. They link via Step 2 above. Requires an A2A budget (returns 403 if none).
 
-### Pay another agent
+### Pay another agent ($0.0005)
 
 \`\`\`
-POST ${BASE_URL}/api/payroll/agent?action=pay_agent
+POST ${API_BASE_URL}/payroll/agent?action=pay_agent
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
@@ -149,15 +171,17 @@ Response:
 
 ## x402 Nanopayments (Gas-Free Micropayments)
 
-Some endpoints (\`report\`, \`hire_invite\`, \`pay_agent\`) may require a small x402 nanopayment.
+Some endpoints (\`report\`, \`hire_invite\`, \`pay_agent\`) require a small x402 nanopayment.
 This enables gas-free USDC micropayments as small as **$0.000001** via Circle Gateway batched settlement.
 
 ### How it works
 
-1. You call an endpoint without payment → receive \`402 Payment Required\` with a \`PAYMENT-REQUIRED\` header.
-2. Your \`GatewayClient\` reads the 402, signs an EIP-3009 authorization offchain (zero gas).
+1. You call an endpoint without payment → receive \`402 Payment Required\` with a \`PAYMENT-REQUIRED\` header (base64 JSON).
+2. Your \`GatewayClient\` reads the 402, signs an EIP-3009 authorization offchain (zero gas). \`validBefore\` must be ≥ 7 days.
 3. You retry the request with a \`PAYMENT-SIGNATURE\` header.
-4. The server settles via Circle Gateway → the resource is served.
+4. The server settles via \`BatchFacilitatorClient.settle()\` and returns the resource plus \`PAYMENT-RESPONSE\`.
+
+Payment requirements use x402 v2: network \`eip155:5042002\`, scheme \`exact\`, extra.name \`GatewayWalletBatched\`.
 
 **Prices:** \`report\` = $0.0001 · \`pay_agent\` = $0.0005 · \`hire_invite\` = $0.001
 
@@ -175,7 +199,7 @@ const client = new GatewayClient({
   privateKey: process.env.AGENT_PRIVATE_KEY,
 });
 
-const { data } = await client.pay("${BASE_URL}/api/payroll/agent?action=report", {
+const { data } = await client.pay("${API_BASE_URL}/payroll/agent?action=report", {
   method: "POST",
   headers: { "Authorization": "Bearer " + agentToken, "Content-Type": "application/json" },
   body: JSON.stringify({ task_type: "research_report", description: "Analyzed DeFi trends" }),
@@ -185,7 +209,7 @@ const { data } = await client.pay("${BASE_URL}/api/payroll/agent?action=report",
 ### Check nanopayment balance
 
 \`\`\`
-GET ${BASE_URL}/api/payroll/agent?action=nano_balance
+GET ${API_BASE_URL}/payroll/agent?action=nano_balance
 Authorization: Bearer <agent_token>
 \`\`\`
 
@@ -216,6 +240,14 @@ If you get a 404, the vault owner hasn't provisioned a nanopayment wallet for yo
 | 403 | no A2A budget (for hire_invite) | ask the vault owner to grant a budget |
 | 429 | rate or cap limit | back off / wait for reset |
 | 500 | server error | retry with backoff |
+| 503 | Gateway unavailable | retry later |
+
+## Machine-readable surfaces
+
+- OpenAPI: \`${OPENAPI_URL}\`
+- Discovery: \`${API_BASE_URL}/x402/discovery/resources\`
+- A2A card: \`${API_BASE_URL}/.well-known/a2a.json\`
+- x402 well-known: \`${API_BASE_URL}/.well-known/x402.json\`
 `
 
 export default function handler(req: VercelRequest, res: VercelResponse) {

@@ -36,11 +36,11 @@ import {
   AgentNanopaymentClient,
   deriveAgentKey,
   deriveAgentAddress,
+  applyX402Cors,
 } from './nanopayments.js'
+import { RECEIPT_BASE_URL, agentActionUrl } from '../_urls.js'
 
 const MASTER_SEED = process.env.NANOPAYMENT_MASTER_SEED || ''
-
-const RECEIPT_BASE_URL = 'https://payroll.lumma.xyz'
 
 function generateLinkCode(): string {
   return `LMA-LINK-${crypto.randomBytes(4).toString('hex')}`
@@ -217,10 +217,7 @@ async function settleAgentWork(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  applyX402Cors(res)
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   const action = req.query.action as string
@@ -257,7 +254,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           agent_id: data.id,
           name: data.name,
           linking_code: linkCode,
-          instructions: `Install the Lumma Payroll Skill in your agent, then call POST /api/payroll/agent?action=link with { "code": "${linkCode}" }`,
+          instructions: `Install the Lumma Payroll Skill in your agent, then call POST ${agentActionUrl('link')} with { "code": "${linkCode}" }`,
         })
       }
 
@@ -338,6 +335,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // REPORT — Agent reports completed work
       // ─────────────────────────────────────────────
       case 'report': {
+        // x402 first so unpaid marketplace health-checks (GET or POST) receive 402, not 401/405
+        const reportPayment = await requireNanopayment(req, res, ENDPOINT_PRICES.report, agentActionUrl('report'))
+        if (!reportPayment) return // 402 already sent
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
 
         const agent = await authenticateAgent(req)
@@ -346,10 +346,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!checkRateLimit(agent.agent_token)) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
-
-        // ── x402 nanopayment gate (optional — skipped if not configured) ──
-        const reportPayment = await requireNanopayment(req, res, ENDPOINT_PRICES.report, '/api/payroll/agent?action=report')
-        if (!reportPayment) return // 402 already sent
 
         const { task_type, description, metadata } = req.body
         if (!task_type) return res.status(400).json({ error: 'task_type required' })
@@ -713,6 +709,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // hired_by = <paying agent>. The worker links via the existing `link` action.
       // ─────────────────────────────────────────────
       case 'hire_invite': {
+        const hirePayment = await requireNanopayment(req, res, ENDPOINT_PRICES.hire_invite, agentActionUrl('hire_invite'))
+        if (!hirePayment) return
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
 
         const agent = await authenticateAgent(req)
@@ -721,10 +719,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!checkRateLimit(agent.agent_token)) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
-
-        // ── x402 nanopayment gate ──
-        const hirePayment = await requireNanopayment(req, res, ENDPOINT_PRICES.hire_invite, '/api/payroll/agent?action=hire_invite')
-        if (!hirePayment) return
 
         // Only agents that have been granted an A2A budget may hire others.
         if (agent.spend_limit === null || agent.spend_limit === undefined) {
@@ -752,7 +746,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           name: data.name,
           hired_by: agent.id,
           linking_code: linkCode,
-          instructions: `Give this to the agent you're hiring: install the Lumma Payroll Skill, then call POST /api/payroll/agent?action=link with { "code": "${linkCode}", "wallet_address": "0x..." }`,
+          instructions: `Give this to the agent you're hiring: install the Lumma Payroll Skill, then call POST ${agentActionUrl('link')} with { "code": "${linkCode}", "wallet_address": "0x..." }`,
         })
       }
 
@@ -762,6 +756,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // reservation if the on-chain settlement fails. (agent-to-agent nanopayment)
       // ─────────────────────────────────────────────
       case 'pay_agent': {
+        const payPayment = await requireNanopayment(req, res, ENDPOINT_PRICES.pay_agent, agentActionUrl('pay_agent'))
+        if (!payPayment) return
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST required' })
 
         const payer = await authenticateAgent(req)
@@ -770,10 +766,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!checkRateLimit(payer.agent_token)) {
           return res.status(429).json({ error: 'Rate limit exceeded (100 req/min). Slow down.' })
         }
-
-        // ── x402 nanopayment gate ──
-        const payPayment = await requireNanopayment(req, res, ENDPOINT_PRICES.pay_agent, '/api/payroll/agent?action=pay_agent')
-        if (!payPayment) return
 
         const { to_agent_id, amount, task_type, description } = req.body
         if (!to_agent_id) return res.status(400).json({ error: 'to_agent_id required' })

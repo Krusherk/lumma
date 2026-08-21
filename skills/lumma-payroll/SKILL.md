@@ -1,379 +1,334 @@
 ---
 name: lumma-payroll
-description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing — report tasks as they complete and accumulate payouts for settlement. Also supports agent-to-agent (A2A) nanopayments — hire sub-agents and pay them from a granted budget. Supports gas-free x402 nanopayments via Circle Gateway batched settlement — agents can make USDC micropayments as small as $0.000001 without gas. Use when an agent needs to log completed work, check pending earnings, hire another agent, pay another agent, check nanopayment balance, or interact with Lumma's payroll infrastructure. Triggers: report work, log task, submit completion, claim payout, check earnings, lumma payroll, USDC payout, work report, task complete, job done, log completion, hire agent, pay agent, a2a payment, nanopayment, x402, gateway balance, gas-free payment."
+description: "Report completed work to a Lumma payroll vault for USDC compensation on Arc. Supports usage-based billing, agent-to-agent hiring/payments, and gas-free x402 nanopayments via Circle Gateway batched settlement. Use when an agent needs to log completed work, check earnings, hire or pay another agent, or interact with Lumma payroll. Triggers: report work, log task, submit completion, claim payout, check earnings, lumma payroll, USDC payout, hire agent, pay agent, a2a payment, nanopayment, x402, gateway balance."
+metadata:
+  openapi: https://api.lumma.xyz/openapi.json
+  discovery: https://api.lumma.xyz/x402/discovery/resources
+  a2a: https://api.lumma.xyz/.well-known/a2a.json
+  website: https://lumma.xyz
+  skill: https://lumma.xyz/skills/lumma.md
+  category: INFRASTRUCTURE
+  network: eip155:5042002
+  chain: Arc Testnet
+  asset: USDC
+  x402Version: 2
+  scheme: exact
+  extraName: GatewayWalletBatched
+  supportsCircleGateway: true
+  supportsVanillax402: false
+  siwx: false
+homepage: https://lumma.xyz
+license: MIT
 ---
 
-## Overview
+# Lumma Payroll Skill
 
-The Lumma Payroll Skill connects your agent to a Lumma payroll vault on Arc (Circle's stablecoin blockchain). Once linked, your agent can:
+You are connecting to **Lumma** — usage-based USDC payroll for AI agents on Arc (Circle's stablecoin chain).
 
-- Report completed work (research reports, content posts, resolved tickets, etc.)
-- Accumulate USDC payouts based on rules set by the vault owner
-- Check pending and total earnings
-- Receive USDC settlements to a configured wallet address
-- **Hire sub-agents** and pay them from a granted A2A budget (agent-to-agent nanopayments)
-- **Make gas-free x402 micropayments** via Circle Gateway batched settlement
-- **Check nanopayment Gateway balance** and deposit status
+Follow these instructions to link to a payroll vault, report completed work for USDC, hire sub-agents, and make gas-free x402 micropayments.
 
-All payments are in **USDC** on **Arc Testnet** (Chain ID: 5042002).
+| | |
+|---|---|
+| **API base** | `https://api.lumma.xyz` |
+| **Skill** | `https://lumma.xyz/skills/lumma.md` |
+| **OpenAPI** | `https://api.lumma.xyz/openapi.json` |
+| **Discovery** | `https://api.lumma.xyz/x402/discovery/resources` |
+| **Chain** | Arc Testnet (`eip155:5042002`) |
+| **Asset** | USDC (6 decimals) |
 
-## Prerequisites
+All amounts are USDC. Paid endpoints speak **x402 v2** with Circle Gateway batching (`extra.name = GatewayWalletBatched`).
 
-1. A vault owner must create an agent slot and provide you with a **linking code** (format: `LMA-LINK-xxxxxxxx`)
-2. Your agent must have HTTP request capability
-3. Base URL: `https://lumma.xyz`
+---
 
-## Setup — Linking to a Vault
+## Tools
 
-### Step 1: Link with the code
+### `link` — exchange a linking code for a token
 
-```bash
-curl -X POST https://lumma.xyz/api/payroll/agent?action=link \
-  -H "Content-Type: application/json" \
-  -d '{"code": "LMA-LINK-xxxxxxxx"}'
+- **Method:** `POST`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=link`
+- **Auth:** none
+- **x402 price:** free
+
+```
+POST https://api.lumma.xyz/payroll/agent?action=link
+Content-Type: application/json
+
+{ "code": "LMA-LINK-xxxxxxxx", "wallet_address": "0xYourAgentWalletOnArc" }
 ```
 
-Response:
+**Parameters**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `code` | string | yes | One-time linking code from the vault owner (`LMA-LINK-xxxxxxxx`) |
+| `wallet_address` | string | yes | Your USDC payout wallet on Arc Testnet (`0x` + 40 hex) |
+
+**Response**
+
 ```json
-{
-  "agent_token": "lma_at_abc123...",
-  "agent_name": "Research Agent",
-  "agent_type": "research",
-  "message": "Successfully linked."
-}
+{ "agent_token": "lma_at_...", "agent_name": "Research Agent", "agent_type": "research", "payout_wallet": "0x..." }
 ```
 
-### Step 2: Store the token
+Store `agent_token` securely. Use it as `Authorization: Bearer <agent_token>` on every call below.
 
-Save `agent_token` securely. You will use it as `Authorization: Bearer <token>` for all subsequent API calls.
+---
 
-**IMPORTANT:** The linking code is single-use. Once consumed, it cannot be reused. Store the agent_token — it is your permanent credential.
+### `set_wallet` — update payout wallet
 
-## Core Operations
-
-### Report Completed Work
-
-Call this after completing a task to log it for USDC compensation.
+- **Method:** `POST`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=set_wallet`
+- **Auth:** Bearer
+- **x402 price:** free
 
 ```
-POST https://lumma.xyz/api/payroll/agent?action=report
+POST https://api.lumma.xyz/payroll/agent?action=set_wallet
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
+{ "wallet_address": "0xYourNewWalletOnArc" }
+```
+
+---
+
+### `report` — log completed work
+
+- **Method:** `POST`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=report`
+- **Auth:** Bearer
+- **x402 price:** `$0.0001`
+
+```
+POST https://api.lumma.xyz/payroll/agent?action=report
+Authorization: Bearer <agent_token>
+Content-Type: application/json
+PAYMENT-SIGNATURE: <from GatewayClient>
+
 {
   "task_type": "research_report",
-  "description": "Completed market analysis on DeFi yield trends Q2 2026",
-  "metadata": {
-    "word_count": 2400,
-    "sources_cited": 8
-  }
+  "description": "Short human-readable summary of what you did",
+  "metadata": { "word_count": 1500, "sources": 8 }
 }
 ```
 
-**Parameters:**
+**Parameters**
 
-| Field | Required | Description |
-|---|---|---|
-| `task_type` | Yes | Type of work. Must match a rule configured by the vault owner. Common types: `research_report`, `post_approved`, `ticket_resolved`, `data_fetch`, `code_review` |
-| `description` | No | Human-readable summary of what was completed |
-| `metadata` | No | JSON object with task-specific data (word count, sources, model used, etc.) |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `task_type` | string | yes | Must match a vault rule (`research_report`, `post_approved`, `ticket_resolved`, `data_fetch`, `code_review`) |
+| `description` | string | no | Human-readable summary |
+| `metadata` | object | no | Task-specific data |
 
-**Response:**
+**Response**
+
 ```json
 {
   "logged": true,
-  "work_id": "uuid",
-  "task_type": "research_report",
   "payout_amount": "0.050000",
   "pending_total": "0.50",
   "status": "pending",
+  "auto_settled": false,
   "has_rule": true
 }
 ```
 
-**Status values:**
-- `pending` — Logged, awaiting vault owner approval
-- `approved` — Auto-approved (if rule allows), awaiting settlement
-- `settled` — USDC payment has been sent
+If `has_rule` is `false`, tell the vault owner to configure a payout rule for that `task_type`.
 
-**If `has_rule` is false**, the vault owner has not configured a payment rule for this `task_type`. The work is logged but `payout_amount` will be `0`. Ask the vault owner to set a rule.
+---
 
-### Check Earnings
+### `earnings` — check pending / total USDC
+
+- **Method:** `GET`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=earnings`
+- **Auth:** Bearer
+- **x402 price:** free
 
 ```
-GET https://lumma.xyz/api/payroll/agent?action=earnings
+GET https://api.lumma.xyz/payroll/agent?action=earnings
 Authorization: Bearer <agent_token>
 ```
 
-**Response:**
 ```json
 {
   "agent_name": "Research Agent",
   "pending": "0.50",
   "total_earned": "12.35",
   "total_tasks": 247,
-  "status": "active",
   "spend_limit": "50.000000",
   "spend_used": "3.500000",
   "spend_available": "46.500000"
 }
 ```
 
-> **Note:** `spend_limit`, `spend_used`, and `spend_available` only appear if the vault owner has granted you an A2A budget. If they're absent, you don't have hiring/paying permissions.
+`spend_*` fields appear only if the owner granted an A2A budget.
 
-## Agent-to-Agent (A2A) Nanopayments
+---
 
-If the vault owner grants your agent an A2A budget, you can **hire other agents** and **pay them directly** from that budget. The budget is a hard cap — you can never spend more than the owner allowed.
+### `hire_invite` — hire a sub-agent
 
-Check your `earnings` response for `spend_limit` / `spend_available` to see if you have a budget.
-
-### Hire a Sub-Agent
-
-Create a linking code for a new agent you want to hire into the same vault.
+- **Method:** `POST`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=hire_invite`
+- **Auth:** Bearer
+- **x402 price:** `$0.001`
+- **Requires:** A2A budget (`spend_limit` in earnings). Returns `403` if none.
 
 ```
-POST https://lumma.xyz/api/payroll/agent?action=hire_invite
+POST https://api.lumma.xyz/payroll/agent?action=hire_invite
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
-{
-  "name": "Data Fetcher",
-  "agent_type": "data"
-}
+{ "name": "Data Fetcher", "agent_type": "data" }
 ```
 
-**Response:**
-```json
-{
-  "agent_id": "uuid",
-  "name": "Data Fetcher",
-  "hired_by": "your-agent-uuid",
-  "linking_code": "LMA-LINK-abc12345",
-  "instructions": "Give this to the agent you're hiring: install the Lumma Payroll Skill, then call POST /api/payroll/agent?action=link with { \"code\": \"LMA-LINK-abc12345\", \"wallet_address\": \"0x...\" }"
-}
-```
+Give the returned `linking_code` to the hired agent. They call `link`.
 
-The hired agent links via the same `link` action documented above. Once linked, you can pay it.
+---
 
-**Requires:** An A2A budget (check `spend_limit` in earnings). Returns `403` if no budget is granted.
+### `pay_agent` — pay another agent from your budget
 
-### Pay Another Agent
-
-Pay an agent in the same vault from your budget. The payment is settled immediately via the vault.
+- **Method:** `POST`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=pay_agent`
+- **Auth:** Bearer
+- **x402 price:** `$0.0005`
 
 ```
-POST https://lumma.xyz/api/payroll/agent?action=pay_agent
+POST https://api.lumma.xyz/payroll/agent?action=pay_agent
 Authorization: Bearer <agent_token>
 Content-Type: application/json
 
-{
-  "to_agent_id": "target-agent-uuid",
-  "amount": 0.5,
-  "task_type": "data_fetch",
-  "description": "Fetched 500 records from CoinGecko API"
-}
+{ "to_agent_id": "target-agent-uuid", "amount": 0.5, "task_type": "data_fetch", "description": "Fetched 500 records" }
 ```
 
-**Parameters:**
+**Parameters**
 
-| Field | Required | Description |
-|---|---|---|
-| `to_agent_id` | Yes | UUID of the agent to pay (from `hire_invite` response) |
-| `amount` | Yes | USDC amount to pay (must be within your remaining budget) |
-| `task_type` | No | Label for the payment (defaults to `a2a_payment`) |
-| `description` | No | What the payment is for |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `to_agent_id` | string | yes | UUID of the payee (from `hire_invite`) |
+| `amount` | number | yes | USDC amount, must fit remaining budget |
+| `task_type` | string | no | Defaults to `a2a_payment` |
+| `description` | string | no | What the payment is for |
 
-**Response:**
-```json
-{
-  "paid": true,
-  "from_agent": "Orchestrator",
-  "to_agent": "Data Fetcher",
-  "amount": "0.500000",
-  "spend_used": "3.500000",
-  "spend_limit": "50.000000",
-  "spend_available": "46.500000",
-  "settlement": { ... }
-}
+---
+
+### `nano_balance` — Gateway nanopayment balance
+
+- **Method:** `GET`
+- **URL:** `https://api.lumma.xyz/payroll/agent?action=nano_balance`
+- **Auth:** Bearer
+- **x402 price:** free
+
+```
+GET https://api.lumma.xyz/payroll/agent?action=nano_balance
+Authorization: Bearer <agent_token>
 ```
 
-**Error codes for A2A:**
+`404` means the vault owner has not provisioned a nanopayment wallet yet.
 
-| Status | Meaning | Action |
-|---|---|---|
-| `402` | Over budget or no budget granted | Ask the vault owner to raise your `spend_limit` |
-| `403` | No A2A budget (for `hire_invite`) | Ask the owner to grant you a budget first |
-| `404` | Payee agent not found in your vault | Check the `to_agent_id` is correct |
-| `400` | Self-payment or payee not active | Cannot pay yourself; payee must be active with a wallet |
+---
 
-## x402 Nanopayments (Gas-Free Micropayments)
+## x402 payment flow
 
-Lumma integrates Circle Gateway's x402 batched settlement protocol. This enables **gas-free USDC micropayments as small as $0.000001** between agents. Instead of each payment requiring an onchain transaction, agents sign payment authorizations offchain and Circle Gateway batches thousands into a single onchain settlement.
+Paid tools (`report`, `hire_invite`, `pay_agent`) use Circle Gateway batched settlement.
 
-### How x402 Works
+1. Call the endpoint without `PAYMENT-SIGNATURE` → `402 Payment Required` plus a `PAYMENT-REQUIRED` header (base64 JSON).
+2. Decode the header. `accepts[]` lists x402 v2 options: Arc Testnet (`eip155:5042002`), USDC, `scheme: exact`, `extra.name: GatewayWalletBatched`.
+3. Sign an EIP-3009 authorization offchain (zero gas). `validBefore` must be at least 7 days in the future.
+4. Retry with `PAYMENT-SIGNATURE` (base64 of the signed payload).
+5. Server calls `BatchFacilitatorClient.settle()` and returns the resource plus `PAYMENT-RESPONSE`.
 
-Some endpoints (`report`, `hire_invite`, `pay_agent`) are paywalled with x402. The flow:
+**Prices**
 
-1. Agent calls endpoint without payment → receives `402 Payment Required` with a `PAYMENT-REQUIRED` header
-2. Agent's `GatewayClient` reads the 402, signs an EIP-3009 authorization offchain (zero gas)
-3. Agent retries the request with a `PAYMENT-SIGNATURE` header
-4. Server settles via Circle Gateway → resource is served
-
-**Paywalled endpoint prices:**
-
-| Action | Price |
-|--------|-------|
+| Tool | Price |
+|---|---|
 | `report` | $0.0001 |
 | `pay_agent` | $0.0005 |
 | `hire_invite` | $0.001 |
 
-> **Note:** If the vault has not configured nanopayments (no `NANOPAYMENT_SELLER_ADDRESS`), payment gating is bypassed and all endpoints work as before.
+If `NANOPAYMENT_SELLER_ADDRESS` is unset on the server, gating is bypassed (dev mode).
 
-### Check Nanopayment Balance
+### GatewayClient (recommended)
 
-If the vault owner has provisioned a nanopayment wallet for your agent, you can check your Gateway balance:
-
-```
-GET https://lumma.xyz/api/payroll/agent?action=nano_balance
-Authorization: Bearer <agent_token>
-```
-
-**Response:**
-```json
-{
-  "agent_id": "uuid",
-  "agent_name": "Research Agent",
-  "eoa_address": "0x1234...abcd",
-  "wallet_usdc": "0.000000",
-  "gateway_available": "4.999500",
-  "gateway_total": "5.000000",
-  "gateway_deposited": true
-}
-```
-
-If you get a `404`, it means the vault owner hasn't provisioned a nanopayment wallet for you yet. Ask them to run `nano_setup` and `nano_deposit`.
-
-### Using GatewayClient for x402 Payments
-
-To automatically handle the 402 → sign → retry flow, use Circle's `GatewayClient`:
+`GatewayClient.pay()` handles 402 → sign → retry:
 
 ```typescript
-import { GatewayClient } from '@circle-fin/x402-batching/client'
+import { GatewayClient } from "@circle-fin/x402-batching/client"
 
 const client = new GatewayClient({
-  chain: 'arcTestnet',
+  chain: "arcTestnet",
   privateKey: process.env.AGENT_PRIVATE_KEY as `0x${string}`,
 })
 
-// client.pay() handles the entire 402 negotiation automatically
-const { data, status } = await client.pay(
-  'https://lumma.xyz/api/payroll/agent?action=report',
+const { data } = await client.pay(
+  "https://api.lumma.xyz/payroll/agent?action=report",
   {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Authorization': 'Bearer ' + agentToken,
-      'Content-Type': 'application/json',
+      Authorization: "Bearer " + agentToken,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      task_type: 'research_report',
-      description: 'Analyzed DeFi yield trends',
+      task_type: "research_report",
+      description: "Analyzed DeFi yield trends",
     }),
-  }
+  },
 )
-
-console.log(data) // Normal report response
 ```
 
-### x402 Error Codes
+Circle CLI equivalent:
+
+```bash
+circle services pay "https://api.lumma.xyz/payroll/agent?action=report" \
+  --chain ARC \
+  -X POST \
+  -H "Authorization: Bearer $AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data '{"task_type":"research_report","description":"Analyzed DeFi yield trends"}'
+```
+
+---
+
+## Authentication
+
+1. A vault owner issues `LMA-LINK-xxxxxxxx`.
+2. You call `link` with that code and your payout wallet.
+3. You receive `agent_token` (`lma_at_...`). Permanent until revoked.
+4. Send `Authorization: Bearer <agent_token>` on every subsequent request.
+5. Paid endpoints additionally require a valid x402 `PAYMENT-SIGNATURE`.
+
+The linking code is single-use. A leaked agent token can spend at most the remaining A2A budget, never the whole vault.
+
+---
+
+## Errors
 
 | Status | Meaning | Action |
 |---|---|---|
-| `402` (no header) | Nanopayment required | Retry with `PAYMENT-SIGNATURE` header via `GatewayClient.pay()` |
-| `402` (with reason) | Payment settlement failed | Check error reason (insufficient balance, expired signature, etc.) |
-| `503` | Gateway service unavailable | Retry later |
+| 401 | Invalid or revoked token | Re-link with a fresh code |
+| 400 | Missing / invalid field | Check `task_type`, `code`, or `wallet_address` |
+| 402 | x402 payment required or settlement failed | Use `GatewayClient.pay()`; check Gateway balance |
+| 403 | No A2A budget | Ask the vault owner to grant `spend_limit` |
+| 404 | Agent / wallet not found | Check IDs; ask owner to run `nano_setup` |
+| 429 | Rate (100/min) or daily/monthly cap | Back off until reset |
+| 500 | Server error | Retry with backoff |
+| 503 | Gateway unavailable | Retry later |
 
-## Rate Limits
-
-- **100 requests per minute** per agent token
-- If you hit a `429` response, the daily or monthly cap has been reached. Stop reporting until the next period.
-
-## Error Handling
-
-| Status | Meaning | Action |
-|---|---|---|
-| `401` | Invalid or revoked token | Re-link with a new code from the vault owner |
-| `400` | Missing required field | Check that `task_type` is provided |
-| `402` | x402 payment required or failed | Use `GatewayClient.pay()` or check Gateway balance |
-| `429` | Rate or cap limit reached | Wait until daily/monthly cap resets |
-| `500` | Server error | Retry with exponential backoff |
-
-## Best Practices
-
-1. **Always include `task_type`** — This is how the rule engine determines your payout rate
-2. **Add meaningful descriptions** — Helps the vault owner audit work during approval
-3. **Include metadata** — Word counts, sources, model info help justify payouts
-4. **Check earnings periodically** — Monitor your pending balance and total earnings
-5. **Handle `has_rule: false`** — If no rule exists for your task type, notify the user/owner to configure one
-6. **Don't over-report** — Only report genuinely completed, distinct tasks
-7. **Use `GatewayClient.pay()`** — For x402-paywalled endpoints, this handles the full 402 negotiation automatically
-8. **Check `nano_balance` before bulk operations** — Ensure sufficient Gateway balance before making many paid calls
-9. **Deposit once, pay forever** — After the initial Gateway deposit, all x402 payments are gas-free
-
-## Example Integration
-
-```typescript
-// After completing a research task (with x402 support)
-import { GatewayClient } from '@circle-fin/x402-batching/client'
-
-const gateway = new GatewayClient({
-  chain: 'arcTestnet',
-  privateKey: process.env.AGENT_PRIVATE_KEY as `0x${string}`,
-})
-
-async function reportWork(token: string) {
-  // GatewayClient handles 402 → sign → retry automatically
-  const { data } = await gateway.pay(
-    'https://lumma.xyz/api/payroll/agent?action=report',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        task_type: 'research_report',
-        description: 'Analyzed top 10 DeFi protocols by TVL',
-        metadata: { protocols_analyzed: 10, data_sources: 4 },
-      }),
-    }
-  )
-  console.log(`Logged: ${data.payout_amount} USDC pending`)
-}
-
-// Without x402 (if nanopayments not configured on the vault)
-async function reportWorkSimple(token: string) {
-  const res = await fetch('https://lumma.xyz/api/payroll/agent?action=report', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      task_type: 'research_report',
-      description: 'Analyzed top 10 DeFi protocols by TVL',
-      metadata: { protocols_analyzed: 10, data_sources: 4 },
-    }),
-  })
-  const data = await res.json()
-  console.log(`Logged: ${data.payout_amount} USDC pending`)
-}
-```
+---
 
 ## Settlement
 
-Settlement is controlled by the vault owner. They can:
-- **Manually approve** — Review pending work and approve payouts
-- **Auto-settle** — Configure rules to automatically approve payouts under a threshold
-- **Batch settle** — Approve all pending work at once
+Settlement is controlled by the vault owner (manual approval, auto-settle under a threshold, or batch). Once settled, USDC is sent to the agent's payout wallet on Arc Testnet. Receipt: `https://payroll.lumma.xyz/<receipt_id>`.
 
-Once settled, USDC is transferred to the agent's configured wallet address on Arc Testnet. A receipt is generated at `payroll.lumma.xyz/LMA-xxxxxxxx`.
+## Rules
+
+- Rate limit: 100 requests/min per token.
+- Only report genuinely completed, distinct tasks. Always include `task_type`.
+- Use `GatewayClient.pay()` for paid tools.
+- Check `nano_balance` before bulk paid calls.
+- After the initial Gateway deposit, x402 payments are gas-free.
+
+## Machine-readable surfaces
+
+- OpenAPI: `https://api.lumma.xyz/openapi.json`
+- Discovery catalog: `https://api.lumma.xyz/x402/discovery/resources`
+- A2A card: `https://api.lumma.xyz/.well-known/a2a.json`
+- x402 well-known: `https://api.lumma.xyz/.well-known/x402.json`
+- Skill index: `https://api.lumma.xyz/.well-known/agent-skills/index.json`

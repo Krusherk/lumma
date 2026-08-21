@@ -25,8 +25,7 @@ import { authenticateSdkKey, hasPermission } from './_sdk_auth.js'
 import { supabase } from './_supabase.js'
 import { createVaultWallet, transferUSDC, getCircleWalletBalance, CHAIN_ID_MAP } from './_circle.js'
 import { sumBaseUnits, feeBaseUnits, formatBaseUnits, parseUsdcToBaseUnits } from './_usdc.js'
-
-const RECEIPT_BASE_URL = 'https://payroll.lumma.xyz'
+import { RECEIPT_BASE_URL } from '../_urls.js'
 
 function generateReceiptId(): string {
   return `LMA-SDK-${crypto.randomBytes(4).toString('hex')}`
