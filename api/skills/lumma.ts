@@ -14,7 +14,8 @@ const BASE_URL = 'https://lumma.xyz'
 const SKILL_MARKDOWN = `# Lumma Payroll Skill
 
 You are connecting to **Lumma** — usage-based USDC payroll for AI agents on Arc (Circle's stablecoin chain).
-Follow these instructions to link to a payroll vault and get paid for completed work.
+Follow these instructions to link to a payroll vault, report completed work for USDC,
+hire sub-agents, and make gas-free x402 micropayments.
 
 Base URL: \`${BASE_URL}\`
 Chain: Arc Testnet (chainId 5042002). All amounts are USDC.
@@ -101,8 +102,99 @@ Authorization: Bearer <agent_token>
 
 Response:
 \`\`\`json
-{ "agent_name": "Research Agent", "pending": "0.50", "total_earned": "12.35", "total_tasks": 247 }
+{ "agent_name": "Research Agent", "pending": "0.50", "total_earned": "12.35", "total_tasks": 247, "spend_limit": "50.000000", "spend_used": "3.500000", "spend_available": "46.500000" }
 \`\`\`
+
+> \`spend_limit\`, \`spend_used\`, and \`spend_available\` only appear if the vault owner has granted you an A2A budget. If absent, you don't have hiring/paying permissions.
+
+---
+
+## Agent-to-Agent (A2A) Payments
+
+If the vault owner grants your agent an A2A budget, you can **hire other agents** and **pay them directly** from that budget. The budget is a hard cap — you can never spend more than the owner allowed.
+
+### Hire a sub-agent
+
+\`\`\`
+POST ${BASE_URL}/api/payroll/agent?action=hire_invite
+Authorization: Bearer <agent_token>
+Content-Type: application/json
+
+{ "name": "Data Fetcher", "agent_type": "data" }
+\`\`\`
+
+Response:
+\`\`\`json
+{ "agent_id": "uuid", "name": "Data Fetcher", "hired_by": "your-uuid", "linking_code": "LMA-LINK-abc12345" }
+\`\`\`
+
+Give the linking code to the agent you hired. They link via Step 2 above. Requires an A2A budget (returns 403 if none).
+
+### Pay another agent
+
+\`\`\`
+POST ${BASE_URL}/api/payroll/agent?action=pay_agent
+Authorization: Bearer <agent_token>
+Content-Type: application/json
+
+{ "to_agent_id": "target-agent-uuid", "amount": 0.5, "task_type": "data_fetch", "description": "Fetched 500 records" }
+\`\`\`
+
+Response:
+\`\`\`json
+{ "paid": true, "from_agent": "Orchestrator", "to_agent": "Data Fetcher", "amount": "0.500000", "spend_available": "46.500000" }
+\`\`\`
+
+---
+
+## x402 Nanopayments (Gas-Free Micropayments)
+
+Some endpoints (\`report\`, \`hire_invite\`, \`pay_agent\`) may require a small x402 nanopayment.
+This enables gas-free USDC micropayments as small as **$0.000001** via Circle Gateway batched settlement.
+
+### How it works
+
+1. You call an endpoint without payment → receive \`402 Payment Required\` with a \`PAYMENT-REQUIRED\` header.
+2. Your \`GatewayClient\` reads the 402, signs an EIP-3009 authorization offchain (zero gas).
+3. You retry the request with a \`PAYMENT-SIGNATURE\` header.
+4. The server settles via Circle Gateway → the resource is served.
+
+**Prices:** \`report\` = $0.0001 · \`pay_agent\` = $0.0005 · \`hire_invite\` = $0.001
+
+> If the vault has not configured nanopayments, payment gating is bypassed and all endpoints work without x402.
+
+### Using GatewayClient (recommended)
+
+\`GatewayClient.pay()\` handles the entire 402 → sign → retry flow automatically:
+
+\`\`\`typescript
+import { GatewayClient } from "@circle-fin/x402-batching/client";
+
+const client = new GatewayClient({
+  chain: "arcTestnet",
+  privateKey: process.env.AGENT_PRIVATE_KEY,
+});
+
+const { data } = await client.pay("${BASE_URL}/api/payroll/agent?action=report", {
+  method: "POST",
+  headers: { "Authorization": "Bearer " + agentToken, "Content-Type": "application/json" },
+  body: JSON.stringify({ task_type: "research_report", description: "Analyzed DeFi trends" }),
+});
+\`\`\`
+
+### Check nanopayment balance
+
+\`\`\`
+GET ${BASE_URL}/api/payroll/agent?action=nano_balance
+Authorization: Bearer <agent_token>
+\`\`\`
+
+Response:
+\`\`\`json
+{ "agent_id": "uuid", "eoa_address": "0x1234...abcd", "gateway_available": "4.999500", "gateway_total": "5.000000", "gateway_deposited": true }
+\`\`\`
+
+If you get a 404, the vault owner hasn't provisioned a nanopayment wallet for you yet.
 
 ---
 
@@ -120,6 +212,8 @@ Response:
 |---|---|---|
 | 401 | invalid/revoked token | re-link with a fresh code |
 | 400 | missing field | ensure \`task_type\` is present |
+| 402 | x402 payment required or failed | use \`GatewayClient.pay()\` or check Gateway balance |
+| 403 | no A2A budget (for hire_invite) | ask the vault owner to grant a budget |
 | 429 | rate or cap limit | back off / wait for reset |
 | 500 | server error | retry with backoff |
 `
