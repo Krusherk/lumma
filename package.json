@@ -19,6 +19,7 @@
     "@circle-fin/x402-batching": "^3.3.0",
     "@lifi/widget": "^3.40.12",
     "@mysten/dapp-kit": "^1.0.6",
+    "@mysten/sui": "^2.26.2",
     "@privy-io/react-auth": "^2.0.0",
     "@privy-io/wagmi": "^1.0.0",
     "@solana/wallet-adapter-react": "^0.15.39",
