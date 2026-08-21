@@ -249,7 +249,7 @@ async function handleRegisterWorker(
       rollingIntervalDays: spendingLimits?.rollingIntervalDays || 1,
     },
     allowAutonomousHiring: !!allowAutonomousHiring,
-    status: payoutWallet ? 'active' : 'pending_wallet',
+    workerStatus: payoutWallet ? 'active' : 'pending_wallet',
   })
 }
 
@@ -370,10 +370,10 @@ async function handleSettleTask(
     const result = await transferUSDC(
       company.vault_wallet_id,
       recipient.payout_wallet,
-      amount,
-      chainId,
+      amountNum.toFixed(6),
+      chain,
     )
-    txHash = result.transactionHash || result.id || ''
+    txHash = result.txHash || result.id || ''
   } catch (transferErr: any) {
     console.error('[sdk] Transfer failed:', transferErr)
     return res.status(500).json({

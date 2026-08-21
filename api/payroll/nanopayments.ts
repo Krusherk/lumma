@@ -315,7 +315,14 @@ export class AgentNanopaymentClient {
    * Pay for an x402-protected resource.
    * Handles the full 402 negotiation flow automatically.
    */
-  async pay<T = any>(url: string, options?: RequestInit) {
+  async pay<T = any>(
+    url: string,
+    options?: {
+      method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+      body?: unknown
+      headers?: Record<string, string>
+    },
+  ) {
     return this.client.pay<T>(url, options)
   }
 
