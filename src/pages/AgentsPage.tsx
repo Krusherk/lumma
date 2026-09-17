@@ -1,30 +1,11 @@
 /**
- * AgentsPage — Public landing for connecting AI agents to Lumma payroll.
- *
- * URL: /agents
- * The "paste this into your agent" entry point. Any compatible coding/AI
- * agent can read /skills/lumma.md and follow the instructions to link to a
- * payroll vault and report completed work for USDC.
+ * AgentsPage — Private landing for Agent Payroll.
+ * Public visitors book a demo. Access-code holders are pointed at the app.
  */
-import { useState } from 'react'
+import { DEMO_BOOKING_URL, APP_URL } from '../config/demo'
 import './AgentsPage.css'
 
-const SKILL_URL = 'https://lumma.xyz/skills/lumma.md'
-const PASTE_COMMAND = `read ${SKILL_URL} and follow the instructions to connect to a Lumma payroll vault and report completed work`
-
 export default function AgentsPage() {
-  const [copied, setCopied] = useState(false)
-
-  const copy = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {
-      /* clipboard unavailable */
-    }
-  }
-
   return (
     <div className="agents">
       <div className="agents-inner">
@@ -35,63 +16,47 @@ export default function AgentsPage() {
 
         <h1>Put your agent on payroll.</h1>
         <p className="agents-sub">
-          Any compatible coding or AI agent can read the Lumma skill, link to a payroll
-          vault, and get paid in USDC on Arc for completed work. No SDK, no install — just paste.
+          Programmable USDC payroll for employees, contractors, and AI agents on Arc.
+          Agent Payroll is private — book a demo to get access.
         </p>
 
-        <div className="agents-paste">
-          <div className="agents-paste-head">
-            <span className="agents-dot" /> paste into your agent
-          </div>
-          <div className="agents-paste-body">
-            <code>
-              <span className="agents-prompt">$</span> {PASTE_COMMAND}
-            </code>
-            <button className="agents-copy" onClick={() => copy(PASTE_COMMAND)}>
-              {copied ? 'Copied ✓' : 'Copy'}
-            </button>
-          </div>
+        <div className="agents-links" style={{ marginBottom: 48 }}>
+          <a className="agents-btn" href={DEMO_BOOKING_URL}>Book a demo</a>
+          <a className="agents-btn ghost" href={APP_URL}>Open Bridge & Swap</a>
         </div>
-
-        <p className="agents-hint">
-          Your agent will fetch <a href={SKILL_URL} target="_blank" rel="noreferrer">{SKILL_URL}</a> and
-          follow it. API calls go to <code>https://api.lumma.xyz/payroll/agent</code>.
-          You'll need a one-time <strong>linking code</strong> (<code>LMA-LINK-…</code>) from a vault owner.
-        </p>
 
         <div className="agents-steps">
           <div className="agents-step">
             <span className="agents-step-n">1</span>
             <div>
-              <h3>Link</h3>
-              <p>Agent exchanges its <code>LMA-LINK</code> code for a permanent bearer token.</p>
+              <h3>Create a vault</h3>
+              <p>Deploy a dedicated USDC payroll account on Arc.</p>
             </div>
           </div>
           <div className="agents-step">
             <span className="agents-step-n">2</span>
             <div>
-              <h3>Report work</h3>
-              <p>After each task, the agent posts a <code>task_type</code> + details. Lumma prices it by your rules.</p>
+              <h3>Add your team</h3>
+              <p>Register people, contractors, and AI agents with payout wallets and rates.</p>
             </div>
           </div>
           <div className="agents-step">
             <span className="agents-step-n">3</span>
             <div>
-              <h3>Get paid</h3>
-              <p>Work accumulates; the owner approves (or auto-settle pays instantly). USDC lands on Arc with a public receipt.</p>
+              <h3>Settle in USDC</h3>
+              <p>Recurring payroll for humans, per-task pay for agents, with on-chain receipts.</p>
             </div>
           </div>
         </div>
 
         <div className="agents-owner">
-          <h2>Run a vault?</h2>
+          <h2>Already invited?</h2>
           <p>
-            Vault owners create agent slots, set per-task rates, and approve payouts from the
-            Lumma chat agent. Generate a linking code with <code>"link an agent"</code>.
+            After your demo you'll get an access code. Open Lumma, go to Agent Payroll,
+            and enter it under “Have an access code?”
           </p>
           <div className="agents-links">
-            <a className="agents-btn" href="https://testnet.lumma.xyz">Open Lumma</a>
-            <a className="agents-btn ghost" href={SKILL_URL} target="_blank" rel="noreferrer">View raw skill</a>
+            <a className="agents-btn ghost" href={APP_URL}>Open Lumma</a>
           </div>
         </div>
       </div>

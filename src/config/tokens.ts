@@ -1,5 +1,7 @@
 /**
  * Token metadata for UI display and contract interactions.
+ * USDC addresses: https://developers.circle.com/stablecoins/usdc-contract-addresses
+ * EURC addresses: https://developers.circle.com/stablecoins/eurc-contract-addresses
  */
 export const TOKENS: Record<string, {
   symbol: string
@@ -16,12 +18,12 @@ export const TOKENS: Record<string, {
     color: '#2775ca',
     icon: '💲',
     addresses: {
-      arc_testnet: '0x3600000000000000000000000000000000000000',
-      ethereum_sepolia: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-      base_sepolia: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-      arbitrum_sepolia: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-      op_sepolia: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-      polygon_amoy: '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582',
+      arc: '0x3600000000000000000000000000000000000000',
+      ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      base: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      arbitrum: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+      optimism: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+      polygon: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
     },
   },
   EURC: {
@@ -31,28 +33,22 @@ export const TOKENS: Record<string, {
     color: '#1b6ef5',
     icon: '€',
     addresses: {
-      arc_testnet: '0x08210F9170F89Ab7658F0B5E3fF39b0E03C594D4',
+      arc: '0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1',
     },
   },
 }
 
 /**
- * USDC token addresses on each supported testnet.
- * Source: Circle official docs + block explorer verification.
+ * USDC token addresses on each supported mainnet.
+ * Arc USDC is native gas (ERC-20 interface at this precompile, 6 decimals).
  */
 export const USDC_ADDRESSES: Record<number, `0x${string}`> = {
-  // Arc Testnet — native gas token is USDC at this special address
-  5042002: '0x3600000000000000000000000000000000000000',
-  // Ethereum Sepolia
-  11155111: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-  // Base Sepolia
-  84532: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-  // Arbitrum Sepolia
-  421614: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-  // OP Sepolia
-  11155420: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-  // Polygon Amoy
-  80002: '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582',
+  5042: '0x3600000000000000000000000000000000000000',
+  1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  8453: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+  10: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+  137: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
 }
 
 /** Standard ERC-20 ABI for balanceOf */

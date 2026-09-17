@@ -1,5 +1,5 @@
-import { arcTestnet } from './chains'
-import { baseSepolia, sepolia, arbitrumSepolia, polygonAmoy } from 'viem/chains'
+import { arcMainnet } from './chains'
+import { mainnet, base, arbitrum, optimism, polygon } from 'viem/chains'
 
 export const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID
 
@@ -13,6 +13,6 @@ export const privyConfig = {
   embeddedWallets: {
     createOnLogin: 'users-without-wallets' as const,
   },
-  supportedChains: [arcTestnet, sepolia, baseSepolia, arbitrumSepolia, polygonAmoy],
-  defaultChain: arcTestnet,
+  supportedChains: [arcMainnet, mainnet, base, arbitrum, optimism, polygon],
+  defaultChain: arcMainnet,
 }

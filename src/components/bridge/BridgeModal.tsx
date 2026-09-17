@@ -21,45 +21,47 @@ interface BridgeModalProps {
 }
 
 const CHAIN_EXPLORERS: Record<number, string> = {
-  5042002: 'https://testnet.arcscan.app',
-  11155111: 'https://sepolia.etherscan.io',
-  84532: 'https://sepolia.basescan.org',
-  421614: 'https://sepolia.arbiscan.io',
-  80002: 'https://amoy.polygonscan.com',
+  5042: 'https://explorer.arc.io',
+  1: 'https://etherscan.io',
+  8453: 'https://basescan.org',
+  42161: 'https://arbiscan.io',
+  137: 'https://polygonscan.com',
+  10: 'https://optimistic.etherscan.io',
 }
 
 function getTimeEstimate(mode: string, sourceChainId: number): string {
   if (mode === 'swap') return '< 5 seconds'
   switch (sourceChainId) {
-    case 5042002: return '~10 seconds (Arc has instant finality)'
-    case 11155111: return '~2-3 minutes (Ethereum needs block confirmations)'
-    case 84532: return '~1-2 minutes (Base L2 finality)'
-    case 421614: return '~1-2 minutes (Arbitrum L2 finality)'
-    case 80002: return '~1-2 minutes (Polygon finality)'
+    case 5042: return '~10 seconds (Arc has instant finality)'
+    case 1: return '~2-3 minutes (Ethereum needs block confirmations)'
+    case 8453: return '~1-2 minutes (Base L2 finality)'
+    case 42161: return '~1-2 minutes (Arbitrum L2 finality)'
+    case 137: return '~1-2 minutes (Polygon finality)'
+    case 10: return '~1-2 minutes (Optimism L2 finality)'
     default: return '~2 minutes'
   }
 }
 
 function getGasErrorInfo(error: string, sourceChainId: number): { message: string; fix: string; link: string } | null {
   if (error.includes('insufficient funds for gas') || error.includes('insufficient funds')) {
-    if (sourceChainId === 5042002) {
+    if (sourceChainId === 5042) {
       return {
         message: 'You need USDC on Arc to pay for gas fees.',
-        fix: 'Get free testnet USDC from the faucet:',
-        link: 'https://faucet.circle.com',
+        fix: 'Fund your wallet with USDC on Arc.',
+        link: 'https://explorer.arc.io',
       }
     }
     return {
-      message: `You need testnet ETH on the source chain to pay for gas fees.`,
-      fix: 'Get free Sepolia ETH from Google Cloud faucet:',
-      link: 'https://cloud.google.com/application/web3/faucet/ethereum/sepolia',
+      message: `You need ETH on the source chain to pay for gas fees.`,
+      fix: 'Fund your wallet with native gas on the source chain.',
+      link: 'https://app.lumma.xyz',
     }
   }
   if (error.includes('Insufficient USDC')) {
     return {
       message: error,
-      fix: 'Get free testnet USDC from Circle faucet:',
-      link: 'https://faucet.circle.com',
+      fix: 'Bridge USDC onto the source chain, then try again.',
+      link: 'https://app.lumma.xyz',
     }
   }
   return null
@@ -76,8 +78,8 @@ export default function BridgeModal({
   if (step === 'idle') return null
 
   const isLoading = step !== 'success' && step !== 'error'
-  const srcExplorer = CHAIN_EXPLORERS[sourceChainId] || 'https://testnet.arcscan.app'
-  const dstExplorer = CHAIN_EXPLORERS[destChainId] || 'https://testnet.arcscan.app'
+  const srcExplorer = CHAIN_EXPLORERS[sourceChainId] || 'https://explorer.arc.io'
+  const dstExplorer = CHAIN_EXPLORERS[destChainId] || 'https://explorer.arc.io'
   const timeEstimate = getTimeEstimate(mode, sourceChainId)
   const gasInfo = step === 'error' ? getGasErrorInfo(error, sourceChainId) : null
 

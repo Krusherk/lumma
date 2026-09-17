@@ -1,39 +1,47 @@
 import { http, fallback } from 'wagmi'
 import { createConfig } from '@privy-io/wagmi'
-import { arcTestnet } from './chains'
+import { arcMainnet, ARC_RPC_URL } from './chains'
 import {
-  sepolia,
-  baseSepolia,
-  arbitrumSepolia,
-  optimismSepolia,
-  polygonAmoy,
+  mainnet,
+  base,
+  arbitrum,
+  optimism,
+  polygon,
 } from 'viem/chains'
 
+const ALCHEMY = 'yY2DFVAadrwKpQLwJ-8L2'
+const INFURA = 'cca7556247f2413c97c39723f0fe7526'
+
 export const wagmiConfig = createConfig({
-  chains: [arcTestnet, sepolia, baseSepolia, arbitrumSepolia, optimismSepolia, polygonAmoy],
+  chains: [arcMainnet, mainnet, base, arbitrum, optimism, polygon],
   transports: {
-    [arcTestnet.id]: http('https://rpc.testnet.arc.network'),
-    [sepolia.id]: fallback([
-      http('https://eth-sepolia.g.alchemy.com/v2/yY2DFVAadrwKpQLwJ-8L2'),
+    [arcMainnet.id]: fallback([
+      http(ARC_RPC_URL),
+      http('https://rpc.mainnet.arc.io'),
+      http('https://rpc.drpc.mainnet.arc.io'),
+    ]),
+    [mainnet.id]: fallback([
+      http(`https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY}`),
+      http(`https://mainnet.infura.io/v3/${INFURA}`),
       http(),
     ]),
-    [baseSepolia.id]: fallback([
-      http('https://base-sepolia.g.alchemy.com/v2/yY2DFVAadrwKpQLwJ-8L2'),
-      http('https://base-sepolia.infura.io/v3/cca7556247f2413c97c39723f0fe7526'),
+    [base.id]: fallback([
+      http(`https://base-mainnet.g.alchemy.com/v2/${ALCHEMY}`),
+      http(`https://base-mainnet.infura.io/v3/${INFURA}`),
       http(),
     ]),
-    [arbitrumSepolia.id]: fallback([
-      http('https://arb-sepolia.g.alchemy.com/v2/yY2DFVAadrwKpQLwJ-8L2'),
-      http('https://arbitrum-sepolia.infura.io/v3/cca7556247f2413c97c39723f0fe7526'),
+    [arbitrum.id]: fallback([
+      http(`https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY}`),
+      http(`https://arbitrum-mainnet.infura.io/v3/${INFURA}`),
       http(),
     ]),
-    [optimismSepolia.id]: fallback([
-      http('https://opt-sepolia.g.alchemy.com/v2/yY2DFVAadrwKpQLwJ-8L2'),
-      http('https://optimism-sepolia.infura.io/v3/cca7556247f2413c97c39723f0fe7526'),
+    [optimism.id]: fallback([
+      http(`https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY}`),
+      http(`https://optimism-mainnet.infura.io/v3/${INFURA}`),
       http(),
     ]),
-    [polygonAmoy.id]: fallback([
-      http('https://polygon-amoy.g.alchemy.com/v2/yY2DFVAadrwKpQLwJ-8L2'),
+    [polygon.id]: fallback([
+      http(`https://polygon-mainnet.g.alchemy.com/v2/${ALCHEMY}`),
       http(),
     ]),
   },

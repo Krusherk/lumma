@@ -7,11 +7,18 @@ import { useLiFiTransfers, type LiFiTransfer } from '../../hooks/useLiFiTransfer
 import './TransferHistory.css'
 
 const CHAIN_META: Record<number, { name: string; logo: string }> = {
-  5042002: { name: 'Arc', logo: '/images/arclogo.jpg' },
+  5042: { name: 'Arc', logo: '/images/arclogo.jpg' },
+  1: { name: 'Ethereum', logo: '/images/eth.jpg' },
+  8453: { name: 'Base', logo: '/images/base.jpg' },
+  42161: { name: 'Arbitrum', logo: '/images/arbitrum.jpg' },
+  10: { name: 'Optimism', logo: '/images/eth.jpg' },
+  137: { name: 'Polygon', logo: '/images/polygon.png' },
+  // Historical testnet rows still render if they appear in LI.FI history
+  5042002: { name: 'Arc Testnet', logo: '/images/arclogo.jpg' },
   11155111: { name: 'Sepolia', logo: '/images/eth.jpg' },
-  84532: { name: 'Base', logo: '/images/base.jpg' },
-  421614: { name: 'Arbitrum', logo: '/images/arbitrum.jpg' },
-  11155420: { name: 'OP', logo: '/images/eth.jpg' },
+  84532: { name: 'Base Sepolia', logo: '/images/base.jpg' },
+  421614: { name: 'Arb Sepolia', logo: '/images/arbitrum.jpg' },
+  11155420: { name: 'OP Sepolia', logo: '/images/eth.jpg' },
 }
 
 function chainLabel(chainId: number) {

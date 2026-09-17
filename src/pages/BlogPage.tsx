@@ -597,7 +597,7 @@ export default function BlogPage() {
             <div className="bg-footer-links">
               <div className="bg-footer-col">
                 <h5>Product</h5>
-                <a href="https://testnet.lumma.xyz">Testnet</a>
+                <a href="https://app.lumma.xyz">App</a>
                 <a href="https://docs.lumma.xyz">Documentation</a>
               </div>
               <div className="bg-footer-col">

@@ -54,9 +54,9 @@ export default function BridgePanel() {
   const feeDebounce = useRef<ReturnType<typeof setTimeout>>()
 
   // Real balance from the correct chain (swap always uses Arc)
-  const balanceChainId = mode === 'swap' ? 5042002 : sourceChain.chainId
+  const balanceChainId = mode === 'swap' ? 5042 : sourceChain.chainId
   const balanceTokenAddr = mode === 'swap'
-    ? (swapTokenIn === 'USDC' ? USDC_ADDRESSES[5042002] : TOKENS.EURC.addresses.arc_testnet as `0x${string}`)
+    ? (swapTokenIn === 'USDC' ? USDC_ADDRESSES[5042] : TOKENS.EURC.addresses.arc as `0x${string}`)
     : USDC_ADDRESSES[sourceChain.chainId]
   const usdcAddr = USDC_ADDRESSES[sourceChain.chainId]
 
@@ -160,7 +160,7 @@ export default function BridgePanel() {
     // Check sufficient balance
     if (balanceData && amountBig > balanceData.value) {
       setStep('error')
-      setError(`Insufficient USDC on ${sourceChain.shortName}. You have ${displayBalance} USDC but need ${amount} USDC. Get testnet USDC from faucet.circle.com`)
+      setError(`Insufficient USDC on ${sourceChain.shortName}. You have ${displayBalance} USDC but need ${amount} USDC.`)
       return
     }
 
@@ -277,11 +277,11 @@ export default function BridgePanel() {
         setError('Transaction cancelled.')
       } else if (msg.includes('insufficient funds for gas') || msg.includes('insufficient funds')) {
         const chainName = sourceChain.shortName
-        const isArc = sourceChain.chainId === 5042002
+        const isArc = sourceChain.chainId === 5042
         setError(
           isArc
-            ? `No USDC for gas on Arc. Get testnet USDC at faucet.circle.com`
-            : `No ${chainName} ETH for gas. Get free testnet ETH at cloud.google.com/application/web3/faucet/ethereum/sepolia`
+            ? `No USDC for gas on Arc.`
+            : `No ${chainName} ETH for gas.`
         )
       } else if (msg.includes('rate limit')) {
         setError('RPC rate limited. Wait a few seconds and try again.')
@@ -302,9 +302,9 @@ export default function BridgePanel() {
       setStatusMsg('Loading swap SDK...')
 
       // Swap happens on Arc — switch wallet if needed
-      if (connectedChainId !== 5042002) {
+      if (connectedChainId !== 5042) {
         setStatusMsg('Switching to Arc Testnet...')
-        await switchChainAsync({ chainId: 5042002 })
+        await switchChainAsync({ chainId: 5042 })
       }
 
       // Dynamic import AppKit (full SDK, not swap-kit)
@@ -351,7 +351,7 @@ export default function BridgePanel() {
       if (msg.includes('User rejected') || msg.includes('user rejected')) {
         setError('Transaction cancelled.')
       } else if (msg.includes('insufficient funds')) {
-        setError('Insufficient USDC on Arc for swap. Get testnet USDC at faucet.circle.com')
+        setError('Insufficient USDC on Arc for swap.')
       } else {
         setError(msg)
       }

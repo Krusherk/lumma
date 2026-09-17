@@ -6,11 +6,12 @@ import { USDC_ADDRESSES } from '../../config/cctp'
 import './WalletDropdown.css'
 
 const BALANCE_CHAINS = [
-  { name: 'Arc Testnet', chainId: 5042002, logo: '/images/arclogo.jpg' },
-  { name: 'Ethereum Sepolia', chainId: 11155111, logo: '/images/eth.jpg' },
-  { name: 'Base Sepolia', chainId: 84532, logo: '/images/base.jpg' },
-  { name: 'Arbitrum Sepolia', chainId: 421614, logo: '/images/arbitrum.jpg' },
-  { name: 'Polygon Amoy', chainId: 80002, logo: '/images/polygon.png' },
+  { name: 'Arc', chainId: 5042, logo: '/images/arclogo.jpg' },
+  { name: 'Ethereum', chainId: 1, logo: '/images/eth.jpg' },
+  { name: 'Base', chainId: 8453, logo: '/images/base.jpg' },
+  { name: 'Arbitrum', chainId: 42161, logo: '/images/arbitrum.jpg' },
+  { name: 'Optimism', chainId: 10, logo: '/images/eth.jpg' },
+  { name: 'Polygon', chainId: 137, logo: '/images/polygon.png' },
 ]
 
 function ChainBalance({ chainId, name, logo, walletAddr }: { chainId: number; name: string; logo: string; walletAddr: `0x${string}` }) {
@@ -96,13 +97,9 @@ export default function WalletDropdown() {
 
             {/* Actions */}
             <div className="wd-actions">
-              <a href="https://faucet.circle.com" target="_blank" rel="noopener noreferrer" className="wd-action">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M2 12h20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
-                Get Testnet USDC
-              </a>
-              <a href={`https://testnet.arcscan.app/address/${walletAddr}`} target="_blank" rel="noopener noreferrer" className="wd-action">
+              <a href={`https://explorer.arc.io/address/${walletAddr}`} target="_blank" rel="noopener noreferrer" className="wd-action">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                View on ArcScan
+                View on Explorer
               </a>
               <button className="wd-action disconnect" onClick={() => { disconnect(); logout(); setIsOpen(false) }} type="button">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>

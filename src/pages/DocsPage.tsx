@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import ShaderBackground from '../components/ShaderBackground'
+import { APP_URL } from '../config/demo'
 import './DocsPage.css'
 
 type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk' | 'skill' | 'api' | 'nanopay'
@@ -137,7 +138,7 @@ export default function DocsPage() {
             <button className="docs-header-search" onClick={() => setSearchOpen(true)} aria-label="Search">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
             </button>
-            <a href="https://testnet.lumma.xyz" className="docs-header-cta">Use Lumma</a>
+            <a href={APP_URL} className="docs-header-cta">Use Lumma</a>
           </div>
         </header>
       )}
@@ -167,7 +168,7 @@ export default function DocsPage() {
                 <button className="docs-hero-nav-search" onClick={() => setSearchOpen(true)} aria-label="Search">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
                 </button>
-                <a href="https://testnet.lumma.xyz" className="docs-hero-nav-cta">Use Lumma</a>
+                <a href={APP_URL} className="docs-hero-nav-cta">Use Lumma</a>
               </div>
             </nav>
 
@@ -381,8 +382,8 @@ function SectionBridge() {
   return (
     <section>
       <h1>Bridge & Swap</h1>
-      <span className="docs-status live">Live on Testnet</span>
-      <p>Move USDC between chains (bridging) and convert between stablecoins on the same chain (swapping).</p>
+      <span className="docs-status live">Live on Mainnet</span>
+      <p>Move USDC between chains (bridging) and convert between stablecoins on the same chain (swapping). The in-app widget is LI.FI, pre-selected to Arc → Base USDC, restricted to mainnet chain IDs: Arc (5042), Ethereum (1), Base (8453), Arbitrum (42161), Optimism (10), Polygon (137).</p>
       <h3>How bridging works</h3>
       <ol>
         <li><strong>Approve</strong> — Your wallet authorizes the CCTP contract.</li>
@@ -405,7 +406,7 @@ function SectionBalance() {
   return (
     <section>
       <h1>Unified Balance</h1>
-      <span className="docs-status live">Live on Testnet</span>
+      <span className="docs-status live">Live on Mainnet</span>
       <p>Multi-chain portfolio dashboard aggregating your stablecoin holdings in real time across every supported chain.</p>
       <h3>Capabilities</h3>
       <ul>
@@ -454,8 +455,12 @@ function SectionAgents() {
   return (
     <section>
       <h1>Agent Payroll</h1>
-      <span className="docs-status live">Live on Testnet</span>
-      <p>Agent Payroll is payroll infrastructure for <strong>hybrid teams</strong> — human employees, contractors, and AI agents — all paid in USDC from a single vault on Arc.</p>
+      <span className="docs-status private">Private — Book a demo</span>
+      <p>Agent Payroll is payroll infrastructure for <strong>hybrid teams</strong> — human employees, contractors, and AI agents — all paid in USDC from a single vault on Arc. It is not publicly available; book a demo to get access.</p>
+      <div className="docs-callout">
+        <div className="docs-callout-title">Private access</div>
+        <p>Bridge &amp; Swap is live on mainnet. Agent Payroll stays invite-only. Email <a href="mailto:support@lumma.xyz?subject=Book%20a%20demo%20%E2%80%94%20Agent%20Payroll">support@lumma.xyz</a> to book a demo — you'll receive an access code after.</p>
+      </div>
 
       <h3>One vault, two ways to pay</h3>
       <ul>
@@ -595,7 +600,8 @@ function SectionRoadmap() {
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>August 2026 — Embedded Payroll SDK</h3><p>"Stripe for Agents" — external platforms can embed Lumma payroll with a few API calls.</p></div></div>
         <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>August 2026 — x402 + api.lumma.xyz</h3><p>Circle Gateway nanopayments, public skill, OpenAPI, and the agent API subdomain.</p></div></div>
         <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Q3 2026 — Points + FX Send</h3><p>Points reward system. FX Send with real-time stablecoin conversion.</p></div></div>
-        <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Q4 2026 — Yield Radar + Mainnet</h3><p>Cross-chain yield aggregator. Production mainnet launch.</p></div></div>
+        <div className="docs-tl-item done"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>September 2026 — Mainnet Bridge &amp; Swap</h3><p>LI.FI widget on Arc, Ethereum, Base, Arbitrum, Optimism, and Polygon. Agent Payroll remains private (demo access).</p></div></div>
+        <div className="docs-tl-item"><div className="docs-tl-dot" /><div className="docs-tl-content"><h3>Next — Yield Radar + FX Send</h3><p>Cross-chain yield aggregator and cross-border stablecoin send.</p></div></div>
       </div>
       <div className="docs-callout">
         <div className="docs-callout-title">A note on timelines</div>
@@ -609,7 +615,7 @@ function SectionSdk() {
   return (
     <section>
       <h1>Embedded Payroll SDK</h1>
-      <span className="docs-status live">Live on Testnet</span>
+      <span className="docs-status private">Private — Book a demo</span>
       <p className="docs-lead">
         The Lumma SDK lets AI agent platforms, developer frameworks, marketplaces, and autonomous organizations integrate 
         <strong> programmable USDC payroll infrastructure</strong> directly into their applications — with just a few API calls.
@@ -832,7 +838,7 @@ function SectionSkill() {
   return (
     <section>
       <h1>Agent Skill</h1>
-      <span className="docs-status live">Live on Testnet</span>
+      <span className="docs-status private">Private — Book a demo</span>
       <p className="docs-lead">
         The Lumma Payroll Skill is a markdown file any coding or AI agent can read and follow.
         No SDK install required. The agent fetches the skill, links to a vault, and reports work for USDC.
@@ -951,7 +957,7 @@ function SectionApi() {
   return (
     <section>
       <h1>API Reference</h1>
-      <span className="docs-status live">Live on Testnet</span>
+      <span className="docs-status private">Private — Book a demo</span>
       <p className="docs-lead">
         Agent-facing payroll lives on <code>https://api.lumma.xyz</code>. Paths do <strong>not</strong> include <code>/api</code>.
         Chain: Arc Testnet (<code>eip155:5042002</code>). Amounts are USDC, 6 decimals.
@@ -1220,7 +1226,7 @@ function SectionNanopay() {
   return (
     <section>
       <h1>Nanopayments (x402)</h1>
-      <span className="docs-status live">Live on Testnet</span>
+      <span className="docs-status private">Private — Book a demo</span>
       <p className="docs-lead">
         Gas-free USDC micropayments as small as <strong>$0.000001</strong>, powered by Circle Gateway batched settlement.
         Enable AI agents to pay for compute, data, and services at high frequency without gas friction.

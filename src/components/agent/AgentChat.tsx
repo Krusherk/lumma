@@ -1,10 +1,11 @@
 /**
  * AgentChat — AI-powered payroll chat interface.
- * Gated behind invite codes, powered by OpenRouter + Circle.
+ * Public surface is a book-a-demo wall. Invite codes unlock the chat for demo users.
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAccount } from 'wagmi'
 import { usePrivy } from '@privy-io/react-auth'
+import { DEMO_BOOKING_URL } from '../../config/demo'
 import './AgentChat.css'
 
 interface Message {
@@ -27,24 +28,12 @@ const SUGGESTIONS = [
 
 const LUMMA_LOGO = '/images/lumma.svg'
 
-// ── TEMPORARY public access flag ──
-// When VITE_PAYROLL_PUBLIC === 'true', Agent Payroll is open to ANY connected
-// wallet with NO invite code. This is intentionally temporary — flip the env
-// var back to 'false' (or remove it) to re-enable the invite-code gate.
-const PAYROLL_PUBLIC = import.meta.env.VITE_PAYROLL_PUBLIC === 'true'
-
-// Derive a stable, wallet-scoped session id for public (no-code) access.
-// The chat API already accepts any sessionId beginning with "LMA-".
-function publicSessionId(address: string): string {
-  return `LMA-PUBLIC-${address.slice(2, 10).toUpperCase()}`
-}
-
-export default function AgentChat() {
+export default function AgentChat({ demoUrl = DEMO_BOOKING_URL }: { demoUrl?: string }) {
   const { address } = useAccount()
   const { authenticated, login } = usePrivy()
 
-  // Invite code gate
   const [codeInput, setCodeInput] = useState('')
+  const [showCode, setShowCode] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('lma_sess_v2')
@@ -53,16 +42,6 @@ export default function AgentChat() {
   })
   const [codeError, setCodeError] = useState('')
   const [validating, setValidating] = useState(false)
-
-  // ── Public access: auto-create a session for any connected wallet ──
-  // Temporary bypass of the invite-code gate, controlled by VITE_PAYROLL_PUBLIC.
-  useEffect(() => {
-    if (PAYROLL_PUBLIC && authenticated && address && !sessionId) {
-      const sid = publicSessionId(address)
-      setSessionId(sid)
-      localStorage.setItem('lma_sess_v2', sid)
-    }
-  }, [authenticated, address, sessionId])
 
 
   // Chat state
@@ -83,7 +62,7 @@ export default function AgentChat() {
       setMessages([{
         id: 'welcome',
         role: 'assistant',
-        content: 'Welcome to Lumma Payroll.\n\nI can help you manage USDC payroll on Arc Testnet — create vaults, add contractors, and run payments.\n\nWhat would you like to do?',
+        content: 'Welcome to Lumma Payroll.\n\nI can help you manage USDC payroll on Arc — create vaults, add contractors, and run payments.\n\nWhat would you like to do?',
         timestamp: new Date(),
       }])
     }
@@ -203,49 +182,56 @@ export default function AgentChat() {
     }
   }
 
-  // ── Not connected ──
-  if (!authenticated || !address) {
-    return (
-      <div className="ac-gate">
-        <div className="ac-gate-logo">
-          <img src={LUMMA_LOGO} alt="Lumma" />
-        </div>
-        <h3>Connect Wallet</h3>
-        <p>Connect your wallet to access Agent Payroll.</p>
-        <button className="ac-btn primary" onClick={login}>Connect Wallet</button>
-      </div>
-    )
-  }
-
-  // ── Invite code gate ──
+  // ── Private: book a demo (invite code still unlocks booked users) ──
   if (!sessionId) {
     return (
       <div className="ac-gate">
         <div className="ac-gate-logo">
           <img src={LUMMA_LOGO} alt="Lumma" />
         </div>
-        <h3>Enter Invite Code</h3>
-        <p>Agent Payroll is in early access. Enter your invite code to continue.</p>
-        <div className="ac-code-form">
-          <input
-            type="text"
-            value={codeInput}
-            onChange={e => setCodeInput(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && handleValidate()}
-            placeholder="LMA-XXXX-XXXX"
-            className="ac-code-input"
-            maxLength={20}
-            autoFocus
-          />
-          <button
-            className="ac-btn primary"
-            onClick={handleValidate}
-            disabled={validating || !codeInput.trim()}
-          >
-            {validating ? 'Validating...' : 'Unlock'}
-          </button>
-        </div>
-        {codeError && <p className="ac-code-error">{codeError}</p>}
+        <h3>Agent Payroll is private</h3>
+        <p>Payroll for people, contractors, and AI agents is available by demo. Book a walkthrough and we'll issue access.</p>
+        <a className="ac-btn primary" href={demoUrl} target="_blank" rel="noopener noreferrer">
+          Book a demo
+        </a>
+
+        <button className="ac-code-toggle" type="button" onClick={() => setShowCode(v => !v)}>
+          {showCode ? 'Hide access code' : 'Have an access code?'}
+        </button>
+
+        {showCode && (
+          <div className="ac-code-panel">
+            {(!authenticated || !address) ? (
+              <>
+                <p>Connect the wallet that was invited, then enter your code.</p>
+                <button className="ac-btn primary" onClick={login}>Connect Wallet</button>
+              </>
+            ) : (
+              <>
+                <div className="ac-code-form">
+                  <input
+                    type="text"
+                    value={codeInput}
+                    onChange={e => setCodeInput(e.target.value.toUpperCase())}
+                    onKeyDown={e => e.key === 'Enter' && handleValidate()}
+                    placeholder="LMA-XXXX-XXXX"
+                    className="ac-code-input"
+                    maxLength={20}
+                    autoFocus
+                  />
+                  <button
+                    className="ac-btn primary"
+                    onClick={handleValidate}
+                    disabled={validating || !codeInput.trim()}
+                  >
+                    {validating ? 'Validating...' : 'Unlock'}
+                  </button>
+                </div>
+                {codeError && <p className="ac-code-error">{codeError}</p>}
+              </>
+            )}
+          </div>
+        )}
       </div>
     )
   }

@@ -16,8 +16,8 @@ export interface ChainBalance {
   isError: boolean
 }
 
-/** EURC address on Arc Testnet */
-const EURC_ARC = TOKENS.EURC.addresses.arc_testnet as `0x${string}`
+/** EURC address on Arc Mainnet */
+const EURC_ARC = TOKENS.EURC.addresses.arc as `0x${string}`
 
 /**
  * Queries USDC balances across all chains + EURC on Arc.
@@ -41,7 +41,7 @@ export function useMultiChainBalance() {
     abi: ERC20_ABI,
     functionName: 'balanceOf' as const,
     args: [address!] as readonly [`0x${string}`],
-    chainId: 5042002,
+    chainId: 5042,
   }
 
   const allContracts = [...usdcContracts, eurcContract]
@@ -80,8 +80,8 @@ export function useMultiChainBalance() {
   const eurcFormatted = eurcResult?.status === 'success' ? formatUnits(eurcRaw, 6) : '0.00'
 
   const eurcBalance: ChainBalance = {
-    chainId: 5042002,
-    name: 'Arc Testnet',
+    chainId: 5042,
+    name: 'Arc',
     shortName: 'Arc',
     color: '#1b6ef5',
     icon: '/images/arclogo.jpg',

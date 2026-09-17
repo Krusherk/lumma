@@ -20,14 +20,14 @@ const queryClient = new QueryClient()
 
 // Detect subdomain to render the right page
 const hostname = window.location.hostname
-const isTestnet = hostname.startsWith('testnet.')
+const isApp = hostname.startsWith('app.') || hostname.startsWith('testnet.')
 const isDocs = hostname.startsWith('docs.')
 const isBlog = hostname.startsWith('blog.')
 const isAdmin = hostname.startsWith('ad.')
 const isPayroll = hostname.startsWith('payroll.')
 
 export default function App() {
-  if (isTestnet) {
+  if (isApp) {
     return (
       <PrivyProvider appId={PRIVY_APP_ID} config={privyConfig}>
         <QueryClientProvider client={queryClient}>

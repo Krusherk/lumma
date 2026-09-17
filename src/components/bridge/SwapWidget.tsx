@@ -3,20 +3,18 @@ import { LiFiWidget, type WidgetConfig } from '@lifi/widget'
 import { usePrivy } from '@privy-io/react-auth'
 import { useAccount } from 'wagmi'
 import { USDC_ADDRESSES } from '../../config/tokens'
+import { ARC_MAINNET_CHAIN_ID, ARC_RPC_URL } from '../../config/chains'
 
 const LIFI_API_KEY = import.meta.env.VITE_LIFI_API_KEY
 
-// Arc Testnet chain ID
-const ARC_TESTNET = 5042002
+const ARC = ARC_MAINNET_CHAIN_ID
+const ETHEREUM = 1
+const BASE = 8453
+const ARBITRUM = 42161
+const OPTIMISM = 10
+const POLYGON = 137
 
-// All testnet chains LI.FI supports — Ethereum Sepolia is critical as a bridge hub
-const ALLOWED_CHAINS = [
-  ARC_TESTNET,    // Arc Testnet
-  11155111,       // Ethereum Sepolia (bridge hub)
-  11155420,       // OP Sepolia
-  421614,         // Arbitrum Sepolia
-  84532,          // Base Sepolia
-]
+const ALLOWED_CHAINS = [ARC, ETHEREUM, OPTIMISM, ARBITRUM, BASE, POLYGON]
 
 export default function SwapWidget() {
   const { login } = usePrivy()
@@ -27,30 +25,28 @@ export default function SwapWidget() {
     appearance: 'dark',
     variant: 'compact',
 
-    // Default from/to so users start with Arc first
-    fromChain: ARC_TESTNET,   // Arc Testnet (shows first)
-    toChain: 84532,           // Base Sepolia
-    fromToken: USDC_ADDRESSES[ARC_TESTNET],
-    toToken: USDC_ADDRESSES[84532],
+    fromChain: ARC,
+    toChain: BASE,
+    fromToken: USDC_ADDRESSES[ARC],
+    toToken: USDC_ADDRESSES[BASE],
 
-    // Arc first in chain selectors
     chains: {
+      allow: ALLOWED_CHAINS,
       from: { allow: ALLOWED_CHAINS },
       to: { allow: ALLOWED_CHAINS },
     },
 
-    // Feature USDC tokens on each chain so they're easy to find
     tokens: {
       featured: [
-        { address: USDC_ADDRESSES[ARC_TESTNET], chainId: ARC_TESTNET as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
-        { address: USDC_ADDRESSES[84532], chainId: 84532 as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
-        { address: USDC_ADDRESSES[421614], chainId: 421614 as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
-        { address: USDC_ADDRESSES[11155420], chainId: 11155420 as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
-        { address: USDC_ADDRESSES[11155111], chainId: 11155111 as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
+        { address: USDC_ADDRESSES[ARC], chainId: ARC as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
+        { address: USDC_ADDRESSES[BASE], chainId: BASE as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
+        { address: USDC_ADDRESSES[ARBITRUM], chainId: ARBITRUM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
+        { address: USDC_ADDRESSES[OPTIMISM], chainId: OPTIMISM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
+        { address: USDC_ADDRESSES[ETHEREUM], chainId: ETHEREUM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
+        { address: USDC_ADDRESSES[POLYGON], chainId: POLYGON as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
       ],
     },
 
-    // Clean UI — hide engine branding and widget's own wallet button
     hiddenUI: [
       'appearance',
       'language',
@@ -58,26 +54,22 @@ export default function SwapWidget() {
       'walletMenu',
     ],
 
-    // Use existing Privy/Wagmi wallet — enables balance display
     walletConfig: {
       usePartialWalletManagement: true,
       onConnect: () => login(),
     },
 
-    // LI.FI SDK settings
     sdkConfig: {
       apiKey: LIFI_API_KEY,
       rpcUrls: {
-        [ARC_TESTNET]: ['https://rpc.testnet.arc.network'],
+        [ARC]: [ARC_RPC_URL, 'https://rpc.mainnet.arc.io'],
       } as Record<number, string[]>,
     },
 
-    // Explorer URL for Arc Testnet
     explorerUrls: {
-      [ARC_TESTNET]: ['https://testnet.arcscan.app'],
+      [ARC]: ['https://explorer.arc.io'],
     },
 
-    // Lumma dark theme
     theme: {
       palette: {
         primary: { main: '#9333ea' },
@@ -113,6 +105,5 @@ export default function SwapWidget() {
     },
   }), [login])
 
-  // Key forces full remount on wallet change, preventing stale chain state
   return <LiFiWidget integrator="lumma" config={config} key={address || 'disconnected'} />
 }

@@ -1,41 +1,44 @@
 // CCTP v2 contract addresses, domain IDs, and ABIs
 // Source: https://developers.circle.com/cctp/concepts/supported-chains-and-domains
-//         https://docs.arc.network/arc/references/contract-addresses
+//         https://developers.circle.com/cctp/evm-smart-contracts
 
-// ── IRIS API ──
-export const IRIS_API = 'https://iris-api-sandbox.circle.com/v2'
+// ── IRIS API (mainnet) ──
+export const IRIS_API = 'https://iris-api.circle.com/v2'
 
 // ── Forwarding Service hook data (magic bytes) ──
 export const FORWARDING_HOOK_DATA = '0x636374702d666f72776172640000000000000000000000000000000000000000' as `0x${string}`
 
 // ── CCTP Domain IDs (NOT chain IDs) ──
 export const CCTP_DOMAINS: Record<number, number> = {
-  5042002:  26, // Arc Testnet
-  11155111:  0, // Ethereum Sepolia
-  84532:     6, // Base Sepolia
-  421614:    3, // Arbitrum Sepolia
-  80002:     7, // Polygon Amoy
+  5042:  26, // Arc
+  1:      0, // Ethereum
+  8453:   6, // Base
+  42161:  3, // Arbitrum
+  137:    7, // Polygon PoS
+  10:     2, // OP Mainnet
 }
 
-// ── TokenMessengerV2 — shared across all EVM testnets ──
-export const TOKEN_MESSENGER_V2 = '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA' as `0x${string}`
+// ── TokenMessengerV2 — shared across EVM mainnets ──
+export const TOKEN_MESSENGER_V2 = '0x28b5a0e9C621a5BadaA536219b3a228C8168cf5d' as `0x${string}`
 
-// ── MessageTransmitterV2 per chain ──
+// ── MessageTransmitterV2 — shared across EVM mainnets ──
 export const MESSAGE_TRANSMITTER_V2: Record<number, `0x${string}`> = {
-  5042002:  '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275', // Arc Testnet
-  11155111: '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275', // Sepolia (verify)
-  84532:    '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275', // Base Sepolia (verify)
-  421614:   '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275', // Arb Sepolia (verify)
-  80002:    '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275', // Polygon Amoy (verify)
+  5042:  '0x81D40F21F12A8F0E3252Bccb954D722d4c464B64',
+  1:     '0x81D40F21F12A8F0E3252Bccb954D722d4c464B64',
+  8453:  '0x81D40F21F12A8F0E3252Bccb954D722d4c464B64',
+  42161: '0x81D40F21F12A8F0E3252Bccb954D722d4c464B64',
+  137:   '0x81D40F21F12A8F0E3252Bccb954D722d4c464B64',
+  10:    '0x81D40F21F12A8F0E3252Bccb954D722d4c464B64',
 }
 
 // ── USDC addresses per chain ──
 export const USDC_ADDRESSES: Record<number, `0x${string}`> = {
-  5042002:  '0x3600000000000000000000000000000000000000',   // Arc Testnet
-  11155111: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // Ethereum Sepolia
-  84532:    '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Base Sepolia
-  421614:   '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d', // Arbitrum Sepolia
-  80002:    '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582', // Polygon Amoy
+  5042:  '0x3600000000000000000000000000000000000000',
+  1:     '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  8453:  '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+  137:   '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+  10:    '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
 }
 
 // ── ABIs (minimal, only what we need) ──
@@ -105,7 +108,6 @@ export interface FeeQuote {
   forwardFee: { med: number }
 }
 
-// Fetch forwarding fees from IRIS
 export async function getForwardingFees(
   srcDomain: number,
   dstDomain: number,
@@ -122,7 +124,6 @@ export async function getForwardingFees(
   return fast
 }
 
-// Calculate total burn amount including fees
 export function calculateBurnAmount(
   amount: bigint,
   feeQuote: FeeQuote,
@@ -134,7 +135,6 @@ export function calculateBurnAmount(
   return { maxFee, totalAmount }
 }
 
-// Poll IRIS for forwarded mint tx hash
 export async function waitForForwardedMint(
   srcDomain: number,
   burnTxHash: string,

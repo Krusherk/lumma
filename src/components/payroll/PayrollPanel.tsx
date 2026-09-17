@@ -9,12 +9,8 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { usePrivy } from '@privy-io/react-auth'
 import { usePayroll } from '../../hooks/usePayroll'
-import { SUPPORTED_CHAINS } from '../../config/chains'
+import { PAYROLL_CHAINS } from '../../config/chains'
 import './PayrollPanel.css'
-
-const PAYROLL_CHAINS = SUPPORTED_CHAINS.filter(c =>
-  [5042002, 11155111, 84532, 421614, 11155420].includes(c.chainId)
-)
 
 function truncAddr(addr: string) {
   return addr.slice(0, 6) + '...' + addr.slice(-4)

@@ -9,11 +9,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { usePrivy } from '@privy-io/react-auth'
 import { useAccount } from 'wagmi'
 import { getInviteByToken, claimInvite, type PayrollInvite } from '../config/payroll'
-import { SUPPORTED_CHAINS } from '../config/chains'
+import { getChainMeta } from '../config/chains'
 import './JoinPage.css'
 
 function chainName(chainId: number) {
-  return SUPPORTED_CHAINS.find(c => c.chainId === chainId)?.shortName || `Chain ${chainId}`
+  return getChainMeta(chainId).shortName
 }
 
 export default function JoinPage() {

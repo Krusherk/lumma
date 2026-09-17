@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import ParticleCanvas from '../components/ParticleCanvas'
+import { APP_URL, DEMO_BOOKING_URL } from '../config/demo'
 import './LandingPage.css'
 
 function SvgIcon({ name }: { name: string }) {
@@ -56,7 +57,7 @@ export default function LandingPage() {
           <a href="#arc" className="nav-tab">Arc</a>
         </div>
         <div className="nav-btns">
-            <a href="https://testnet.lumma.xyz" className="bn p nav-launch">Launch App</a>
+            <a href={APP_URL} className="bn p nav-launch">Launch App</a>
           <div className="dot-menu">
             <button className="dot-trigger" onClick={() => setDotOpen(v => !v)} type="button">
               <span /><span /><span />
@@ -104,7 +105,7 @@ export default function LandingPage() {
           <div className="hero-stats">
             <div className="hs"><div className="hs-v">USDC</div><div className="hs-l">Native Asset</div></div>
             <div className="hs"><div className="hs-v">Arc</div><div className="hs-l">Network</div></div>
-            <div className="hs"><div className="hs-v">Testnet</div><div className="hs-l">Status</div></div>
+            <div className="hs"><div className="hs-v">Mainnet</div><div className="hs-l">Status</div></div>
           </div>
         </div>
       </div>
@@ -136,7 +137,7 @@ export default function LandingPage() {
               <div className="ci"><SvgIcon name="users" /></div>
               <div style={{ fontSize: '.55rem', fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: '#a855f7', marginBottom: 8 }}>Pay</div>
               <div className="ct">Agent Payroll</div>
-              <p className="cb">Run recurring payroll and usage-based compensation for employees, contractors, and AI agents through programmable USDC vaults.</p>
+              <p className="cb">Run recurring payroll and usage-based compensation for employees, contractors, and AI agents through programmable USDC vaults. Private — book a demo to get access.</p>
               <div className="mc2">
                 {[30, 48, 38, 78, 95, 84, 68, 58, 100, 74, 62, 90].map((h, j) => (
                   <div className={`br${[3, 4, 5, 8, 11].includes(j) ? ' h' : ''}`} key={j} style={{ height: `${h}%` }} />
@@ -151,7 +152,7 @@ export default function LandingPage() {
           <div className="rev" ref={el => { revealRefs.current[2] = el }}>
             <span className="stag">Agent Payroll</span>
             <h2 className="stit">Payroll for humans and<br />autonomous agents.</h2>
-            <p className="ssub">A programmable USDC payroll vault on Arc for recurring human payroll and usage-based compensation for AI agents.</p>
+            <p className="ssub">A programmable USDC payroll vault on Arc for recurring human payroll and usage-based compensation for AI agents. Currently private — book a demo to try it.</p>
           </div>
 
           <div className="hg rev" ref={el => { revealRefs.current[3] = el }}>
@@ -184,6 +185,9 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+          <div className="rev" ref={el => { revealRefs.current[7] = el }} style={{ marginTop: 28 }}>
+            <a href={DEMO_BOOKING_URL} className="bl s">Book a demo</a>
           </div>
         </div>
 
@@ -220,7 +224,7 @@ export default function LandingPage() {
             <p>Integrate programmable USDC payroll into applications, agent workflows, and financial products through Lumma's developer infrastructure.</p>
             <div className="ctaf">
               <a href="https://docs.lumma.xyz" className="bl s">Read the docs</a>
-              <a href="https://testnet.lumma.xyz" className="bl o">Try Testnet</a>
+              <a href={APP_URL} className="bl o">Launch App</a>
               <a href="https://x.com/lummaxyz" target="_blank" rel="noopener noreferrer" className="bl o">Follow on X</a>
             </div>
           </div>
