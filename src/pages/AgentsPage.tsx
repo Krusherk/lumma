@@ -21,7 +21,7 @@ export default function AgentsPage() {
         </p>
 
         <div className="agents-links" style={{ marginBottom: 48 }}>
-          <a className="agents-btn" href={DEMO_BOOKING_URL}>Book a demo</a>
+          <a className="agents-btn" href={DEMO_BOOKING_URL} target="_blank" rel="noopener noreferrer">Book a demo</a>
           <a className="agents-btn ghost" href={APP_URL}>Open Bridge & Swap</a>
         </div>
 

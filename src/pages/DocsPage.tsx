@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import ShaderBackground from '../components/ShaderBackground'
-import { APP_URL } from '../config/demo'
+import { APP_URL, DEMO_BOOKING_URL } from '../config/demo'
 import './DocsPage.css'
 
 type Section = 'home' | 'intro' | 'why' | 'bridge' | 'balance' | 'points' | 'send' | 'agents' | 'yield' | 'arch' | 'security' | 'roadmap' | 'sdk' | 'skill' | 'api' | 'nanopay'
@@ -459,7 +459,7 @@ function SectionAgents() {
       <p>Agent Payroll is payroll infrastructure for <strong>hybrid teams</strong> — human employees, contractors, and AI agents — all paid in USDC from a single vault on Arc. It is not publicly available; book a demo to get access.</p>
       <div className="docs-callout">
         <div className="docs-callout-title">Private access</div>
-        <p>Bridge &amp; Swap is live on mainnet. Agent Payroll stays invite-only. Email <a href="mailto:support@lumma.xyz?subject=Book%20a%20demo%20%E2%80%94%20Agent%20Payroll">support@lumma.xyz</a> to book a demo — you'll receive an access code after.</p>
+        <p>Bridge &amp; Swap is live on mainnet. Agent Payroll stays invite-only. <a href={DEMO_BOOKING_URL} target="_blank" rel="noopener noreferrer">Book a demo</a> — you'll receive an access code after.</p>
       </div>
 
       <h3>One vault, two ways to pay</h3>

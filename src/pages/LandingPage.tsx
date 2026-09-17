@@ -187,7 +187,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="rev" ref={el => { revealRefs.current[7] = el }} style={{ marginTop: 28 }}>
-            <a href={DEMO_BOOKING_URL} className="bl s">Book a demo</a>
+            <a href={DEMO_BOOKING_URL} className="bl s" target="_blank" rel="noopener noreferrer">Book a demo</a>
           </div>
         </div>
 
