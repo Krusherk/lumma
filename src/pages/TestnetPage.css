@@ -57,7 +57,8 @@
 .tn-wallet.connected{
   background:rgba(255,255,255,.04);color:#f0ecff;
   border:1px solid rgba(255,255,255,.1);
-  display:flex;align-items:center;gap:7px;
+  display:flex;align-items:center;gap:8px;
+  padding:5px 12px 5px 6px;
 }
 .tn-wallet.connected:hover{border-color:rgba(255,255,255,.2)}
 .tn-wallet-dot{

@@ -13,11 +13,10 @@ export const privyConfig = {
   },
   embeddedWallets: {
     ethereum: {
-      createOnLogin: 'users-without-wallets' as const,
+      createOnLogin: 'off' as const,
     },
   },
-  // SIWE + wallet-add must run on a chain every wallet already has.
-  // Arc is still in supportedChains so LiFi can switch to it after login.
-  defaultChain: mainnet,
+  // No defaultChain: connecting does not force a switch (which broke SIWE).
+  // Arc stays in the list so LiFi can add/switch to it when bridging.
   supportedChains: [mainnet, base, arbitrum, optimism, polygon, arcMainnet],
 }

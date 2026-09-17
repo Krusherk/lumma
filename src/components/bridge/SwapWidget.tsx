@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react'
 import type { WidgetConfig } from '@lifi/widget'
-import { usePrivy } from '@privy-io/react-auth'
+import { useConnectWallet, useWallets } from '@privy-io/react-auth'
 import { useAccount } from 'wagmi'
 import { USDC_ADDRESSES } from '../../config/tokens'
 import { ARC_MAINNET_CHAIN_ID } from '../../config/chains'
@@ -22,9 +22,10 @@ const POLYGON = 137
 const ALLOWED_CHAINS = [ETHEREUM, BASE, ARBITRUM, OPTIMISM, POLYGON, ARC]
 
 export default function SwapWidget() {
-  const { login, authenticated } = usePrivy()
+  const { connectWallet } = useConnectWallet()
+  const { wallets } = useWallets()
   const { address } = useAccount()
-  const connected = authenticated && !!address
+  const connected = !!address || wallets.length > 0
 
   const config = useMemo<WidgetConfig>(() => ({
     integrator: 'lumma',
@@ -67,7 +68,7 @@ export default function SwapWidget() {
 
     walletConfig: {
       usePartialWalletManagement: true,
-      onConnect: () => login(),
+      onConnect: () => connectWallet(),
     },
 
     sdkConfig: {
@@ -117,7 +118,7 @@ export default function SwapWidget() {
         maxWidth: '420px',
       },
     },
-  }), [login])
+  }), [connectWallet])
 
   return (
     <Suspense fallback={

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAccount, useBalance, useDisconnect } from 'wagmi'
-import { usePrivy } from '@privy-io/react-auth'
+import { usePrivy, useConnectWallet, useWallets } from '@privy-io/react-auth'
 import { formatUnits } from 'viem'
 import { USDC_ADDRESSES } from '../../config/cctp'
 import './WalletDropdown.css'
@@ -13,6 +13,14 @@ const BALANCE_CHAINS = [
   { name: 'Optimism', chainId: 10, logo: '/images/eth.jpg' },
   { name: 'Polygon', chainId: 137, logo: '/images/polygon.png' },
 ]
+
+function avatarStyle(addr: string) {
+  const h1 = parseInt(addr.slice(2, 8), 16) % 360
+  const h2 = parseInt(addr.slice(8, 14), 16) % 360
+  return {
+    background: `conic-gradient(from 200deg, hsl(${h1} 72% 58%), hsl(${h2} 80% 38%), hsl(${(h1 + 48) % 360} 64% 50%))`,
+  }
+}
 
 function ChainBalance({ chainId, name, logo, walletAddr, enabled }: { chainId: number; name: string; logo: string; walletAddr: `0x${string}`; enabled: boolean }) {
   const usdcAddr = USDC_ADDRESSES[chainId]
@@ -34,13 +42,16 @@ function ChainBalance({ chainId, name, logo, walletAddr, enabled }: { chainId: n
 }
 
 export default function WalletDropdown() {
-  const { authenticated, login, logout, user } = usePrivy()
-  const { address } = useAccount()
+  const { logout, authenticated } = usePrivy()
+  const { connectWallet } = useConnectWallet()
+  const { wallets } = useWallets()
+  const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const walletAddr = address || (user?.wallet?.address as `0x${string}` | undefined)
+  const walletAddr = (address || wallets[0]?.address) as `0x${string}` | undefined
+  const connected = isConnected || !!walletAddr
   const shortAddr = walletAddr
     ? `${walletAddr.slice(0, 6)}...${walletAddr.slice(-4)}`
     : ''
@@ -52,9 +63,15 @@ export default function WalletDropdown() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  if (!authenticated) {
+  const handleDisconnect = () => {
+    disconnect()
+    if (authenticated) logout()
+    setIsOpen(false)
+  }
+
+  if (!connected) {
     return (
-      <button className="tn-wallet" onClick={login}>
+      <button className="tn-wallet" onClick={() => connectWallet()}>
         Connect Wallet
       </button>
     )
@@ -63,7 +80,7 @@ export default function WalletDropdown() {
   return (
     <div className="wd">
       <button className="tn-wallet connected" onClick={() => setIsOpen(!isOpen)}>
-        <span className="tn-wallet-dot" />
+        <span className="wd-avatar" style={avatarStyle(walletAddr!)} />
         {shortAddr}
         <svg className={`wd-chev ${isOpen ? 'open' : ''}`} width="10" height="10" viewBox="0 0 24 24" fill="none">
           <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -74,8 +91,8 @@ export default function WalletDropdown() {
         <>
           <div className="wd-backdrop" onClick={() => setIsOpen(false)} />
           <div className="wd-panel">
-            {/* Address + Copy */}
             <div className="wd-addr-row">
+              <span className="wd-avatar lg" style={avatarStyle(walletAddr!)} />
               <span className="wd-addr">{shortAddr}</span>
               <button className="wd-copy" onClick={handleCopy} type="button">
                 {copied ? (
@@ -87,21 +104,19 @@ export default function WalletDropdown() {
               </button>
             </div>
 
-            {/* Balances */}
             <div className="wd-section-label">USDC Balances</div>
             <div className="wd-balances">
               {walletAddr && BALANCE_CHAINS.map(c => (
-                <ChainBalance key={c.chainId} chainId={c.chainId} name={c.name} logo={c.logo} walletAddr={walletAddr as `0x${string}`} enabled={isOpen} />
+                <ChainBalance key={c.chainId} chainId={c.chainId} name={c.name} logo={c.logo} walletAddr={walletAddr} enabled={isOpen} />
               ))}
             </div>
 
-            {/* Actions */}
             <div className="wd-actions">
               <a href={`https://explorer.arc.io/address/${walletAddr}`} target="_blank" rel="noopener noreferrer" className="wd-action">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 View on Explorer
               </a>
-              <button className="wd-action disconnect" onClick={() => { disconnect(); logout(); setIsOpen(false) }} type="button">
+              <button className="wd-action disconnect" onClick={handleDisconnect} type="button">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 Disconnect
               </button>

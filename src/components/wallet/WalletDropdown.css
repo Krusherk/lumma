@@ -1,4 +1,9 @@
 .wd{position:relative}
+.wd-avatar{
+  width:18px;height:18px;border-radius:50%;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12);
+}
+.wd-avatar.lg{width:22px;height:22px}
 
 .wd-chev{color:rgba(240,236,255,.35);transition:transform .25s cubic-bezier(.34,1.56,.64,1);margin-left:4px}
 .wd-chev.open{transform:rotate(180deg)}
@@ -17,9 +22,10 @@
 
 /* Address row */
 .wd-addr-row{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;gap:10px;
   padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.06);
 }
+.wd-addr-row .wd-addr{flex:1}
 .wd-addr{font-size:.8rem;font-weight:600;color:#f0ecff;font-family:'JetBrains Mono',monospace}
 .wd-copy{
   display:flex;align-items:center;gap:4px;
