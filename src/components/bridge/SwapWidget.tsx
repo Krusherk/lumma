@@ -1,9 +1,14 @@
-import { useMemo } from 'react'
-import { LiFiWidget, type WidgetConfig } from '@lifi/widget'
+import { lazy, Suspense, useMemo } from 'react'
+import type { WidgetConfig } from '@lifi/widget'
 import { usePrivy } from '@privy-io/react-auth'
 import { useAccount } from 'wagmi'
 import { USDC_ADDRESSES } from '../../config/tokens'
-import { ARC_MAINNET_CHAIN_ID, ARC_RPC_URL } from '../../config/chains'
+import { ARC_MAINNET_CHAIN_ID } from '../../config/chains'
+import { RPC_URLS } from '../../config/rpc'
+
+const LiFiWidget = lazy(() =>
+  import('@lifi/widget').then(m => ({ default: m.LiFiWidget })),
+)
 
 const LIFI_API_KEY = import.meta.env.VITE_LIFI_API_KEY
 
@@ -30,6 +35,11 @@ export default function SwapWidget() {
     toChain: ARC,
     fromToken: USDC_ADDRESSES[ETHEREUM],
     toToken: USDC_ADDRESSES[ARC],
+
+    routePriority: 'FASTEST',
+    slippage: 0.005,
+    useRecommendedRoute: true,
+    useRelayerRoutes: true,
 
     chains: {
       allow: ALLOWED_CHAINS,
@@ -62,14 +72,12 @@ export default function SwapWidget() {
 
     sdkConfig: {
       apiKey: LIFI_API_KEY,
-      rpcUrls: {
-        [ARC]: [ARC_RPC_URL, 'https://rpc.mainnet.arc.io', 'https://rpc.drpc.mainnet.arc.io'],
-        [ETHEREUM]: ['https://eth.llamarpc.com', 'https://rpc.ankr.com/eth'],
-        [BASE]: ['https://mainnet.base.org', 'https://base.llamarpc.com'],
-        [ARBITRUM]: ['https://arb1.arbitrum.io/rpc', 'https://arbitrum.llamarpc.com'],
-        [OPTIMISM]: ['https://mainnet.optimism.io', 'https://optimism.llamarpc.com'],
-        [POLYGON]: ['https://polygon-rpc.com', 'https://polygon.llamarpc.com'],
-      } as Record<number, string[]>,
+      preloadChains: false,
+      rpcUrls: RPC_URLS as Record<number, string[]>,
+      routeOptions: {
+        maxPriceImpact: 0.4,
+        allowSwitchChain: true,
+      },
     },
 
     explorerUrls: {
@@ -111,5 +119,18 @@ export default function SwapWidget() {
     },
   }), [login])
 
-  return <LiFiWidget integrator="lumma" config={config} key={connected ? address : 'disconnected'} />
+  return (
+    <Suspense fallback={
+      <div style={{
+        width: '100%',
+        maxWidth: 420,
+        height: 420,
+        borderRadius: 12,
+        border: '1px solid rgba(255,255,255,.07)',
+        background: '#08080f',
+      }} />
+    }>
+      <LiFiWidget integrator="lumma" config={config} key={connected ? address : 'disconnected'} />
+    </Suspense>
+  )
 }

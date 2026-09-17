@@ -4,7 +4,6 @@ import TransferHistory from '../components/bridge/TransferHistory'
 import BalancePanel from '../components/balance/BalancePanel'
 import AgentChat from '../components/agent/AgentChat'
 import WalletDropdown from '../components/wallet/WalletDropdown'
-import ParticleCanvas from '../components/ParticleCanvas'
 import ErrorBoundary from '../components/ErrorBoundary'
 import { DEMO_BOOKING_URL } from '../config/demo'
 import './TestnetPage.css'
@@ -37,7 +36,6 @@ export default function TestnetPage() {
 
   return (
     <div className="tn">
-      <div className="tn-particles"><ParticleCanvas /></div>
       <nav className="tn-nav">
         <a href="/" className="tn-logo">
           <img src="/images/lumma.svg" alt="Lumma" style={{ height: 22, width: 'auto' }} />

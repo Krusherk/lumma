@@ -14,13 +14,13 @@ const BALANCE_CHAINS = [
   { name: 'Polygon', chainId: 137, logo: '/images/polygon.png' },
 ]
 
-function ChainBalance({ chainId, name, logo, walletAddr }: { chainId: number; name: string; logo: string; walletAddr: `0x${string}` }) {
+function ChainBalance({ chainId, name, logo, walletAddr, enabled }: { chainId: number; name: string; logo: string; walletAddr: `0x${string}`; enabled: boolean }) {
   const usdcAddr = USDC_ADDRESSES[chainId]
   const { data } = useBalance({
     address: walletAddr,
     token: usdcAddr,
     chainId,
-    query: { enabled: !!walletAddr },
+    query: { enabled: enabled && !!walletAddr, staleTime: 30_000 },
   })
   const bal = data ? formatUnits(data.value, 6) : '0.00'
 
@@ -91,7 +91,7 @@ export default function WalletDropdown() {
             <div className="wd-section-label">USDC Balances</div>
             <div className="wd-balances">
               {walletAddr && BALANCE_CHAINS.map(c => (
-                <ChainBalance key={c.chainId} chainId={c.chainId} name={c.name} logo={c.logo} walletAddr={walletAddr as `0x${string}`} />
+                <ChainBalance key={c.chainId} chainId={c.chainId} name={c.name} logo={c.logo} walletAddr={walletAddr as `0x${string}`} enabled={isOpen} />
               ))}
             </div>
 

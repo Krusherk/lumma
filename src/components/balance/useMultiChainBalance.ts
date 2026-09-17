@@ -50,7 +50,9 @@ export function useMultiChainBalance() {
     contracts: isConnected && address ? allContracts : [],
     query: {
       enabled: isConnected && !!address,
-      refetchInterval: 15_000,
+      staleTime: 30_000,
+      refetchInterval: 45_000,
+      refetchOnWindowFocus: false,
     },
   })
 

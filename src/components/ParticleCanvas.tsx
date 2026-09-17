@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 
-const N = 3500
-const INTRO_MS = 2800 // slower contraction
+const N = 1400
+const INTRO_MS = 2200
 
 function fibSphere(n: number) {
   const out: [number, number, number][] = []
@@ -43,7 +43,12 @@ export default function ParticleCanvas({ onPhaseChange }: ParticleCanvasProps) {
 
   useEffect(() => {
     const canvas = canvasRef.current!
-    const ctx = canvas.getContext('2d')!
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      canvas.style.display = 'none'
+      notifyPhase(1)
+      return
+    }
+    const ctx = canvas.getContext('2d', { alpha: false })!
 
     // Load logo image
     const logoImg = new Image()
@@ -169,8 +174,10 @@ export default function ParticleCanvas({ onPhaseChange }: ParticleCanvasProps) {
       return Math.min(1, Math.max(0, window.scrollY / spacerScroll))
     }
 
+    let raf = 0
     function loop(ts: number) {
-      requestAnimationFrame(loop)
+      raf = requestAnimationFrame(loop)
+      if (document.hidden) return
       tick++
       rotY += 0.003
 
@@ -225,9 +232,10 @@ export default function ParticleCanvas({ onPhaseChange }: ParticleCanvasProps) {
     resize()
     window.addEventListener('resize', resize)
     window.addEventListener('mousemove', onMouse)
-    requestAnimationFrame(loop)
+    raf = requestAnimationFrame(loop)
 
     return () => {
+      cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
       window.removeEventListener('mousemove', onMouse)
     }

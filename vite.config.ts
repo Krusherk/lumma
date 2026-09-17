@@ -29,6 +29,13 @@ export default defineConfig({
     include: ['buffer'],
   },
   build: {
-    chunkSizeWarningLimit: 100000,
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/@lifi')) return 'lifi'
+        },
+      },
+    },
   },
 })

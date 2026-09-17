@@ -1,24 +1,18 @@
-import { PrivyProvider } from '@privy-io/react-auth'
-import { WagmiProvider } from '@privy-io/wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense, type ReactElement } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { SpeedInsights } from '@vercel/speed-insights/react'
-import { PRIVY_APP_ID, privyConfig } from './config/privy'
-import { wagmiConfig } from './config/wagmi'
-import LandingPage from './pages/LandingPage'
-import TestnetPage from './pages/TestnetPage'
-import DocsPage from './pages/DocsPage'
-import BlogPage from './pages/BlogPage'
-import AdminPage from './pages/AdminPage'
-import JoinPage from './pages/JoinPage'
-import AgentsPage from './pages/AgentsPage'
-import PayrollReceiptPage from './pages/PayrollReceiptPage'
-
 import ErrorBoundary from './components/ErrorBoundary'
 
-const queryClient = new QueryClient()
+const WalletApp = lazy(() => import('./components/WalletApp'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const TestnetPage = lazy(() => import('./pages/TestnetPage'))
+const DocsPage = lazy(() => import('./pages/DocsPage'))
+const BlogPage = lazy(() => import('./pages/BlogPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const JoinPage = lazy(() => import('./pages/JoinPage'))
+const AgentsPage = lazy(() => import('./pages/AgentsPage'))
+const PayrollReceiptPage = lazy(() => import('./pages/PayrollReceiptPage'))
 
-// Detect subdomain to render the right page
 const hostname = window.location.hostname
 const isApp = hostname.startsWith('app.') || hostname.startsWith('testnet.')
 const isDocs = hostname.startsWith('docs.')
@@ -26,57 +20,77 @@ const isBlog = hostname.startsWith('blog.')
 const isAdmin = hostname.startsWith('ad.')
 const isPayroll = hostname.startsWith('payroll.')
 
+function Boot() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: '#000',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{
+        width: 18,
+        height: 18,
+        border: '2px solid rgba(147,51,234,.25)',
+        borderTopColor: '#9333ea',
+        borderRadius: '50%',
+        animation: 'spin .6s linear infinite',
+      }} />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+}
+
+function withWallet(page: ReactElement) {
+  return (
+    <Suspense fallback={<Boot />}>
+      <WalletApp>
+        <ErrorBoundary>{page}</ErrorBoundary>
+      </WalletApp>
+    </Suspense>
+  )
+}
+
 export default function App() {
   if (isApp) {
     return (
-      <PrivyProvider appId={PRIVY_APP_ID} config={privyConfig}>
-        <QueryClientProvider client={queryClient}>
-          <WagmiProvider config={wagmiConfig}>
-            <ErrorBoundary>
-              <TestnetPage />
-            </ErrorBoundary>
-            <SpeedInsights />
-          </WagmiProvider>
-        </QueryClientProvider>
-      </PrivyProvider>
+      <>
+        {withWallet(<TestnetPage />)}
+        <SpeedInsights />
+      </>
     )
   }
 
   if (isDocs) {
-    return <><DocsPage /><SpeedInsights /></>
+    return <Suspense fallback={<Boot />}><DocsPage /><SpeedInsights /></Suspense>
   }
 
   if (isBlog) {
-    return <><BlogPage /><SpeedInsights /></>
+    return <Suspense fallback={<Boot />}><BlogPage /><SpeedInsights /></Suspense>
   }
 
   if (isAdmin) {
-    return <><AdminPage /><SpeedInsights /></>
+    return <Suspense fallback={<Boot />}><AdminPage /><SpeedInsights /></Suspense>
   }
 
   if (isPayroll) {
-    return <><PayrollReceiptPage /><SpeedInsights /></>
+    return <Suspense fallback={<Boot />}><PayrollReceiptPage /><SpeedInsights /></Suspense>
   }
 
-  // Main domain — normal routing
   return (
-    <PrivyProvider appId={PRIVY_APP_ID} config={privyConfig}>
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/bridge" element={<TestnetPage />} />
-              <Route path="/docs" element={<DocsPage />} />
-              <Route path="/blog" element={<BlogPage />} />
-              <Route path="/join/:token" element={<JoinPage />} />
-              <Route path="/agents" element={<AgentsPage />} />
-            </Routes>
-
-          </ErrorBoundary>
-          <SpeedInsights />
-        </WagmiProvider>
-      </QueryClientProvider>
-    </PrivyProvider>
+    <Suspense fallback={<Boot />}>
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/bridge" element={withWallet(<TestnetPage />)} />
+          <Route path="/docs" element={<DocsPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/join/:token" element={withWallet(<JoinPage />)} />
+          <Route path="/agents" element={<AgentsPage />} />
+        </Routes>
+      </ErrorBoundary>
+      <SpeedInsights />
+    </Suspense>
   )
 }
