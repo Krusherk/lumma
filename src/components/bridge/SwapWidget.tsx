@@ -14,21 +14,22 @@ const ARBITRUM = 42161
 const OPTIMISM = 10
 const POLYGON = 137
 
-const ALLOWED_CHAINS = [ARC, ETHEREUM, OPTIMISM, ARBITRUM, BASE, POLYGON]
+const ALLOWED_CHAINS = [ETHEREUM, BASE, ARBITRUM, OPTIMISM, POLYGON, ARC]
 
 export default function SwapWidget() {
-  const { login } = usePrivy()
+  const { login, authenticated } = usePrivy()
   const { address } = useAccount()
+  const connected = authenticated && !!address
 
   const config = useMemo<WidgetConfig>(() => ({
     integrator: 'lumma',
     appearance: 'dark',
     variant: 'compact',
 
-    fromChain: ARC,
-    toChain: BASE,
-    fromToken: USDC_ADDRESSES[ARC],
-    toToken: USDC_ADDRESSES[BASE],
+    fromChain: ETHEREUM,
+    toChain: ARC,
+    fromToken: USDC_ADDRESSES[ETHEREUM],
+    toToken: USDC_ADDRESSES[ARC],
 
     chains: {
       allow: ALLOWED_CHAINS,
@@ -38,11 +39,11 @@ export default function SwapWidget() {
 
     tokens: {
       featured: [
+        { address: USDC_ADDRESSES[ETHEREUM], chainId: ETHEREUM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
         { address: USDC_ADDRESSES[ARC], chainId: ARC as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
         { address: USDC_ADDRESSES[BASE], chainId: BASE as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
         { address: USDC_ADDRESSES[ARBITRUM], chainId: ARBITRUM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
         { address: USDC_ADDRESSES[OPTIMISM], chainId: OPTIMISM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
-        { address: USDC_ADDRESSES[ETHEREUM], chainId: ETHEREUM as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
         { address: USDC_ADDRESSES[POLYGON], chainId: POLYGON as any, symbol: 'USDC', decimals: 6, name: 'USDC' },
       ],
     },
@@ -62,7 +63,12 @@ export default function SwapWidget() {
     sdkConfig: {
       apiKey: LIFI_API_KEY,
       rpcUrls: {
-        [ARC]: [ARC_RPC_URL, 'https://rpc.mainnet.arc.io'],
+        [ARC]: [ARC_RPC_URL, 'https://rpc.mainnet.arc.io', 'https://rpc.drpc.mainnet.arc.io'],
+        [ETHEREUM]: ['https://eth.llamarpc.com', 'https://rpc.ankr.com/eth'],
+        [BASE]: ['https://mainnet.base.org', 'https://base.llamarpc.com'],
+        [ARBITRUM]: ['https://arb1.arbitrum.io/rpc', 'https://arbitrum.llamarpc.com'],
+        [OPTIMISM]: ['https://mainnet.optimism.io', 'https://optimism.llamarpc.com'],
+        [POLYGON]: ['https://polygon-rpc.com', 'https://polygon.llamarpc.com'],
       } as Record<number, string[]>,
     },
 
@@ -105,5 +111,5 @@ export default function SwapWidget() {
     },
   }), [login])
 
-  return <LiFiWidget integrator="lumma" config={config} key={address || 'disconnected'} />
+  return <LiFiWidget integrator="lumma" config={config} key={connected ? address : 'disconnected'} />
 }

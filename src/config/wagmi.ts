@@ -13,7 +13,7 @@ const ALCHEMY = 'yY2DFVAadrwKpQLwJ-8L2'
 const INFURA = 'cca7556247f2413c97c39723f0fe7526'
 
 export const wagmiConfig = createConfig({
-  chains: [arcMainnet, mainnet, base, arbitrum, optimism, polygon],
+  chains: [mainnet, base, arbitrum, optimism, polygon, arcMainnet],
   transports: {
     [arcMainnet.id]: fallback([
       http(ARC_RPC_URL),

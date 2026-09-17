@@ -9,10 +9,15 @@ export const privyConfig = {
     accentColor: '#9333ea' as const,
     logo: '/images/lumma.svg',
     showWalletLoginFirst: true,
+    walletChainType: 'ethereum-only' as const,
   },
   embeddedWallets: {
-    createOnLogin: 'users-without-wallets' as const,
+    ethereum: {
+      createOnLogin: 'users-without-wallets' as const,
+    },
   },
-  supportedChains: [arcMainnet, mainnet, base, arbitrum, optimism, polygon],
-  defaultChain: arcMainnet,
+  // SIWE + wallet-add must run on a chain every wallet already has.
+  // Arc is still in supportedChains so LiFi can switch to it after login.
+  defaultChain: mainnet,
+  supportedChains: [mainnet, base, arbitrum, optimism, polygon, arcMainnet],
 }

@@ -4,6 +4,7 @@ import { defineChain } from 'viem'
 export const arcMainnet = defineChain({
   id: 5042,
   name: 'Arc',
+  network: 'arc',
   nativeCurrency: {
     decimals: 18,
     name: 'USDC',
